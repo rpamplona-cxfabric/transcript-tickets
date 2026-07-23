@@ -4,8 +4,8 @@ import snappy from 'snappy';
 
 // Initialize the DynamoDB Client
 const region = process.env.AWS_REGION || 'us-east-1';
-const accessKeyId = process.env.AWS_ACCESS_KEY || '';
-const secretAccessKey = process.env.AWS_SECRET_KEY || '';
+const accessKeyId = process.env.AMAZON_ACCESS_KEY || '';
+const secretAccessKey = process.env.AMAZON_SECRET_KEY || '';
 
 if (!accessKeyId || !secretAccessKey) {
   console.warn('WARNING: AWS credentials are not fully set in environment variables.');
