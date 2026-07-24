@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  FileAudio, 
-  Search, 
-  Clock, 
-  Filter, 
-  AlertCircle, 
-  Loader2, 
-  ChevronRight, 
+import {
+  FileAudio,
+  Search,
+  Clock,
+  Filter,
+  AlertCircle,
+  Loader2,
+  ChevronRight,
   ChevronLeft,
-  X, 
+  X,
   Download,
   Building,
   Hash,
@@ -24,15 +24,15 @@ export default function TranscriptionsPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTenant, setSelectedTenant] = useState('all');
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
-  
+
   // Details slide-over state
   const [activeTranscript, setActiveTranscript] = useState(null);
 
@@ -86,13 +86,13 @@ export default function TranscriptionsPage() {
 
   // Filter logic
   const filteredTranscripts = transcripts.filter(t => {
-    const matchesSearch = 
+    const matchesSearch =
       (t.transcript && t.transcript.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (t.transcriptSummary && t.transcriptSummary.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (t.transcriptId && t.transcriptId.toLowerCase().includes(searchQuery.toLowerCase()));
-      
+
     const matchesTenant = selectedTenant === 'all' || t.tenantId === selectedTenant;
-    
+
     return matchesSearch && matchesTenant;
   });
 
@@ -116,7 +116,7 @@ ${transcript.transcriptSummary || 'No summary available.'}
 ${transcript.transcript || 'No transcript text.'}
 `;
     const element = document.createElement("a");
-    const file = new Blob([text], {type: 'text/plain'});
+    const file = new Blob([text], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = `transcript-${transcript.transcriptId.slice(0, 8)}.txt`;
     document.body.appendChild(element);
@@ -129,9 +129,9 @@ ${transcript.transcript || 'No transcript text.'}
     if (!timeStr) return 'N/A';
     try {
       const date = new Date(timeStr);
-      return date.toLocaleString(undefined, { 
-        dateStyle: 'medium', 
-        timeStyle: 'short' 
+      return date.toLocaleString(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short'
       });
     } catch {
       return timeStr;
@@ -141,22 +141,22 @@ ${transcript.transcript || 'No transcript text.'}
   // Render raw transcript with speaker cues formatted
   const renderFormattedTranscript = (text) => {
     if (!text) return <p className="text-zinc-500 italic">No transcript text available.</p>;
-    
+
     // Split by bracket speaker markers, e.g., [00:14 - 00:19] Speaker 1: or Speaker 1:
     const lines = text.split('\n');
     return (
       <div className="space-y-4">
         {lines.map((line, idx) => {
           if (!line.trim()) return null;
-          
+
           // Match speaker lines, e.g. [00:00] Speaker or Speaker 1: or [00:00 - 00:30]
           const speakerMatch = line.match(/^(\[.*?\])?\s*(Speaker\s*\d+|[^:]+):(.*)$/);
-          
+
           if (speakerMatch) {
             const timeTag = speakerMatch[1] || '';
             const speakerName = speakerMatch[2] || '';
             const speakerText = speakerMatch[3] || '';
-            
+
             return (
               <div key={idx} className="flex flex-col gap-1 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
@@ -171,7 +171,7 @@ ${transcript.transcript || 'No transcript text.'}
               </div>
             );
           }
-          
+
           return (
             <p key={idx} className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 p-2 bg-zinc-50/50 rounded dark:bg-zinc-900/20">
               {line}
@@ -184,10 +184,10 @@ ${transcript.transcript || 'No transcript text.'}
 
   return (
     <div className="relative flex flex-1 bg-zinc-50 dark:bg-zinc-900">
-      
+
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 p-6 md:p-8 pb-32 min-w-0">
-        
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="flex flex-col gap-1">
@@ -255,14 +255,14 @@ ${transcript.transcript || 'No transcript text.'}
                   <tr>
                     <th scope="col" className="px-6 py-4">Tenant ID</th>
                     <th scope="col" className="px-6 py-4">Transcript ID</th>
-                    <th scope="col" className="px-6 py-4">Timestamp</th>
+                    <th scope="col" className="px-6 py-4">Retrieved</th>
                     <th scope="col" className="px-6 py-4">Preview Summary</th>
                     <th scope="col" className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                   {currentItems.map((t) => (
-                    <tr 
+                    <tr
                       key={t.transcriptId}
                       onClick={() => setActiveTranscript(t)}
                       className="hover:bg-zinc-50/80 cursor-pointer transition-colors dark:hover:bg-zinc-900/40"
@@ -349,16 +349,15 @@ ${transcript.transcript || 'No transcript text.'}
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </button>
-                      
+
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                            currentPage === page
-                              ? 'z-10 bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
-                              : 'text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
-                          }`}
+                          className={`relative inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold ${currentPage === page
+                            ? 'z-10 bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
+                            : 'text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                            }`}
                         >
                           {page}
                         </button>
@@ -384,13 +383,13 @@ ${transcript.transcript || 'No transcript text.'}
       {activeTranscript && (
         <>
           {/* Overlay Background */}
-          <div 
+          <div
             onClick={() => setActiveTranscript(null)}
             className="fixed inset-0 z-40 bg-zinc-950/30 backdrop-blur-xs transition-opacity duration-300"
           />
 
           {/* Drawer Panel */}
-          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800">
+          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-3xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800">
             {/* Header */}
             <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6 dark:border-zinc-800">
               <div className="flex items-center gap-2">
@@ -407,7 +406,7 @@ ${transcript.transcript || 'No transcript text.'}
 
             {/* Content Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              
+
 
 
               {/* Timestamp Card */}
@@ -462,11 +461,10 @@ ${transcript.transcript || 'No transcript text.'}
                             </span>
                             <span className="text-[10px] text-zinc-450 line-clamp-1">{task.description}</span>
                           </div>
-                          <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${
-                            task.priority === 'high' 
-                              ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400' 
-                              : 'bg-zinc-100 text-zinc-650 dark:bg-zinc-900 dark:text-zinc-400'
-                          }`}>
+                          <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${task.priority === 'high'
+                            ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400'
+                            : 'bg-zinc-100 text-zinc-650 dark:bg-zinc-900 dark:text-zinc-400'
+                            }`}>
                             {task.priority}
                           </span>
                         </Link>
@@ -487,7 +485,7 @@ ${transcript.transcript || 'No transcript text.'}
                 <Download className="h-4 w-4" />
                 Download Transcription Report
               </button>
-              
+
               <Link
                 href={`/tasks?createFrom=${activeTranscript.transcriptId}`}
                 className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 hover:border-zinc-450 transition dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-250 dark:hover:bg-zinc-800/80"
