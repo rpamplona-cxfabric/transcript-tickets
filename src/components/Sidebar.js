@@ -2,17 +2,35 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileAudio, Ticket, Terminal, ChevronRight, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { LayoutDashboard, FileAudio, CheckSquare, Terminal, ChevronRight, Menu, X, Sun, Moon } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [theme, setTheme] = useState('dark');
+
+  useEffect(() => {
+    // Determine active theme on client
+    const isDark = document.documentElement.classList.contains('dark');
+    setTheme(isDark ? 'dark' : 'light');
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   const menuItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Transcriptions', path: '/transcriptions', icon: FileAudio },
-    { name: 'Tickets', path: '/tickets', icon: Ticket },
+    { name: 'Tasks', path: '/tasks', icon: CheckSquare },
   ];
 
   return (
@@ -77,7 +95,18 @@ export default function Sidebar() {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="border-t border-zinc-800 p-4">
+        <div className="border-t border-zinc-800 p-4 flex flex-col gap-2.5">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all duration-150 cursor-pointer"
+          >
+            <span className="flex items-center gap-2.5">
+              {theme === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
+              <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </span>
+          </button>
+
           <div className="flex items-center gap-3 rounded-lg bg-zinc-900/50 p-3">
             <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500" />
             <div className="flex flex-col overflow-hidden">

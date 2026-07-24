@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   FileAudio, 
   Search, 
@@ -13,11 +14,14 @@ import {
   X, 
   Download,
   Building,
-  Hash
+  Hash,
+  CheckSquare,
+  Plus
 } from 'lucide-react';
 
 export default function TranscriptionsPage() {
   const [transcripts, setTranscripts] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -33,14 +37,22 @@ export default function TranscriptionsPage() {
   const [activeTranscript, setActiveTranscript] = useState(null);
 
   useEffect(() => {
-    async function fetchTranscripts() {
+    async function fetchData() {
       try {
-        const res = await fetch('/api/transcriptions');
-        if (!res.ok) {
+        const [transRes, tasksRes] = await Promise.all([
+          fetch('/api/transcriptions'),
+          fetch('/api/tasks')
+        ]);
+        if (!transRes.ok) {
           throw new Error('Failed to load transcriptions');
         }
-        const data = await res.json();
-        setTranscripts(data);
+        const transData = await transRes.json();
+        setTranscripts(transData);
+
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          setTasks(tasksData);
+        }
       } catch (err) {
         console.error(err);
         setError(err.message);
@@ -48,8 +60,21 @@ export default function TranscriptionsPage() {
         setLoading(false);
       }
     }
-    fetchTranscripts();
+    fetchData();
   }, []);
+
+  useEffect(() => {
+    if (transcripts.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const openId = params.get('open');
+      if (openId) {
+        const matchedTranscript = transcripts.find(t => t.transcriptId === openId);
+        if (matchedTranscript) {
+          setActiveTranscript(matchedTranscript);
+        }
+      }
+    }
+  }, [transcripts]);
 
   // Reset to first page when search filters change
   useEffect(() => {
@@ -170,7 +195,7 @@ ${transcript.transcript || 'No transcript text.'}
               Call Transcriptions
             </h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Decompressed transcripts fetched from AWS DynamoDB.
+              View and search through your recent call transcriptions.
             </p>
           </div>
         </div>
@@ -365,7 +390,7 @@ ${transcript.transcript || 'No transcript text.'}
           />
 
           {/* Drawer Panel */}
-          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800">
+          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800">
             {/* Header */}
             <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6 dark:border-zinc-800">
               <div className="flex items-center gap-2">
@@ -383,23 +408,7 @@ ${transcript.transcript || 'No transcript text.'}
             {/* Content Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               
-              {/* Metadata Cards */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 dark:border-zinc-900 dark:bg-zinc-900/30 flex items-start gap-3">
-                  <Building className="h-4.5 w-4.5 text-zinc-400 mt-0.5" />
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500">Tenant ID</span>
-                    <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">{activeTranscript.tenantId}</span>
-                  </div>
-                </div>
-                <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 dark:border-zinc-900 dark:bg-zinc-900/30 flex items-start gap-3">
-                  <Hash className="h-4.5 w-4.5 text-zinc-400 mt-0.5" />
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-500">Transcript ID</span>
-                    <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">{activeTranscript.transcriptId}</span>
-                  </div>
-                </div>
-              </div>
+
 
               {/* Timestamp Card */}
               <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/30 flex items-center justify-between">
@@ -430,17 +439,62 @@ ${transcript.transcript || 'No transcript text.'}
                 </div>
               </div>
 
+              {/* Identified Tasks Block (if any) */}
+              {(() => {
+                const relatedTasks = tasks.filter(t => t.transcriptId === activeTranscript.transcriptId);
+                if (relatedTasks.length === 0) return null;
+                return (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-450 flex items-center gap-1.5">
+                      <CheckSquare className="h-4.5 w-4.5 text-zinc-500" />
+                      Identified Tasks
+                    </h3>
+                    <div className="rounded-xl border border-zinc-150 p-4 bg-zinc-50/50 dark:bg-zinc-900 dark:border-zinc-800 space-y-2.5">
+                      {relatedTasks.map(task => (
+                        <Link
+                          key={task.ticketId}
+                          href={`/tasks?open=${task.ticketId}`}
+                          className="flex items-center justify-between rounded-lg border border-zinc-200/60 bg-white p-3 hover:border-zinc-350 hover:shadow-xs transition duration-150 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700 group"
+                        >
+                          <div className="flex flex-col gap-0.5 overflow-hidden">
+                            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                              {task.title}
+                            </span>
+                            <span className="text-[10px] text-zinc-450 line-clamp-1">{task.description}</span>
+                          </div>
+                          <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${
+                            task.priority === 'high' 
+                              ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400' 
+                              : 'bg-zinc-100 text-zinc-650 dark:bg-zinc-900 dark:text-zinc-400'
+                          }`}>
+                            {task.priority}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
             </div>
 
             {/* Footer Actions */}
-            <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80">
+            <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 flex flex-col gap-2">
               <button
                 onClick={() => downloadTextFile(activeTranscript)}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-zinc-800 transition dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-zinc-800 transition dark:bg-white dark:text-zinc-955 dark:hover:bg-zinc-100"
               >
-                <Download className="h-4.5 w-4.5" />
+                <Download className="h-4 w-4" />
                 Download Transcription Report
               </button>
+              
+              <Link
+                href={`/tasks?createFrom=${activeTranscript.transcriptId}`}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 hover:border-zinc-450 transition dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-250 dark:hover:bg-zinc-800/80"
+              >
+                <Plus className="h-4 w-4" />
+                Create Task from Transcript
+              </Link>
             </div>
           </div>
         </>

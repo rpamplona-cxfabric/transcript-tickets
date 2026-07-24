@@ -78,9 +78,9 @@ export async function getTranscripts() {
 }
 
 /**
- * Fetch all tickets from `mock-tickets`
+ * Fetch all tasks from `mock-tickets`
  */
-export async function getTickets() {
+export async function getTasks() {
   try {
     const command = new ScanCommand({
       TableName: 'mock-tickets',
@@ -89,95 +89,98 @@ export async function getTickets() {
     const items = result.Items || [];
 
     // Standardize structure (add default values if fields are missing)
-    const tickets = items.map((item) => ({
+    const tasks = items.map((item) => ({
       ticketId: item.ticketId || '',
-      title: item.title || 'Untitled Ticket',
+      title: item.title || 'Untitled Task',
       description: item.description || '',
       priority: item.priority || 'low',
       status: item.status || 'open',
+      transcriptId: item.transcriptId || '',
       createdAt: item.createdAt || new Date().toISOString(),
     }));
 
     // Sort by createdAt descending
-    tickets.sort((a, b) => {
+    tasks.sort((a, b) => {
       const timeA = new Date(a.createdAt).getTime();
       const timeB = new Date(b.createdAt).getTime();
       return timeB - timeA;
     });
 
-    return tickets;
+    return tasks;
   } catch (error) {
-    console.error('Error scanning tickets:', error);
+    console.error('Error scanning tasks:', error);
     throw error;
   }
 }
 
 /**
- * Create a new ticket
+ * Create a new task
  */
-export async function createTicket(ticketData) {
+export async function createTask(taskData) {
   const ticketId = `${Date.now()}-${Math.floor(10000 + Math.random() * 90000)}`;
-  const newTicket = {
+  const newRawTask = {
     ticketId,
-    title: ticketData.title || 'Untitled Ticket',
-    description: ticketData.description || '',
-    priority: ticketData.priority || 'low',
-    status: ticketData.status || 'open',
+    title: taskData.title || 'Untitled Task',
+    description: taskData.description || '',
+    priority: taskData.priority || 'low',
+    status: taskData.status || 'open',
+    transcriptId: taskData.transcriptId || '',
     createdAt: new Date().toISOString(),
   };
 
   try {
     const command = new PutCommand({
       TableName: 'mock-tickets',
-      Item: newTicket,
+      Item: newRawTask,
     });
     await docClient.send(command);
-    return newTicket;
+    return newRawTask;
   } catch (error) {
-    console.error('Error creating ticket:', error);
+    console.error('Error creating task:', error);
     throw error;
   }
 }
 
 /**
- * Update an existing ticket
+ * Update an existing task
  */
-export async function updateTicket(ticketId, ticketData) {
+export async function updateTask(ticketId, taskData) {
   try {
-    // Merge updated fields with original ticket
+    // Merge updated fields with original task
     const scanCommand = new ScanCommand({
       TableName: 'mock-tickets',
     });
     const result = await docClient.send(scanCommand);
-    const existingTicket = (result.Items || []).find((t) => t.ticketId === ticketId);
+    const existingTask = (result.Items || []).find((t) => t.ticketId === ticketId);
 
-    const updatedTicket = {
-      ...existingTicket,
+    const updatedTask = {
+      ...existingTask,
       ticketId,
-      title: ticketData.title !== undefined ? ticketData.title : (existingTicket?.title || 'Untitled Ticket'),
-      description: ticketData.description !== undefined ? ticketData.description : (existingTicket?.description || ''),
-      priority: ticketData.priority !== undefined ? ticketData.priority : (existingTicket?.priority || 'low'),
-      status: ticketData.status !== undefined ? ticketData.status : (existingTicket?.status || 'open'),
-      createdAt: existingTicket?.createdAt || new Date().toISOString(),
+      title: taskData.title !== undefined ? taskData.title : (existingTask?.title || 'Untitled Task'),
+      description: taskData.description !== undefined ? taskData.description : (existingTask?.description || ''),
+      priority: taskData.priority !== undefined ? taskData.priority : (existingTask?.priority || 'low'),
+      status: taskData.status !== undefined ? taskData.status : (existingTask?.status || 'open'),
+      transcriptId: taskData.transcriptId !== undefined ? taskData.transcriptId : (existingTask?.transcriptId || ''),
+      createdAt: existingTask?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     const command = new PutCommand({
       TableName: 'mock-tickets',
-      Item: updatedTicket,
+      Item: updatedTask,
     });
     await docClient.send(command);
-    return updatedTicket;
+    return updatedTask;
   } catch (error) {
-    console.error('Error updating ticket:', error);
+    console.error('Error updating task:', error);
     throw error;
   }
 }
 
 /**
- * Delete a ticket
+ * Delete a task
  */
-export async function deleteTicket(ticketId) {
+export async function deleteTask(ticketId) {
   try {
     const command = new DeleteCommand({
       TableName: 'mock-tickets',
@@ -188,7 +191,7 @@ export async function deleteTicket(ticketId) {
     await docClient.send(command);
     return { success: true, ticketId };
   } catch (error) {
-    console.error('Error deleting ticket:', error);
+    console.error('Error deleting task:', error);
     throw error;
   }
 }

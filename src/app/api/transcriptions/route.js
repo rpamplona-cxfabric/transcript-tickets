@@ -1,10 +1,34 @@
 import { NextResponse } from 'next/server';
 import { getTranscripts } from '../../../lib/db';
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+
+    // Retrieve all transcripts, already sorted descending by timestamp in db.js
     const transcripts = await getTranscripts();
-    return NextResponse.json(transcripts);
+    
+    // Always restrict the dataset to the 20 most recent transcripts
+    const recent20 = transcripts.slice(0, 20);
+
+    // If pagination parameters are requested, return paginated structure
+    if (searchParams.has('page') || searchParams.has('limit')) {
+      const startIndex = (page - 1) * limit;
+      const paginatedItems = recent20.slice(startIndex, startIndex + limit);
+
+      return NextResponse.json({
+        items: paginatedItems,
+        total: recent20.length,
+        page,
+        limit,
+        totalPages: Math.ceil(recent20.length / limit)
+      });
+    }
+
+    // Default response: return the recent 20 flat array for backward compatibility
+    return NextResponse.json(recent20);
   } catch (error) {
     console.error('API Error in GET /api/transcriptions:', error);
     return NextResponse.json(

@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getTickets, createTicket } from '../../../lib/db';
+import { getTasks, createTask } from '../../../lib/db';
 
 export async function GET() {
   try {
-    const tickets = await getTickets();
-    return NextResponse.json(tickets);
+    const tasks = await getTasks();
+    return NextResponse.json(tasks);
   } catch (error) {
-    console.error('API Error in GET /api/tickets:', error);
+    console.error('API Error in GET /api/tasks:', error);
     return NextResponse.json(
-      { error: 'Failed to retrieve tickets from database' },
+      { error: 'Failed to retrieve tasks from database' },
       { status: 500 }
     );
   }
@@ -24,12 +24,12 @@ export async function POST(request) {
       );
     }
     
-    const newTicket = await createTicket(body);
-    return NextResponse.json(newTicket, { status: 201 });
+    const newTask = await createTask(body);
+    return NextResponse.json(newTask, { status: 201 });
   } catch (error) {
-    console.error('API Error in POST /api/tickets:', error);
+    console.error('API Error in POST /api/tasks:', error);
     return NextResponse.json(
-      { error: 'Failed to create ticket in database' },
+      { error: 'Failed to create task in database' },
       { status: 500 }
     );
   }
