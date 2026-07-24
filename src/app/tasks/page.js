@@ -717,32 +717,27 @@ export default function TasksPage() {
                 </div>
               </div>
 
-              {/* Created Date Info */}
-              <div className="rounded-xl bg-zinc-50 border border-zinc-150 p-3 flex items-center justify-between dark:bg-zinc-900 dark:border-zinc-800 mt-2">
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
-                  <CalendarDays className="h-4 w-4" />
-                  <span>Created Date:</span>
+              {/* Task Metadata Row */}
+              <div className="border-t border-zinc-100 pt-4 dark:border-zinc-900/60 mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-zinc-500">
+                <div className="flex items-center gap-1.5">
+                  <CalendarDays className="h-4 w-4 text-zinc-400" />
+                  <span>Created:</span>
+                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">{formatTime(editingTask.createdAt)}</span>
                 </div>
-                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                  {formatTime(editingTask.createdAt)}
-                </span>
-              </div>
-
-              {/* Transcript ID Info (if present) */}
-              {editingTask.transcriptId && (
-                <Link
-                  href={`/transcriptions?open=${editingTask.transcriptId}`}
-                  className="rounded-xl bg-zinc-50 border border-zinc-150 p-3 flex items-center justify-between hover:bg-zinc-100 hover:border-zinc-300 transition duration-150 dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-850 mt-2 cursor-pointer group shadow-2xs"
-                >
-                  <div className="flex items-center gap-2 text-xs text-zinc-500">
-                    <FileAudio className="h-4 w-4 text-zinc-400 group-hover:text-zinc-650 dark:group-hover:text-zinc-300 transition-colors" />
-                    <span className="font-semibold text-zinc-550 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">Associated Transcript:</span>
+                {editingTask.transcriptId && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-zinc-500 dark:text-zinc-400">Associated Transcript:</span>
+                    <Link
+                      href={`/transcriptions?open=${editingTask.transcriptId}`}
+                      className="inline-flex items-center gap-1 rounded-lg bg-indigo-50/60 px-2.5 py-1 font-bold text-indigo-650 hover:bg-indigo-100 transition dark:bg-indigo-950/30 dark:text-indigo-400 dark:hover:bg-indigo-950/60"
+                      title={editingTask.transcriptId}
+                    >
+                      <FileAudio className="h-3.5 w-3.5" />
+                      <span>{editingTask.transcriptId.slice(0, 8)}...</span>
+                    </Link>
                   </div>
-                  <span className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 hover:underline truncate max-w-[200px]" title={editingTask.transcriptId}>
-                    {editingTask.transcriptId}
-                  </span>
-                </Link>
-              )}
+                )}
+              </div>
 
               <div className="flex justify-end gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-900 mt-6">
                 <button
