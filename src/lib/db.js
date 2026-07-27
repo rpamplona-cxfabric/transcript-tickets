@@ -195,3 +195,43 @@ export async function deleteTask(ticketId) {
     throw error;
   }
 }
+
+/**
+ * Update speakerNames for a transcript
+ */
+export async function updateTranscriptSpeakerNames(transcriptId, speakerNames) {
+  try {
+    const scanCommand = new ScanCommand({
+      TableName: 'contact-transcripts',
+    });
+    const result = await docClient.send(scanCommand);
+    const existing = (result.Items || []).find((t) => t.transcriptId === transcriptId);
+
+    if (!existing) {
+      throw new Error(`Transcript not found with id: ${transcriptId}`);
+    }
+
+    const updatedItem = {
+      ...existing,
+      speakerNames: speakerNames,
+    };
+
+    const command = new PutCommand({
+      TableName: 'contact-transcripts',
+      Item: updatedItem,
+    });
+    await docClient.send(command);
+    
+    const transcript = await decompressField(updatedItem.transcript);
+    const transcriptSummary = await decompressField(updatedItem.transcriptSummary);
+
+    return {
+      ...updatedItem,
+      transcript,
+      transcriptSummary,
+    };
+  } catch (error) {
+    console.error('Error updating transcript speakerNames:', error);
+    throw error;
+  }
+}

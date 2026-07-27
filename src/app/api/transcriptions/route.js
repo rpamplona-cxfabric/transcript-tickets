@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getTranscripts } from '../../../lib/db';
+import { getTranscripts, updateTranscriptSpeakerNames } from '../../../lib/db';
 
 export async function GET(request) {
   try {
@@ -33,6 +33,29 @@ export async function GET(request) {
     console.error('API Error in GET /api/transcriptions:', error);
     return NextResponse.json(
       { error: 'Failed to retrieve transcripts from database' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request) {
+  try {
+    const body = await request.json();
+    const { transcriptId, speakerNames } = body;
+
+    if (!transcriptId) {
+      return NextResponse.json(
+        { error: 'transcriptId is required' },
+        { status: 400 }
+      );
+    }
+
+    const updated = await updateTranscriptSpeakerNames(transcriptId, speakerNames);
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('API Error in PATCH /api/transcriptions:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to update transcript speaker names' },
       { status: 500 }
     );
   }
