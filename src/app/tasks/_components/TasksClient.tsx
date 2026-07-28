@@ -357,12 +357,12 @@ export default function TasksClient({ initialTasks }: TasksClientProps) {
                           ]}
                           buttonClassName={`text-xs py-1 px-2.5 rounded-lg font-bold border ${
                             t.priority === 'high' 
-                              ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-955/20 dark:text-red-400 dark:border-red-900/50' 
+                              ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/50' 
                               : 'bg-zinc-100 text-zinc-650 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
                           }`}
                         />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-zinc-550 dark:text-zinc-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-zinc-500 dark:text-zinc-400">
                         {formatTime(t.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>

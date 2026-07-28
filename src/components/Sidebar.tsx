@@ -64,16 +64,6 @@ export default function Sidebar() {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Brand Header */}
-        <div className="flex h-16 items-center gap-3 border-b border-zinc-800 px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-zinc-950">
-            <Terminal className="h-5 w-5" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold tracking-tight text-white">CXF Workspace</span>
-            <span className="text-xs text-zinc-500">v1.2.0</span>
-          </div>
-        </div>
 
         {/* Navigation Items */}
         <nav className="flex-1 space-y-1.5 px-4 py-6">
@@ -113,14 +103,6 @@ export default function Sidebar() {
               <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
             </span>
           </button>
-
-          <div className="flex items-center gap-3 rounded-lg bg-zinc-900/50 p-3">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500" />
-            <div className="flex flex-col overflow-hidden">
-              <span className="text-xs font-medium text-white truncate">Administrator</span>
-              <span className="text-[10px] text-zinc-500 truncate">admin@cxfabric.io</span>
-            </div>
-          </div>
         </div>
       </aside>
 
