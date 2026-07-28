@@ -40,6 +40,15 @@ export default function TasksClient({ initialTasks }) {
     setTasks(initialTasks);
   }, [initialTasks, setTasks]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('cxf_task_view_mode');
+      if (savedMode && (savedMode === 'kanban' || savedMode === 'list')) {
+        setViewMode(savedMode);
+      }
+    }
+  }, [setViewMode]);
+
   const fetchTasks = async () => {
     try {
       const res = await fetch('/api/tasks');

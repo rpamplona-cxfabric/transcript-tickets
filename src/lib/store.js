@@ -35,7 +35,12 @@ export const useTaskStore = create((set) => ({
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setPriorityFilter: (priorityFilter) => set({ priorityFilter }),
   setStatusFilter: (statusFilter) => set({ statusFilter }),
-  setViewMode: (viewMode) => set({ viewMode }),
+  setViewMode: (viewMode) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cxf_task_view_mode', viewMode);
+    }
+    set({ viewMode });
+  },
   setEditingTask: (editingTask) => set({ editingTask }),
   setDeletingTaskId: (deletingTaskId) => set({ deletingTaskId }),
   setIsCreateModalOpen: (isCreateModalOpen) => set({ isCreateModalOpen }),

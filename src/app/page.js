@@ -185,8 +185,9 @@ export default function Dashboard() {
               </div>
             ) : (
               recentTranscripts.map((t) => (
-                <div 
+                <Link 
                   key={t.transcriptId} 
+                  href={`/transcriptions?open=${t.transcriptId}`}
                   className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 transition-colors hover:bg-zinc-50 dark:border-zinc-900 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50"
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -200,7 +201,7 @@ export default function Dashboard() {
                   <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2 italic">
                     &ldquo;{t.transcriptSummary || t.transcript || 'No summary text.'}&rdquo;
                   </p>
-                </div>
+                </Link>
               ))
             )}
           </div>
@@ -228,8 +229,9 @@ export default function Dashboard() {
               </div>
             ) : (
               recentTasks.map((t) => (
-                <div 
+                <Link 
                   key={t.ticketId} 
+                  href={`/tasks?open=${t.ticketId}`}
                   className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 transition-colors hover:bg-zinc-50 dark:border-zinc-900 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50"
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -258,7 +260,7 @@ export default function Dashboard() {
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">
                     {t.description}
                   </p>
-                </div>
+                </Link>
               ))
             )}
           </div>
