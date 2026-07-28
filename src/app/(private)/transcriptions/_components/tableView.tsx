@@ -1,29 +1,36 @@
 'use client';
 
 import { ChevronRight, ChevronLeft } from 'lucide-react';
-import { Transcript } from '@/types';
+import { useTranscriptionStore } from '@/lib/store/transcriptions';
 
-interface TableViewProps {
-  currentItems: Transcript[];
-  setActiveTranscript: (transcript: Transcript | null) => void;
-  currentPage: number;
-  setCurrentPage: (page: number) => void;
-  totalPages: number;
-  indexOfFirstItem: number;
-  indexOfLastItem: number;
-  filteredTranscriptsLength: number;
-}
+export const TableView = () => {
+  const {
+    transcripts,
+    currentPage,
+    setCurrentPage,
+    setActiveTranscript,
+    searchQuery,
+    selectedTenant
+  } = useTranscriptionStore();
 
-export const TableView = ({
-  currentItems,
-  setActiveTranscript,
-  currentPage,
-  setCurrentPage,
-  totalPages,
-  indexOfFirstItem,
-  indexOfLastItem,
-  filteredTranscriptsLength
-}: TableViewProps) => {
+  const itemsPerPage = 20;
+
+  const filteredTranscripts = transcripts.filter(t => {
+    const matchesSearch =
+      (t.transcript && t.transcript.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (t.transcriptSummary && t.transcriptSummary.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (t.transcriptId && t.transcriptId.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesTenant = selectedTenant === 'all' || t.tenantId === selectedTenant;
+
+    return matchesSearch && matchesTenant;
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredTranscripts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredTranscripts.length / itemsPerPage);
+
   const formatTime = (timeStr: string | undefined) => {
     if (!timeStr) return 'N/A';
     try {
@@ -104,9 +111,9 @@ export const TableView = ({
               <p className="text-xs text-zinc-550 font-medium">
                 Showing <span className="font-semibold text-zinc-900 dark:text-white">{indexOfFirstItem + 1}</span> to{' '}
                 <span className="font-semibold text-zinc-900 dark:text-white">
-                  {Math.min(indexOfLastItem, filteredTranscriptsLength)}
+                  {Math.min(indexOfLastItem, filteredTranscripts.length)}
                 </span>{' '}
-                of <span className="font-semibold text-zinc-900 dark:text-white">{filteredTranscriptsLength}</span> transcripts
+                of <span className="font-semibold text-zinc-900 dark:text-white">{filteredTranscripts.length}</span> transcripts
               </p>
             </div>
             <div>

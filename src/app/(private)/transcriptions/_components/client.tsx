@@ -10,19 +10,12 @@ export const TranscriptionsClient = () => {
   const {
     isReady,
     activeTranscript,
-    setActiveTranscript,
     searchQuery,
     setSearchQuery,
     selectedTenant,
     setSelectedTenant,
-    currentPage,
-    setCurrentPage,
     tenants,
-    filteredTranscripts,
-    indexOfFirstItem,
-    indexOfLastItem,
-    currentItems,
-    totalPages
+    hasTranscripts
   } = useTranscriptionsClient();
 
   if (!isReady) {
@@ -68,23 +61,14 @@ export const TranscriptionsClient = () => {
           />
         </div>
 
-        {filteredTranscripts.length === 0 ? (
+        {!hasTranscripts ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950/40 text-center">
             <FileAudio className="h-10 w-10 text-zinc-300 dark:text-zinc-700 mb-3" />
             <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No transcriptions found</p>
             <p className="text-xs text-zinc-450 dark:text-zinc-500 mt-1">Try adjusting your filters or search query.</p>
           </div>
         ) : (
-          <TableView
-            currentItems={currentItems}
-            setActiveTranscript={setActiveTranscript}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            totalPages={totalPages}
-            indexOfFirstItem={indexOfFirstItem}
-            indexOfLastItem={indexOfLastItem}
-            filteredTranscriptsLength={filteredTranscripts.length}
-          />
+          <TableView />
         )}
       </div>
 

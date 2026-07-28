@@ -11,14 +11,10 @@ export const useTranscriptionsClient = () => {
     searchQuery,
     setSearchQuery,
     selectedTenant,
-    setSelectedTenant,
-    currentPage,
-    setCurrentPage
+    setSelectedTenant
   } = useTranscriptionStore();
 
   const isTasksReady = useTaskStore((state) => state.isReady);
-
-  const itemsPerPage = 20;
 
   useEffect(() => {
     if (transcripts.length > 0) {
@@ -46,30 +42,17 @@ export const useTranscriptionsClient = () => {
     return matchesSearch && matchesTenant;
   });
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredTranscripts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredTranscripts.length / itemsPerPage);
-
   const isReady = isTranscriptionsReady && isTasksReady;
+  const hasTranscripts = filteredTranscripts.length > 0;
 
   return {
-    transcripts,
     isReady,
     activeTranscript,
-    setActiveTranscript,
     searchQuery,
     setSearchQuery,
     selectedTenant,
     setSelectedTenant,
-    currentPage,
-    setCurrentPage,
     tenants,
-    filteredTranscripts,
-    indexOfLastItem,
-    indexOfFirstItem,
-    currentItems,
-    totalPages,
-    itemsPerPage
+    hasTranscripts
   };
 };
