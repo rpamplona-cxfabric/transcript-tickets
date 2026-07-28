@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileAudio, CheckSquare, Terminal, ChevronRight, Menu, X, Sun, Moon } from 'lucide-react';
-import { useState, useEffect, ElementType } from 'react';
+import { Terminal, ChevronRight, Menu, X, Sun, Moon, LayoutDashboard, FileAudio, CheckSquare } from 'lucide-react';
+import { useSidebar } from './hook';
+import { ElementType } from 'react';
 
 interface MenuItem {
   name: string;
@@ -12,27 +12,13 @@ interface MenuItem {
 }
 
 export default function Sidebar() {
-  const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-
-  useEffect(() => {
-    // Determine active theme on client
-    const isDark = document.documentElement.classList.contains('dark');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTheme(isDark ? 'dark' : 'light');
-  }, []);
-
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    localStorage.setItem('theme', nextTheme);
-    if (nextTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
+  const {
+    pathname,
+    isOpen,
+    setIsOpen,
+    theme,
+    toggleTheme,
+  } = useSidebar();
 
   const menuItems: MenuItem[] = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -42,7 +28,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Toggle Bar */}
       <div className="flex h-16 items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-black">
@@ -58,14 +43,11 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Sidebar Container */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-zinc-200 bg-zinc-950 text-zinc-400 transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-
-        {/* Navigation Items */}
         <nav className="flex-1 space-y-1.5 px-4 py-6">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -82,7 +64,8 @@ export default function Sidebar() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-zinc-950' : 'text-zinc-400 group-hover:text-white'}`} />
+                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-zinc-950' : 'text-zinc-400 group-hover:text-white'}`}
+                  />
                   <span>{item.name}</span>
                 </div>
                 {isActive && <ChevronRight className="h-4 w-4 text-zinc-950" />}
@@ -91,9 +74,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Sidebar Footer */}
         <div className="border-t border-zinc-800 p-4 flex flex-col gap-2.5">
-          {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
             className="w-full flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all duration-150 cursor-pointer"

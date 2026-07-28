@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { FileAudio, X, Clock, Plus, CheckSquare, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranscriptionStore } from '../../../lib/store';
-import Select from '../../../components/Select';
+import Select from '@/components/select';
 import { Transcript } from '../../../types';
 
 interface SpeakerMapping {
@@ -364,7 +364,7 @@ ${transcript.transcript || 'No transcript text.'}
                   <Link
                     key={task.ticketId}
                     href={`/tasks?open=${task.ticketId}`}
-                    className="flex items-center justify-between rounded-lg border border-zinc-200/60 bg-white p-3 hover:border-zinc-350 hover:shadow-xs transition duration-150 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700 group cursor-pointer"
+                    className="flex items-center justify-between rounded-lg border border-zinc-200/60 bg-white p-3 hover:border-zinc-350 hover:shadow-xs transition duration-150 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 group cursor-pointer"
                   >
                     <div className="flex flex-col gap-0.5 overflow-hidden">
                       <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">

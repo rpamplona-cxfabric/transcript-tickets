@@ -3,8 +3,8 @@
 import { useEffect } from 'react';
 import { Search, ChevronRight, ChevronLeft, FileAudio } from 'lucide-react';
 import { useTranscriptionStore } from '../../../lib/store';
-import Select from '../../../components/Select';
-import TranscriptionDetailDrawer from './TranscriptionDetailDrawer';
+import Select from '@/components/select';
+import TranscriptionDetailDrawer from './transcriptionDetailDrawer';
 import { Transcript, Task } from '../../../types';
 
 interface TranscriptionsClientProps {
@@ -88,7 +88,7 @@ export default function TranscriptionsClient({ initialTranscripts, initialTasks 
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white md:text-3xl">
               Call Transcriptions
             </h1>
-            <p className="text-sm text-zinc-550 dark:text-zinc-450 font-medium">
+            <p className="text-sm text-zinc-500 dark:text-zinc-450 font-medium">
               View and search through your recent call transcriptions.
             </p>
           </div>

@@ -5,7 +5,7 @@ import { X, CalendarDays, FileAudio } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { useTaskStore } from '../../../lib/store';
-import Select from '../../../components/Select';
+import Select from '@/components/select';
 
 interface TaskModalProps {
   onRefresh: () => Promise<void> | void;

@@ -1,5 +1,5 @@
 import { getTranscripts, getTasks } from '../../lib/db';
-import TranscriptionsClient from './_components/TranscriptionsClient';
+import TranscriptionsClient from './_components/transcriptionsClient';
 
 export const dynamic = 'force-dynamic';
 

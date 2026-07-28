@@ -11,9 +11,9 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTaskStore } from '../../../lib/store';
-import Select from '../../../components/Select';
-import TaskModal from './TaskModal';
-import DeleteConfirmationModal from './DeleteConfirmationModal';
+import Select from '@/components/select';
+import TaskModal from './taskModal';
+import DeleteConfirmationModal from './deleteConfirmationModal';
 import { Task } from '../../../types';
 
 interface TasksClientProps {
@@ -251,7 +251,7 @@ export default function TasksClient({ initialTasks }: TasksClientProps) {
                           <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                             t.priority === 'high' 
                               ? 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/50' 
-                              : 'bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
+                              : 'bg-zinc-100 text-zinc-650 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
                           }`}>
                             <span className={`h-1 w-1 rounded-full ${t.priority === 'high' ? 'bg-red-500' : 'bg-zinc-400'}`} />
                             {t.priority}
