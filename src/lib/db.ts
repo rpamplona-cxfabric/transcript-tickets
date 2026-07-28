@@ -27,7 +27,7 @@ const docClient = DynamoDBDocumentClient.from(client, {
   },
 });
 
-// Helper to decompress a snappy-compressed base64 string
+
 async function decompressField(value: string | undefined): Promise<string> {
   if (!value) return '';
   try {
@@ -36,14 +36,11 @@ async function decompressField(value: string | undefined): Promise<string> {
     return typeof decompressed === 'string' ? decompressed : decompressed.toString('utf8');
   } catch (error) {
     console.error('Error decompressing snappy field:', error);
-    // If it fails, return the original string or empty
+
     return value;
   }
 }
 
-/**
- * Fetch and decompress all transcripts from `contact-transcripts`
- */
 export async function getTranscripts(): Promise<Transcript[]> {
   try {
     const command = new ScanCommand({
@@ -52,7 +49,6 @@ export async function getTranscripts(): Promise<Transcript[]> {
     const result = await docClient.send(command);
     const items = result.Items || [];
 
-    // Decompress snappy fields in parallel
     const processedItems = await Promise.all(
       items.map(async (item) => {
         const transcript = await decompressField(item.transcript);
@@ -65,7 +61,6 @@ export async function getTranscripts(): Promise<Transcript[]> {
       })
     );
 
-    // Sort by timestamp descending
     processedItems.sort((a, b) => {
       const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
       const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
@@ -79,9 +74,6 @@ export async function getTranscripts(): Promise<Transcript[]> {
   }
 }
 
-/**
- * Fetch all tasks from `mock-tickets`
- */
 export async function getTasks(): Promise<Task[]> {
   try {
     const command = new ScanCommand({
@@ -90,7 +82,6 @@ export async function getTasks(): Promise<Task[]> {
     const result = await docClient.send(command);
     const items = result.Items || [];
 
-    // Standardize structure (add default values if fields are missing)
     const tasks = items.map((item) => ({
       ticketId: item.ticketId || '',
       title: item.title || 'Untitled Task',
@@ -101,7 +92,6 @@ export async function getTasks(): Promise<Task[]> {
       createdAt: item.createdAt || new Date().toISOString(),
     }));
 
-    // Sort by createdAt descending
     tasks.sort((a, b) => {
       const timeA = new Date(a.createdAt).getTime();
       const timeB = new Date(b.createdAt).getTime();
@@ -115,9 +105,6 @@ export async function getTasks(): Promise<Task[]> {
   }
 }
 
-/**
- * Create a new task
- */
 export async function createTask(taskData: Partial<Task>): Promise<Task> {
   const ticketId = `${Date.now()}-${Math.floor(10000 + Math.random() * 90000)}`;
   const newRawTask: Task = {
@@ -143,12 +130,8 @@ export async function createTask(taskData: Partial<Task>): Promise<Task> {
   }
 }
 
-/**
- * Update an existing task
- */
 export async function updateTask(ticketId: string, taskData: Partial<Task>): Promise<Task> {
   try {
-    // Merge updated fields with original task
     const scanCommand = new ScanCommand({
       TableName: 'mock-tickets',
     });
@@ -179,9 +162,6 @@ export async function updateTask(ticketId: string, taskData: Partial<Task>): Pro
   }
 }
 
-/**
- * Delete a task
- */
 export async function deleteTask(ticketId: string): Promise<{ success: boolean; ticketId: string }> {
   try {
     const command = new DeleteCommand({
@@ -198,9 +178,6 @@ export async function deleteTask(ticketId: string): Promise<{ success: boolean; 
   }
 }
 
-/**
- * Update speakerNames for a transcript
- */
 export async function updateTranscriptSpeakerNames(
   transcriptId: string,
   speakerNames: Record<string, string>
@@ -226,7 +203,7 @@ export async function updateTranscriptSpeakerNames(
       Item: updatedItem,
     });
     await docClient.send(command);
-    
+
     const transcript = await decompressField(updatedItem.transcript);
     const transcriptSummary = await decompressField(updatedItem.transcriptSummary);
 

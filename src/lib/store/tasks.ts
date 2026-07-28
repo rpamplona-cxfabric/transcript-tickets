@@ -3,6 +3,7 @@ import { Task } from '@/types';
 
 interface TaskState {
   tasks: Task[];
+  isReady: boolean;
   searchQuery: string;
   priorityFilter: string;
   statusFilter: string;
@@ -26,6 +27,7 @@ interface TaskState {
 
 export const useTaskStore = create<TaskState>((set) => ({
   tasks: [],
+  isReady: false,
   searchQuery: '',
   priorityFilter: 'all',
   statusFilter: 'all',
@@ -34,7 +36,7 @@ export const useTaskStore = create<TaskState>((set) => ({
   deletingTaskId: null,
   isCreateModalOpen: false,
 
-  setTasks: (tasks) => set({ tasks }),
+  setTasks: (tasks) => set({ tasks, isReady: true }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setPriorityFilter: (priorityFilter) => set({ priorityFilter }),
   setStatusFilter: (statusFilter) => set({ statusFilter }),

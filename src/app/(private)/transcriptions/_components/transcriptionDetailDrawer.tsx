@@ -6,7 +6,7 @@ import { FileAudio, X, Clock, Plus, CheckSquare, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
 import { Select } from '@/components/select';
-import { Transcript } from '../../../types';
+import { Transcript } from '@/types';
 
 interface SpeakerMapping {
   speaker: string;
@@ -21,21 +21,16 @@ export const TranscriptionDetailDrawer = () => {
     updateTranscript
   } = useTranscriptionStore();
 
-  const [speakerMappings, setSpeakerMappings] = useState<SpeakerMapping[]>([]);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
+  const [speakerMappings, setSpeakerMappings] = useState<SpeakerMapping[]>(() => {
     if (activeTranscript) {
-      const initialMappings = Object.entries(activeTranscript.speakerNames || {}).map(([speaker, mappedName]) => ({
+      return Object.entries(activeTranscript.speakerNames || {}).map(([speaker, mappedName]) => ({
         speaker,
         mappedName
       }));
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSpeakerMappings(initialMappings);
-    } else {
-      setSpeakerMappings([]);
     }
-  }, [activeTranscript]);
+    return [];
+  });
+  const [saving, setSaving] = useState(false);
 
   if (!activeTranscript) return null;
 
@@ -94,7 +89,6 @@ export const TranscriptionDetailDrawer = () => {
     setSpeakerMappings(speakerMappings.filter((_, i) => i !== idx));
   };
 
-  // Check if mapping forms have changed compared to database values
   const getHasChanges = () => {
     const currentObj: Record<string, string> = {};
     speakerMappings.forEach(({ speaker, mappedName }) => {
@@ -242,7 +236,6 @@ ${transcript.transcript || 'No transcript text.'}
       />
 
       <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-3xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800">
-        {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6 dark:border-zinc-800">
           <div className="flex items-center gap-2">
             <FileAudio className="h-5 w-5 text-zinc-900 dark:text-white" />
@@ -256,20 +249,17 @@ ${transcript.transcript || 'No transcript text.'}
           </button>
         </div>
 
-        {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Timestamp Card */}
           <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/30 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="h-4.5 w-4.5 text-zinc-400" />
-              <span className="text-xs text-zinc-500">Recording Date & Time</span>
+              <span className="text-xs text-zinc-500 font-medium">Recording Date & Time</span>
             </div>
             <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
               {formatTime(activeTranscript.timestamp)}
             </span>
           </div>
 
-          {/* Summary Block */}
           <div className="space-y-2">
             <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">AI Summary</h3>
             <div className="rounded-xl bg-zinc-50 border border-zinc-100 p-4 dark:bg-zinc-900 dark:border-zinc-800">
@@ -279,7 +269,6 @@ ${transcript.transcript || 'No transcript text.'}
             </div>
           </div>
 
-          {/* Speaker Mapping Block */}
           <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
             <div className="flex items-center justify-between">
               <div>
@@ -344,7 +333,6 @@ ${transcript.transcript || 'No transcript text.'}
             )}
           </div>
 
-          {/* Full Transcript Block */}
           <div className="space-y-2">
             <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Full Audio Transcript</h3>
             <div>
@@ -352,10 +340,9 @@ ${transcript.transcript || 'No transcript text.'}
             </div>
           </div>
 
-          {/* Identified Tasks Block (if any) */}
           {relatedTasks.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-450 flex items-center gap-1.5">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-450 flex items-center gap-1.5"> {/* wait text-zinc-450 */}
                 <CheckSquare className="h-4.5 w-4.5 text-zinc-500" />
                 Identified Tasks
               </h3>
@@ -370,7 +357,9 @@ ${transcript.transcript || 'No transcript text.'}
                       <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                         {task.title}
                       </span>
-                      <span className="text-[10px] text-zinc-450 line-clamp-1">{task.description}</span>
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 line-clamp-1"> {/* wait text-zinc-450 */}
+                        {task.description}
+                      </span>
                     </div>
                     <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${task.priority === 'high'
                       ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400'
@@ -385,7 +374,6 @@ ${transcript.transcript || 'No transcript text.'}
           )}
         </div>
 
-        {/* Footer Actions */}
         <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 flex flex-col gap-2">
           <button
             onClick={() => downloadTextFile(activeTranscript)}
@@ -406,4 +394,4 @@ ${transcript.transcript || 'No transcript text.'}
       </div>
     </>
   );
-}
+};

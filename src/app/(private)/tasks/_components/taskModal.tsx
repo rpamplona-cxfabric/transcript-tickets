@@ -27,47 +27,39 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
     setEditingTask
   } = useTaskStore();
 
-  const [formData, setFormData] = useState<FormData>({
-    title: '',
-    description: '',
-    priority: 'low',
-    status: 'open',
-    transcriptId: ''
-  });
-  const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-
-  // Sync state when editing task changes
-  useEffect(() => {
+  const [formData, setFormData] = useState<FormData>(() => {
     if (editingTask) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
+      return {
         title: editingTask.title || '',
         description: editingTask.description || '',
         priority: editingTask.priority || 'low',
         status: editingTask.status || 'open',
         transcriptId: editingTask.transcriptId || ''
-      });
-      setFormError(null);
+      };
     }
-  }, [editingTask]);
-
-  // Sync state when createFrom param is parsed
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const createFromId = params.get('createFrom');
-    if (createFromId && isCreateModalOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
-        title: `Follow-up for Call ${createFromId.slice(0, 8)}`,
-        description: `This task was created based on call transcript ${createFromId}.\n\nNext Steps:\n- [ ] Review call details\n- [ ] Action item`,
-        priority: 'low',
-        status: 'open',
-        transcriptId: createFromId
-      });
-      setFormError(null);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const createFromId = params.get('createFrom');
+      if (createFromId && isCreateModalOpen) {
+        return {
+          title: `Follow-up for Call ${createFromId.slice(0, 8)}`,
+          description: `This task was created based on call transcript ${createFromId}.\n\nNext Steps:\n- [ ] Review call details\n- [ ] Action item`,
+          priority: 'low',
+          status: 'open',
+          transcriptId: createFromId
+        };
+      }
     }
-  }, [isCreateModalOpen]);
+    return {
+      title: '',
+      description: '',
+      priority: 'low',
+      status: 'open',
+      transcriptId: ''
+    };
+  });
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const isOpen = isCreateModalOpen || !!editingTask;
 
@@ -81,7 +73,7 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
   };
 
   const hasChanges = () => {
-    if (isCreateModalOpen) return true; // Always allow save when creating new tasks
+    if (isCreateModalOpen) return true;
     if (!editingTask) return false;
 
     return (
@@ -104,7 +96,6 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
 
     try {
       if (isCreateModalOpen) {
-        // Create mutation
         const res = await fetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -120,7 +111,6 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
         if (!res.ok) throw new Error('Could not create task');
         toast.success('Task created successfully!');
       } else if (editingTask) {
-        // Edit mutation
         const res = await fetch(`/api/tasks/${editingTask.ticketId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -167,7 +157,6 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
       />
 
       <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800">
-        {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6 dark:border-zinc-800">
           <h2 className="text-base font-bold text-zinc-900 dark:text-white">
             {isCreateModalOpen ? 'Create Support Ticket' : 'Edit Support Ticket'}
@@ -180,7 +169,6 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
           </button>
         </div>
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
             {formError && (
@@ -214,7 +202,6 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Priority */}
               <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-bold text-zinc-700 dark:text-zinc-400">Priority</label>
                 <Select
@@ -228,7 +215,6 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
                 />
               </div>
 
-              {/* Status */}
               <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-bold text-zinc-700 dark:text-zinc-400">Status</label>
                 <Select
@@ -245,7 +231,6 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
               </div>
             </div>
 
-            {/* Task Metadata Row */}
             {!isCreateModalOpen && editingTask && (
               <div className="border-t border-zinc-100 pt-4 dark:border-zinc-900/60 mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-zinc-500">
                 <div className="flex items-center gap-1.5">
@@ -271,7 +256,6 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
             )}
           </div>
 
-          {/* Footer Actions */}
           <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 flex justify-end gap-3">
             <button
               type="button"
@@ -292,4 +276,4 @@ export const TaskModal = ({ onRefresh }: TaskModalProps) => {
       </div>
     </>
   );
-}
+};

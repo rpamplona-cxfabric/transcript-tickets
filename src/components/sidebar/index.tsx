@@ -87,7 +87,6 @@ export const Sidebar = () => {
         </div>
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}

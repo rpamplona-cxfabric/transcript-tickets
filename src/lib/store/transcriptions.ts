@@ -4,6 +4,7 @@ import { Task, Transcript } from '@/types';
 interface TranscriptionState {
   transcripts: Transcript[];
   tasks: Task[];
+  isReady: boolean;
   activeTranscript: Transcript | null;
   searchQuery: string;
   selectedTenant: string;
@@ -21,12 +22,13 @@ interface TranscriptionState {
 export const useTranscriptionStore = create<TranscriptionState>((set) => ({
   transcripts: [],
   tasks: [],
+  isReady: false,
   activeTranscript: null,
   searchQuery: '',
   selectedTenant: 'all',
   currentPage: 1,
 
-  setTranscripts: (transcripts) => set({ transcripts }),
+  setTranscripts: (transcripts) => set({ transcripts, isReady: true }),
   setTasks: (tasks) => set({ tasks }),
   setActiveTranscript: (activeTranscript) => set({ activeTranscript }),
   setSearchQuery: (searchQuery) => set({ searchQuery, currentPage: 1 }),
