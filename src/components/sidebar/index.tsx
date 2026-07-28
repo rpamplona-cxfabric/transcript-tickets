@@ -11,7 +11,7 @@ interface MenuItem {
   icon: ElementType;
 }
 
-export default function Sidebar() {
+export const Sidebar = () => {
   const {
     pathname,
     isOpen,

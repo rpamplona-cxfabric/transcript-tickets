@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useTaskStore } from '../../../lib/store';
+import { useTaskStore } from '@/lib/store/tasks';
 
 interface DeleteConfirmationModalProps {
   onRefresh: () => Promise<void> | void;
 }
 
-export default function DeleteConfirmationModal({ onRefresh }: DeleteConfirmationModalProps) {
+export const DeleteConfirmationModal = ({ onRefresh }: DeleteConfirmationModalProps) => {
   const {
     deletingTaskId,
     setDeletingTaskId

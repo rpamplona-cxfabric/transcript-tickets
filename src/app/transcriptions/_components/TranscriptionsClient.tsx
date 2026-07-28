@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 import { Search, ChevronRight, ChevronLeft, FileAudio } from 'lucide-react';
-import { useTranscriptionStore } from '../../../lib/store';
-import Select from '@/components/select';
-import TranscriptionDetailDrawer from './transcriptionDetailDrawer';
+import { useTranscriptionStore } from '@/lib/store/transcriptions';
+import { Select } from '@/components/select';
+import { TranscriptionDetailDrawer } from './transcriptionDetailDrawer';
 import { Transcript, Task } from '../../../types';
 
 interface TranscriptionsClientProps {
@@ -12,7 +12,7 @@ interface TranscriptionsClientProps {
   initialTasks: Task[];
 }
 
-export default function TranscriptionsClient({ initialTranscripts, initialTasks }: TranscriptionsClientProps) {
+export const TranscriptionsClient = ({ initialTranscripts, initialTasks }: TranscriptionsClientProps) => {
   const {
     transcripts,
     setTranscripts,

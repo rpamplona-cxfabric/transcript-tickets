@@ -7,7 +7,6 @@ export function useSidebar() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
-    // Determine active theme on client
     const isDark = document.documentElement.classList.contains('dark');
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(isDark ? 'dark' : 'light');

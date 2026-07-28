@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FileAudio, X, Clock, Plus, CheckSquare, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useTranscriptionStore } from '../../../lib/store';
-import Select from '@/components/select';
+import { useTranscriptionStore } from '@/lib/store/transcriptions';
+import { Select } from '@/components/select';
 import { Transcript } from '../../../types';
 
 interface SpeakerMapping {
@@ -13,7 +13,7 @@ interface SpeakerMapping {
   mappedName: string;
 }
 
-export default function TranscriptionDetailDrawer() {
+export const TranscriptionDetailDrawer = () => {
   const {
     activeTranscript,
     setActiveTranscript,

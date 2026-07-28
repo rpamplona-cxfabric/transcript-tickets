@@ -13,14 +13,14 @@ interface SelectProps {
   buttonClassName?: string;
 }
 
-export default function Select({
+export const Select = ({
   value,
   onChange,
   options,
   placeholder = 'Select option',
   className = '',
   buttonClassName = '',
-}: SelectProps) {
+}: SelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 

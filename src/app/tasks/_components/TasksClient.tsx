@@ -10,17 +10,17 @@ import {
   Clock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useTaskStore } from '../../../lib/store';
-import Select from '@/components/select';
-import TaskModal from './taskModal';
-import DeleteConfirmationModal from './deleteConfirmationModal';
+import { useTaskStore } from '@/lib/store/tasks';
+import { Select } from '@/components/select';
+import { TaskModal } from './taskModal';
+import { DeleteConfirmationModal } from './deleteConfirmationModal';
 import { Task } from '../../../types';
 
 interface TasksClientProps {
   initialTasks: Task[];
 }
 
-export default function TasksClient({ initialTasks }: TasksClientProps) {
+export const TasksClient = ({ initialTasks }: TasksClientProps) => {
   const {
     tasks,
     setTasks,

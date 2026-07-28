@@ -1,5 +1,5 @@
 import { getTasks } from '../../lib/db';
-import TasksClient from './_components/tasksClient';
+import { TasksClient } from './_components/tasksClient';
 
 export const dynamic = 'force-dynamic';
 
