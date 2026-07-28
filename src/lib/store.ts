@@ -1,6 +1,24 @@
 import { create } from 'zustand';
+import { Task, Transcript } from '../types';
 
-export const useTranscriptionStore = create((set) => ({
+interface TranscriptionState {
+  transcripts: Transcript[];
+  tasks: Task[];
+  activeTranscript: Transcript | null;
+  searchQuery: string;
+  selectedTenant: string;
+  currentPage: number;
+
+  setTranscripts: (transcripts: Transcript[]) => void;
+  setTasks: (tasks: Task[]) => void;
+  setActiveTranscript: (activeTranscript: Transcript | null) => void;
+  setSearchQuery: (searchQuery: string) => void;
+  setSelectedTenant: (selectedTenant: string) => void;
+  setCurrentPage: (currentPage: number) => void;
+  updateTranscript: (updated: Transcript) => void;
+}
+
+export const useTranscriptionStore = create<TranscriptionState>((set) => ({
   transcripts: [],
   tasks: [],
   activeTranscript: null,
@@ -21,12 +39,35 @@ export const useTranscriptionStore = create((set) => ({
   }))
 }));
 
-export const useTaskStore = create((set) => ({
+interface TaskState {
+  tasks: Task[];
+  searchQuery: string;
+  priorityFilter: string;
+  statusFilter: string;
+  viewMode: 'kanban' | 'list';
+  editingTask: Task | null;
+  deletingTaskId: string | null;
+  isCreateModalOpen: boolean;
+
+  setTasks: (tasks: Task[]) => void;
+  setSearchQuery: (searchQuery: string) => void;
+  setPriorityFilter: (priorityFilter: string) => void;
+  setStatusFilter: (statusFilter: string) => void;
+  setViewMode: (viewMode: 'kanban' | 'list') => void;
+  setEditingTask: (editingTask: Task | null) => void;
+  setDeletingTaskId: (deletingTaskId: string | null) => void;
+  setIsCreateModalOpen: (isCreateModalOpen: boolean) => void;
+  updateTaskInList: (updated: Task) => void;
+  removeTaskFromList: (ticketId: string) => void;
+  addTaskToList: (task: Task) => void;
+}
+
+export const useTaskStore = create<TaskState>((set) => ({
   tasks: [],
   searchQuery: '',
   priorityFilter: 'all',
   statusFilter: 'all',
-  viewMode: 'kanban', // 'kanban' or 'list'
+  viewMode: 'kanban',
   editingTask: null,
   deletingTaskId: null,
   isCreateModalOpen: false,

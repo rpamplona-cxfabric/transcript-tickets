@@ -5,8 +5,14 @@ import { Search, ChevronRight, ChevronLeft, FileAudio } from 'lucide-react';
 import { useTranscriptionStore } from '../../../lib/store';
 import Select from '../../../components/Select';
 import TranscriptionDetailDrawer from './TranscriptionDetailDrawer';
+import { Transcript, Task } from '../../../types';
 
-export default function TranscriptionsClient({ initialTranscripts, initialTasks }) {
+interface TranscriptionsClientProps {
+  initialTranscripts: Transcript[];
+  initialTasks: Task[];
+}
+
+export default function TranscriptionsClient({ initialTranscripts, initialTasks }: TranscriptionsClientProps) {
   const {
     transcripts,
     setTranscripts,
@@ -59,7 +65,7 @@ export default function TranscriptionsClient({ initialTranscripts, initialTasks 
   const currentItems = filteredTranscripts.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredTranscripts.length / itemsPerPage);
 
-  const formatTime = (timeStr) => {
+  const formatTime = (timeStr: string | undefined) => {
     if (!timeStr) return 'N/A';
     try {
       const date = new Date(timeStr);
@@ -97,7 +103,7 @@ export default function TranscriptionsClient({ initialTranscripts, initialTasks 
               placeholder="Search transcript keyword or ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-zinc-900 dark:border-zinc-805 dark:bg-zinc-950 dark:focus:border-white"
+              className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:focus:border-white"
             />
           </div>
           <Select
@@ -186,7 +192,7 @@ export default function TranscriptionsClient({ initialTranscripts, initialTasks 
                 </div>
                 <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-xs text-zinc-500 font-medium">
+                    <p className="text-xs text-zinc-550 font-medium">
                       Showing <span className="font-semibold text-zinc-900 dark:text-white">{indexOfFirstItem + 1}</span> to{' '}
                       <span className="font-semibold text-zinc-900 dark:text-white">
                         {Math.min(indexOfLastItem, filteredTranscripts.length)}

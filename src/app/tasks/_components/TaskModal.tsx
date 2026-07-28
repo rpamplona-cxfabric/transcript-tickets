@@ -1,13 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { X, CalendarDays, FileAudio } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { useTaskStore } from '../../../lib/store';
 import Select from '../../../components/Select';
 
-export default function TaskModal({ onRefresh }) {
+interface TaskModalProps {
+  onRefresh: () => Promise<void> | void;
+}
+
+interface FormData {
+  title: string;
+  description: string;
+  priority: 'low' | 'high';
+  status: 'open' | 'in-progress' | 'resolved';
+  transcriptId: string;
+}
+
+export default function TaskModal({ onRefresh }: TaskModalProps) {
   const {
     isCreateModalOpen,
     setIsCreateModalOpen,
@@ -15,7 +27,7 @@ export default function TaskModal({ onRefresh }) {
     setEditingTask
   } = useTaskStore();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
     priority: 'low',
@@ -23,11 +35,12 @@ export default function TaskModal({ onRefresh }) {
     transcriptId: ''
   });
   const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Sync state when editing task changes
   useEffect(() => {
     if (editingTask) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         title: editingTask.title || '',
         description: editingTask.description || '',
@@ -44,6 +57,7 @@ export default function TaskModal({ onRefresh }) {
     const params = new URLSearchParams(window.location.search);
     const createFromId = params.get('createFrom');
     if (createFromId && isCreateModalOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         title: `Follow-up for Call ${createFromId.slice(0, 8)}`,
         description: `This task was created based on call transcript ${createFromId}.\n\nNext Steps:\n- [ ] Review call details\n- [ ] Action item`,
@@ -78,7 +92,7 @@ export default function TaskModal({ onRefresh }) {
     );
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.description.trim()) {
       setFormError('Title and description are required.');
@@ -105,7 +119,7 @@ export default function TaskModal({ onRefresh }) {
 
         if (!res.ok) throw new Error('Could not create task');
         toast.success('Task created successfully!');
-      } else {
+      } else if (editingTask) {
         // Edit mutation
         const res = await fetch(`/api/tasks/${editingTask.ticketId}`, {
           method: 'PUT',
@@ -124,7 +138,7 @@ export default function TaskModal({ onRefresh }) {
 
       handleClose();
       await onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       setFormError(err.message);
       toast.error(err.message || 'Failed to save task');
     } finally {
@@ -132,7 +146,7 @@ export default function TaskModal({ onRefresh }) {
     }
   };
 
-  const formatTime = (timeStr) => {
+  const formatTime = (timeStr: string | undefined) => {
     if (!timeStr) return 'N/A';
     try {
       const date = new Date(timeStr);
@@ -149,10 +163,10 @@ export default function TaskModal({ onRefresh }) {
     <>
       <div
         onClick={handleClose}
-        className="fixed inset-0 z-40 bg-zinc-955/30 backdrop-blur-xs transition-opacity duration-200 cursor-pointer"
+        className="fixed inset-0 z-40 bg-zinc-950/30 backdrop-blur-xs transition-opacity duration-200 cursor-pointer"
       />
 
-      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-955 border-l border-zinc-200 dark:border-zinc-800">
+      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800">
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6 dark:border-zinc-800">
           <h2 className="text-base font-bold text-zinc-900 dark:text-white">
@@ -205,7 +219,7 @@ export default function TaskModal({ onRefresh }) {
                 <label className="text-xs font-bold text-zinc-700 dark:text-zinc-400">Priority</label>
                 <Select
                   value={formData.priority}
-                  onChange={(val) => setFormData({ ...formData, priority: val })}
+                  onChange={(val) => setFormData({ ...formData, priority: val as 'low' | 'high' })}
                   options={[
                     { value: 'low', label: 'Low Priority' },
                     { value: 'high', label: 'High Priority' }
@@ -219,7 +233,7 @@ export default function TaskModal({ onRefresh }) {
                 <label className="text-xs font-bold text-zinc-700 dark:text-zinc-400">Status</label>
                 <Select
                   value={formData.status}
-                  onChange={(val) => setFormData({ ...formData, status: val })}
+                  onChange={(val) => setFormData({ ...formData, status: val as 'open' | 'in-progress' | 'resolved' })}
                   options={[
                     { value: 'open', label: 'Open' },
                     { value: 'in-progress', label: 'In Progress' },
@@ -258,7 +272,7 @@ export default function TaskModal({ onRefresh }) {
           </div>
 
           {/* Footer Actions */}
-          <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-955/80 flex justify-end gap-3">
+          <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 flex justify-end gap-3">
             <button
               type="button"
               onClick={handleClose}

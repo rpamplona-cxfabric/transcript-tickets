@@ -7,17 +7,17 @@ import {
   CheckSquare, 
   Clock, 
   AlertTriangle, 
-  CheckCircle, 
   Loader2, 
   ChevronRight, 
   ArrowUpRight, 
   Activity 
 } from 'lucide-react';
+import { Task, Transcript } from '@/types';
 
 export default function Dashboard() {
-  const [data, setData] = useState({ tasks: [], transcripts: [] });
+  const [data, setData] = useState<{ tasks: Task[]; transcripts: Transcript[] }>({ tasks: [], transcripts: [] });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -35,7 +35,7 @@ export default function Dashboard() {
         const transcripts = await transcriptsRes.json();
 
         setData({ tasks, transcripts });
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
         setError(err.message);
       } finally {

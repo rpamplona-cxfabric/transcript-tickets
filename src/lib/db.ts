@@ -1,6 +1,8 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+// @ts-ignore
 import snappy from 'snappy';
+import { Task, Transcript } from '../types';
 
 // Initialize the DynamoDB Client
 const region = process.env.AWS_REGION || 'us-east-1';
@@ -26,7 +28,7 @@ const docClient = DynamoDBDocumentClient.from(client, {
 });
 
 // Helper to decompress a snappy-compressed base64 string
-async function decompressField(value) {
+async function decompressField(value: string | undefined): Promise<string> {
   if (!value) return '';
   try {
     const buf = Buffer.from(value, 'base64');
@@ -42,7 +44,7 @@ async function decompressField(value) {
 /**
  * Fetch and decompress all transcripts from `contact-transcripts`
  */
-export async function getTranscripts() {
+export async function getTranscripts(): Promise<Transcript[]> {
   try {
     const command = new ScanCommand({
       TableName: 'contact-transcripts',
@@ -59,7 +61,7 @@ export async function getTranscripts() {
           ...item,
           transcript,
           transcriptSummary,
-        };
+        } as Transcript;
       })
     );
 
@@ -80,7 +82,7 @@ export async function getTranscripts() {
 /**
  * Fetch all tasks from `mock-tickets`
  */
-export async function getTasks() {
+export async function getTasks(): Promise<Task[]> {
   try {
     const command = new ScanCommand({
       TableName: 'mock-tickets',
@@ -93,8 +95,8 @@ export async function getTasks() {
       ticketId: item.ticketId || '',
       title: item.title || 'Untitled Task',
       description: item.description || '',
-      priority: item.priority || 'low',
-      status: item.status || 'open',
+      priority: (item.priority || 'low') as 'low' | 'high',
+      status: (item.status || 'open') as 'open' | 'in-progress' | 'resolved',
       transcriptId: item.transcriptId || '',
       createdAt: item.createdAt || new Date().toISOString(),
     }));
@@ -116,14 +118,14 @@ export async function getTasks() {
 /**
  * Create a new task
  */
-export async function createTask(taskData) {
+export async function createTask(taskData: Partial<Task>): Promise<Task> {
   const ticketId = `${Date.now()}-${Math.floor(10000 + Math.random() * 90000)}`;
-  const newRawTask = {
+  const newRawTask: Task = {
     ticketId,
     title: taskData.title || 'Untitled Task',
     description: taskData.description || '',
-    priority: taskData.priority || 'low',
-    status: taskData.status || 'open',
+    priority: (taskData.priority || 'low') as 'low' | 'high',
+    status: (taskData.status || 'open') as 'open' | 'in-progress' | 'resolved',
     transcriptId: taskData.transcriptId || '',
     createdAt: new Date().toISOString(),
   };
@@ -144,7 +146,7 @@ export async function createTask(taskData) {
 /**
  * Update an existing task
  */
-export async function updateTask(ticketId, taskData) {
+export async function updateTask(ticketId: string, taskData: Partial<Task>): Promise<Task> {
   try {
     // Merge updated fields with original task
     const scanCommand = new ScanCommand({
@@ -153,13 +155,13 @@ export async function updateTask(ticketId, taskData) {
     const result = await docClient.send(scanCommand);
     const existingTask = (result.Items || []).find((t) => t.ticketId === ticketId);
 
-    const updatedTask = {
+    const updatedTask: Task = {
       ...existingTask,
       ticketId,
       title: taskData.title !== undefined ? taskData.title : (existingTask?.title || 'Untitled Task'),
       description: taskData.description !== undefined ? taskData.description : (existingTask?.description || ''),
-      priority: taskData.priority !== undefined ? taskData.priority : (existingTask?.priority || 'low'),
-      status: taskData.status !== undefined ? taskData.status : (existingTask?.status || 'open'),
+      priority: (taskData.priority !== undefined ? taskData.priority : (existingTask?.priority || 'low')) as 'low' | 'high',
+      status: (taskData.status !== undefined ? taskData.status : (existingTask?.status || 'open')) as 'open' | 'in-progress' | 'resolved',
       transcriptId: taskData.transcriptId !== undefined ? taskData.transcriptId : (existingTask?.transcriptId || ''),
       createdAt: existingTask?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -180,7 +182,7 @@ export async function updateTask(ticketId, taskData) {
 /**
  * Delete a task
  */
-export async function deleteTask(ticketId) {
+export async function deleteTask(ticketId: string): Promise<{ success: boolean; ticketId: string }> {
   try {
     const command = new DeleteCommand({
       TableName: 'mock-tickets',
@@ -199,19 +201,22 @@ export async function deleteTask(ticketId) {
 /**
  * Update speakerNames for a transcript
  */
-export async function updateTranscriptSpeakerNames(transcriptId, speakerNames) {
+export async function updateTranscriptSpeakerNames(
+  transcriptId: string,
+  speakerNames: Record<string, string>
+): Promise<Transcript> {
   try {
     const scanCommand = new ScanCommand({
       TableName: 'contact-transcripts',
     });
     const result = await docClient.send(scanCommand);
-    const existing = (result.Items || []).find((t) => t.transcriptId === transcriptId);
+    const existing = (result.Items || []).find((t) => t.transcriptId === transcriptId) as any;
 
     if (!existing) {
       throw new Error(`Transcript not found with id: ${transcriptId}`);
     }
 
-    const updatedItem = {
+    const updatedItem: any = {
       ...existing,
       speakerNames: speakerNames,
     };
@@ -229,7 +234,7 @@ export async function updateTranscriptSpeakerNames(transcriptId, speakerNames) {
       ...updatedItem,
       transcript,
       transcriptSummary,
-    };
+    } as Transcript;
   } catch (error) {
     console.error('Error updating transcript speakerNames:', error);
     throw error;

@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getTranscripts, updateTranscriptSpeakerNames } from '../../../lib/db';
 
-export async function GET(request) {
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    // Retrieve all transcripts, already sorted descending by timestamp in db.js
+    // Retrieve all transcripts, already sorted descending by timestamp in db.ts
     const transcripts = await getTranscripts();
     
     // Always restrict the dataset to the 20 most recent transcripts
@@ -38,7 +38,7 @@ export async function GET(request) {
   }
 }
 
-export async function PATCH(request) {
+export async function PATCH(request: Request) {
   try {
     const body = await request.json();
     const { transcriptId, speakerNames } = body;
@@ -52,7 +52,7 @@ export async function PATCH(request) {
 
     const updated = await updateTranscriptSpeakerNames(transcriptId, speakerNames);
     return NextResponse.json(updated);
-  } catch (error) {
+  } catch (error: any) {
     console.error('API Error in PATCH /api/transcriptions:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to update transcript speaker names' },

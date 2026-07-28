@@ -1,25 +1,26 @@
 'use client';
 
-import { useEffect } from 'react';
-import Link from 'next/link';
+import { useEffect, useCallback } from 'react';
 import { 
-  CheckSquare, 
   Plus, 
   Search, 
   Trash2, 
   Kanban, 
   List, 
-  Clock, 
-  CalendarDays,
-  FileAudio
+  Clock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTaskStore } from '../../../lib/store';
 import Select from '../../../components/Select';
 import TaskModal from './TaskModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import { Task } from '../../../types';
 
-export default function TasksClient({ initialTasks }) {
+interface TasksClientProps {
+  initialTasks: Task[];
+}
+
+export default function TasksClient({ initialTasks }: TasksClientProps) {
   const {
     tasks,
     setTasks,
@@ -36,6 +37,10 @@ export default function TasksClient({ initialTasks }) {
     setIsCreateModalOpen
   } = useTaskStore();
 
+  const openEditModal = useCallback((task: Task) => {
+    setEditingTask(task);
+  }, [setEditingTask]);
+
   useEffect(() => {
     setTasks(initialTasks);
   }, [initialTasks, setTasks]);
@@ -44,7 +49,7 @@ export default function TasksClient({ initialTasks }) {
     if (typeof window !== 'undefined') {
       const savedMode = localStorage.getItem('cxf_task_view_mode');
       if (savedMode && (savedMode === 'kanban' || savedMode === 'list')) {
-        setViewMode(savedMode);
+        setViewMode(savedMode as 'kanban' | 'list');
       }
     }
   }, [setViewMode]);
@@ -72,17 +77,13 @@ export default function TasksClient({ initialTasks }) {
         }
       }
     }
-  }, [tasks]);
-
-  const openEditModal = (task) => {
-    setEditingTask(task);
-  };
+  }, [tasks, openEditModal]);
 
   const openCreateModal = () => {
     setIsCreateModalOpen(true);
   };
 
-  const handleQuickUpdate = async (task, updates) => {
+  const handleQuickUpdate = async (task: Task, updates: Partial<Task>) => {
     try {
       const res = await fetch(`/api/tasks/${task.ticketId}`, {
         method: 'PUT',
@@ -114,7 +115,7 @@ export default function TasksClient({ initialTasks }) {
     return matchesSearch && matchesPriority && matchesStatus;
   });
 
-  const formatTime = (timeStr) => {
+  const formatTime = (timeStr: string | undefined) => {
     if (!timeStr) return 'N/A';
     try {
       const date = new Date(timeStr);
@@ -127,7 +128,7 @@ export default function TasksClient({ initialTasks }) {
     }
   };
 
-  const columns = [
+  const columns: { id: 'open' | 'in-progress' | 'resolved'; title: string; color: string }[] = [
     { id: 'open', title: 'Open Tickets', color: 'bg-sky-500' },
     { id: 'in-progress', title: 'In Progress', color: 'bg-amber-500' },
     { id: 'resolved', title: 'Resolved', color: 'bg-emerald-500' }
@@ -143,14 +144,14 @@ export default function TasksClient({ initialTasks }) {
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white md:text-3xl">
               Support Tickets
             </h1>
-            <p className="text-sm text-zinc-550 dark:text-zinc-450 font-medium">
+            <p className="text-sm text-zinc-500 dark:text-zinc-450 font-medium">
               Create and manage support tickets identified from call recordings.
             </p>
           </div>
           
           <button
             onClick={openCreateModal}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-zinc-805 transition dark:bg-white dark:text-zinc-955 dark:hover:bg-zinc-100 cursor-pointer"
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-zinc-800 transition dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
           >
             <Plus className="h-4.5 w-4.5" />
             Create Ticket
@@ -203,7 +204,7 @@ export default function TasksClient({ initialTasks }) {
               onClick={() => setViewMode('kanban')}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-colors ${
                 viewMode === 'kanban' 
-                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-955' 
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950' 
                   : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
               }`}
             >
@@ -213,7 +214,7 @@ export default function TasksClient({ initialTasks }) {
               onClick={() => setViewMode('list')}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-colors ${
                 viewMode === 'list' 
-                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-955' 
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950' 
                   : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
               }`}
             >
@@ -228,7 +229,7 @@ export default function TasksClient({ initialTasks }) {
             {columns.map(col => {
               const columnTasks = filteredTasks.filter(t => t.status === col.id);
               return (
-                <div key={col.id} className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-850 dark:bg-zinc-955/20 flex flex-col min-h-[400px]">
+                <div key={col.id} className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/20 flex flex-col min-h-[400px]">
                   <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-200/60 dark:border-zinc-800/60">
                     <div className="flex items-center gap-2">
                       <span className={`h-2.5 w-2.5 rounded-full ${col.color}`} />
@@ -244,13 +245,13 @@ export default function TasksClient({ initialTasks }) {
                       <div
                         key={t.ticketId}
                         onClick={() => openEditModal(t)}
-                        className="group flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs hover:shadow-md hover:border-zinc-300 dark:border-zinc-805 dark:bg-zinc-950 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                        className="group flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs hover:shadow-md hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
                           <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                             t.priority === 'high' 
-                              ? 'bg-red-50 text-red-700 border border-red-100 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30' 
-                              : 'bg-zinc-100 text-zinc-650 border border-zinc-200/50 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-850'
+                              ? 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/50' 
+                              : 'bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
                           }`}>
                             <span className={`h-1 w-1 rounded-full ${t.priority === 'high' ? 'bg-red-500' : 'bg-zinc-400'}`} />
                             {t.priority}
@@ -258,7 +259,7 @@ export default function TasksClient({ initialTasks }) {
                           
                           <Select
                             value={t.status}
-                            onChange={(val) => handleQuickUpdate(t, { status: val })}
+                            onChange={(val) => handleQuickUpdate(t, { status: val as any })}
                             options={[
                               { value: 'open', label: 'Open' },
                               { value: 'in-progress', label: 'In Progress' },
@@ -330,7 +331,7 @@ export default function TasksClient({ initialTasks }) {
                           }`} />
                           <Select
                             value={t.status}
-                            onChange={(val) => handleQuickUpdate(t, { status: val })}
+                            onChange={(val) => handleQuickUpdate(t, { status: val as any })}
                             options={[
                               { value: 'open', label: 'Open' },
                               { value: 'in-progress', label: 'In Progress' },
@@ -343,20 +344,20 @@ export default function TasksClient({ initialTasks }) {
                       <td className="px-6 py-4 max-w-sm">
                         <div className="flex flex-col gap-0.5">
                           <span className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t.title}</span>
-                          <span className="text-xs text-zinc-555 dark:text-zinc-400 line-clamp-1">{t.description}</span>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">{t.description}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <Select
                           value={t.priority}
-                          onChange={(val) => handleQuickUpdate(t, { priority: val })}
+                          onChange={(val) => handleQuickUpdate(t, { priority: val as any })}
                           options={[
                             { value: 'low', label: 'Low' },
                             { value: 'high', label: 'High' }
                           ]}
                           buttonClassName={`text-xs py-1 px-2.5 rounded-lg font-bold border ${
                             t.priority === 'high' 
-                              ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/50' 
+                              ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-955/20 dark:text-red-400 dark:border-red-900/50' 
                               : 'bg-zinc-100 text-zinc-650 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
                           }`}
                         />

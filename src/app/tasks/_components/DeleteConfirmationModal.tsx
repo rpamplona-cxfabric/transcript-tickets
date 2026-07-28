@@ -5,7 +5,11 @@ import { AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTaskStore } from '../../../lib/store';
 
-export default function DeleteConfirmationModal({ onRefresh }) {
+interface DeleteConfirmationModalProps {
+  onRefresh: () => Promise<void> | void;
+}
+
+export default function DeleteConfirmationModal({ onRefresh }: DeleteConfirmationModalProps) {
   const {
     deletingTaskId,
     setDeletingTaskId
@@ -31,7 +35,7 @@ export default function DeleteConfirmationModal({ onRefresh }) {
       toast.success('Task deleted successfully!');
       handleClose();
       await onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       toast.error(`Failed to delete task: ${err.message}`);
     } finally {
@@ -43,7 +47,7 @@ export default function DeleteConfirmationModal({ onRefresh }) {
     <>
       <div
         onClick={handleClose}
-        className="fixed inset-0 z-50 bg-zinc-955/35 backdrop-blur-xs transition-opacity duration-200 cursor-pointer"
+        className="fixed inset-0 z-50 bg-zinc-950/35 backdrop-blur-xs transition-opacity duration-200 cursor-pointer"
       />
 
       <div className="fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-950">

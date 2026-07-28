@@ -6,6 +6,12 @@ import { FileAudio, X, Clock, Plus, CheckSquare, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranscriptionStore } from '../../../lib/store';
 import Select from '../../../components/Select';
+import { Transcript } from '../../../types';
+
+interface SpeakerMapping {
+  speaker: string;
+  mappedName: string;
+}
 
 export default function TranscriptionDetailDrawer() {
   const {
@@ -15,7 +21,7 @@ export default function TranscriptionDetailDrawer() {
     updateTranscript
   } = useTranscriptionStore();
 
-  const [speakerMappings, setSpeakerMappings] = useState([]);
+  const [speakerMappings, setSpeakerMappings] = useState<SpeakerMapping[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -24,6 +30,7 @@ export default function TranscriptionDetailDrawer() {
         speaker,
         mappedName
       }));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSpeakerMappings(initialMappings);
     } else {
       setSpeakerMappings([]);
@@ -32,9 +39,9 @@ export default function TranscriptionDetailDrawer() {
 
   if (!activeTranscript) return null;
 
-  const getSpeakersFromTranscript = (text) => {
+  const getSpeakersFromTranscript = (text: string | undefined): string[] => {
     if (!text) return [];
-    const speakers = new Set();
+    const speakers = new Set<string>();
     const lines = text.split('\n');
     lines.forEach(line => {
       const speakerMatch = line.match(/^(\[.*?\])?\s*(Speaker\s*\d+|[^:]+):(.*)$/);
@@ -48,7 +55,7 @@ export default function TranscriptionDetailDrawer() {
     return Array.from(speakers).sort();
   };
 
-  const getAvailableSpeakers = (currentIndex) => {
+  const getAvailableSpeakers = (currentIndex: number): string[] => {
     const allSpeakers = getSpeakersFromTranscript(activeTranscript.transcript);
     const selectedOtherSpeakers = speakerMappings
       .filter((_, idx) => idx !== currentIndex)
@@ -68,7 +75,7 @@ export default function TranscriptionDetailDrawer() {
     setSpeakerMappings([...speakerMappings, { speaker: nextSpeaker, mappedName: '' }]);
   };
 
-  const handleSpeakerChange = (idx, value) => {
+  const handleSpeakerChange = (idx: number, value: string) => {
     const newMappings = [...speakerMappings];
     newMappings[idx].speaker = value;
     if (!value) {
@@ -77,19 +84,19 @@ export default function TranscriptionDetailDrawer() {
     setSpeakerMappings(newMappings);
   };
 
-  const handleMappedNameChange = (idx, value) => {
+  const handleMappedNameChange = (idx: number, value: string) => {
     const newMappings = [...speakerMappings];
     newMappings[idx].mappedName = value;
     setSpeakerMappings(newMappings);
   };
 
-  const handleRemoveMapping = (idx) => {
+  const handleRemoveMapping = (idx: number) => {
     setSpeakerMappings(speakerMappings.filter((_, i) => i !== idx));
   };
 
   // Check if mapping forms have changed compared to database values
   const getHasChanges = () => {
-    const currentObj = {};
+    const currentObj: Record<string, string> = {};
     speakerMappings.forEach(({ speaker, mappedName }) => {
       if (speaker && mappedName.trim()) {
         currentObj[speaker] = mappedName.trim();
@@ -115,7 +122,7 @@ export default function TranscriptionDetailDrawer() {
   const handleSaveSpeakerNames = async () => {
     setSaving(true);
     try {
-      const speakerNamesObj = {};
+      const speakerNamesObj: Record<string, string> = {};
       speakerMappings.forEach(({ speaker, mappedName }) => {
         if (speaker && mappedName.trim()) {
           speakerNamesObj[speaker] = mappedName.trim();
@@ -140,7 +147,7 @@ export default function TranscriptionDetailDrawer() {
       const updatedTranscript = await response.json();
       updateTranscript(updatedTranscript);
       toast.success('Speaker mappings updated successfully!');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Failed to update speaker names');
     } finally {
@@ -148,7 +155,7 @@ export default function TranscriptionDetailDrawer() {
     }
   };
 
-  const downloadTextFile = (transcript) => {
+  const downloadTextFile = (transcript: Transcript) => {
     const text = `CXF Transcription Report
 ------------------------
 Tenant ID: ${transcript.tenantId}
@@ -170,7 +177,7 @@ ${transcript.transcript || 'No transcript text.'}
     document.body.removeChild(element);
   };
 
-  const formatTime = (timeStr) => {
+  const formatTime = (timeStr: string | undefined) => {
     if (!timeStr) return 'N/A';
     try {
       const date = new Date(timeStr);
@@ -183,7 +190,7 @@ ${transcript.transcript || 'No transcript text.'}
     }
   };
 
-  const renderFormattedTranscript = (text) => {
+  const renderFormattedTranscript = (text: string | undefined) => {
     if (!text) return <p className="text-zinc-500 italic">No transcript text available.</p>;
 
     const lines = text.split('\n');
@@ -255,7 +262,7 @@ ${transcript.transcript || 'No transcript text.'}
           <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/30 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="h-4.5 w-4.5 text-zinc-400" />
-              <span className="text-xs text-zinc-555">Recording Date & Time</span>
+              <span className="text-xs text-zinc-500">Recording Date & Time</span>
             </div>
             <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
               {formatTime(activeTranscript.timestamp)}
@@ -282,7 +289,7 @@ ${transcript.transcript || 'No transcript text.'}
               {speakerMappings.length < getSpeakersFromTranscript(activeTranscript.transcript).length && (
                 <button
                   onClick={handleAddMapping}
-                  className="flex items-center gap-1 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-955 dark:hover:bg-zinc-100 cursor-pointer"
+                  className="flex items-center gap-1 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Add Map
@@ -308,7 +315,7 @@ ${transcript.transcript || 'No transcript text.'}
                       disabled={!mapping.speaker}
                       value={mapping.mappedName}
                       onChange={(e) => handleMappedNameChange(idx, e.target.value)}
-                      className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-955 dark:text-white dark:placeholder-zinc-650 dark:disabled:bg-zinc-900/50"
+                      className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650 dark:disabled:bg-zinc-900/50"
                     />
 
                     <button
@@ -357,7 +364,7 @@ ${transcript.transcript || 'No transcript text.'}
                   <Link
                     key={task.ticketId}
                     href={`/tasks?open=${task.ticketId}`}
-                    className="flex items-center justify-between rounded-lg border border-zinc-200/60 bg-white p-3 hover:border-zinc-350 hover:shadow-xs transition duration-150 dark:border-zinc-800 dark:bg-zinc-955 dark:hover:border-zinc-700 group cursor-pointer"
+                    className="flex items-center justify-between rounded-lg border border-zinc-200/60 bg-white p-3 hover:border-zinc-350 hover:shadow-xs transition duration-150 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700 group cursor-pointer"
                   >
                     <div className="flex flex-col gap-0.5 overflow-hidden">
                       <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
@@ -379,10 +386,10 @@ ${transcript.transcript || 'No transcript text.'}
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-955/80 flex flex-col gap-2">
+        <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 flex flex-col gap-2">
           <button
             onClick={() => downloadTextFile(activeTranscript)}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-zinc-800 transition dark:bg-white dark:text-zinc-955 dark:hover:bg-zinc-100 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-zinc-800 transition dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
           >
             <Download className="h-4 w-4" />
             Download Transcription Report

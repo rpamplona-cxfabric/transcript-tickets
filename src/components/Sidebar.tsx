@@ -3,16 +3,23 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, FileAudio, CheckSquare, Terminal, ChevronRight, Menu, X, Sun, Moon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ElementType } from 'react';
+
+interface MenuItem {
+  name: string;
+  path: string;
+  icon: ElementType;
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
     // Determine active theme on client
     const isDark = document.documentElement.classList.contains('dark');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(isDark ? 'dark' : 'light');
   }, []);
 
@@ -27,7 +34,7 @@ export default function Sidebar() {
     }
   };
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Transcriptions', path: '/transcriptions', icon: FileAudio },
     { name: 'Tasks', path: '/tasks', icon: CheckSquare },

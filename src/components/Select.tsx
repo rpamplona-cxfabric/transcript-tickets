@@ -1,14 +1,31 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, MouseEvent } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { SelectOption } from '../types';
 
-export default function Select({ value, onChange, options, placeholder = 'Select option', className = '', buttonClassName = '' }) {
+interface SelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: SelectOption[];
+  placeholder?: string;
+  className?: string;
+  buttonClassName?: string;
+}
+
+export default function Select({
+  value,
+  onChange,
+  options,
+  placeholder = 'Select option',
+  className = '',
+  buttonClassName = '',
+}: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: MouseEvent | MouseEventInit | MouseEventInit | any) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setIsOpen(false);
       }
@@ -17,7 +34,7 @@ export default function Select({ value, onChange, options, placeholder = 'Select
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find((opt) => opt.value === value);
 
   return (
     <div ref={containerRef} className={`relative inline-block ${className}`}>
@@ -46,7 +63,9 @@ export default function Select({ value, onChange, options, placeholder = 'Select
                   setIsOpen(false);
                 }}
                 className={`flex w-full cursor-pointer items-center px-3.5 py-2 text-left text-sm transition hover:bg-zinc-50 dark:hover:bg-zinc-900 ${
-                  opt.value === value ? 'bg-zinc-50 font-semibold text-zinc-900 dark:bg-zinc-900 dark:text-white' : 'text-zinc-700 dark:text-zinc-300'
+                  opt.value === value
+                    ? 'bg-zinc-50 font-semibold text-zinc-900 dark:bg-zinc-900 dark:text-white'
+                    : 'text-zinc-700 dark:text-zinc-300'
                 }`}
               >
                 {opt.label}

@@ -18,7 +18,7 @@ export const metadata = {
   description: "CXF Portal for managing call transcriptions and support tickets",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
@@ -52,4 +52,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-
