@@ -59,8 +59,13 @@ export default function TranscriptionDetailDrawer() {
 
   const handleAddMapping = () => {
     const allSpeakers = getSpeakersFromTranscript(activeTranscript.transcript);
-    if (speakerMappings.length >= allSpeakers.length) return;
-    setSpeakerMappings([...speakerMappings, { speaker: '', mappedName: '' }]);
+    const mappedSpeakers = speakerMappings.map(m => m.speaker).filter(Boolean);
+    const available = allSpeakers.filter(s => !mappedSpeakers.includes(s));
+
+    if (available.length === 0) return;
+
+    const nextSpeaker = available[0];
+    setSpeakerMappings([...speakerMappings, { speaker: nextSpeaker, mappedName: '' }]);
   };
 
   const handleSpeakerChange = (idx, value) => {
@@ -314,19 +319,21 @@ ${transcript.transcript || 'No transcript text.'}
                     </button>
                   </div>
                 ))}
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    onClick={handleSaveSpeakerNames}
-                    disabled={saving || !getHasChanges() || speakerMappings.some(m => !m.speaker || !m.mappedName.trim())}
-                    className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
-                  >
-                    {saving ? 'Saving...' : 'Save Speaker Map'}
-                  </button>
-                </div>
               </div>
             ) : (
               <p className="text-xs italic text-zinc-500 dark:text-zinc-400 font-medium">No speaker mapping configured.</p>
+            )}
+
+            {(getHasChanges() || speakerMappings.length > 0) && (
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={handleSaveSpeakerNames}
+                  disabled={saving || !getHasChanges() || speakerMappings.some(m => !m.speaker || !m.mappedName.trim())}
+                  className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
+                >
+                  {saving ? 'Saving...' : 'Save Speaker Map'}
+                </button>
+              </div>
             )}
           </div>
 

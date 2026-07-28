@@ -128,7 +128,6 @@ export default function TranscriptionsClient({ initialTranscripts, initialTasks 
                 <thead className="bg-zinc-50 text-xs font-bold uppercase text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-800">
                   <tr>
                     <th scope="col" className="px-6 py-4">Transcript ID</th>
-                    <th scope="col" className="px-6 py-4">Tenant ID</th>
                     <th scope="col" className="px-6 py-4">AI Summary</th>
                     <th scope="col" className="px-6 py-4">Date & Time</th>
                     <th scope="col" className="px-6 py-4 text-right">Actions</th>
@@ -143,9 +142,6 @@ export default function TranscriptionsClient({ initialTranscripts, initialTasks 
                     >
                       <td className="px-6 py-4 font-mono text-xs font-bold text-zinc-900 dark:text-zinc-150">
                         {t.transcriptId.slice(0, 8)}...
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-zinc-800 dark:text-zinc-200">
-                        {t.tenantId || 'System'}
                       </td>
                       <td className="px-6 py-4 max-w-sm truncate text-zinc-650 dark:text-zinc-400 font-medium">
                         {t.transcriptSummary || 'No summary available.'}
