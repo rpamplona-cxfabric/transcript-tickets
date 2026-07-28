@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { FileAudio, X, Clock, Plus, CheckSquare, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
