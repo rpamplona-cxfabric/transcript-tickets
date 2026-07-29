@@ -23,7 +23,7 @@ export const TranscriptionsClient = () => {
   }
 
   return (
-    <div className="relative flex flex-1 bg-zinc-50 dark:bg-zinc-900">
+    <div className="workspace-canvas relative flex flex-1">
       <div className="flex flex-col flex-1 p-6 md:p-8 pb-32 min-w-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="flex flex-col gap-1">

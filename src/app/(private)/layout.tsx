@@ -1,15 +1,7 @@
-import { getTasks, getTranscripts } from '@/lib/db';
-import { StoreInitializer } from '@/components/storeInitializer';
+import { PrivateAppShell } from '@/components/auth/privateAppShell';
 
 export const dynamic = 'force-dynamic';
 
-export default async function PrivateLayout({ children }: { children: React.ReactNode }) {
-  const tasks = await getTasks();
-  const transcripts = await getTranscripts();
-
-  return (
-    <StoreInitializer tasks={tasks} transcripts={transcripts}>
-      {children}
-    </StoreInitializer>
-  );
+export default function PrivateLayout({ children }: { children: React.ReactNode }) {
+  return <PrivateAppShell>{children}</PrivateAppShell>;
 }

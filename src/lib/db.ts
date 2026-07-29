@@ -8,17 +8,26 @@ import { Task, Transcript } from '../types';
 const region = process.env.AWS_REGION || 'us-east-1';
 const accessKeyId = process.env.AMAZON_ACCESS_KEY || '';
 const secretAccessKey = process.env.AMAZON_SECRET_KEY || '';
+const sessionToken = process.env.AMAZON_SESSION_TOKEN;
+const hasCustomCredentials = Boolean(accessKeyId && secretAccessKey);
 
-if (!accessKeyId || !secretAccessKey) {
-  console.warn('WARNING: AWS credentials are not fully set in environment variables.');
+if ((accessKeyId || secretAccessKey) && !hasCustomCredentials) {
+  console.warn(
+    'WARNING: Ignoring incomplete AMAZON_ACCESS_KEY / AMAZON_SECRET_KEY credentials. Falling back to the AWS SDK credential provider chain.'
+  );
 }
 
 const client = new DynamoDBClient({
   region,
-  credentials: {
-    accessKeyId,
-    secretAccessKey,
-  },
+  ...(hasCustomCredentials
+    ? {
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+          ...(sessionToken ? { sessionToken } : {}),
+        },
+      }
+    : {}),
 });
 
 const docClient = DynamoDBDocumentClient.from(client, {

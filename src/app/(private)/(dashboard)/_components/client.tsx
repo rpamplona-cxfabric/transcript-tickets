@@ -22,7 +22,7 @@ export const DashboardClient = () => {
   const highPriorityTasks = tasks.filter(t => t.priority === 'high' && t.status !== 'resolved').length;
 
   return (
-    <div className="flex-1 bg-zinc-50 p-6 md:p-8 dark:bg-zinc-900 overflow-y-auto">
+    <div className="workspace-canvas flex-1 overflow-y-auto p-6 md:p-8">
       <div className="flex flex-col gap-1 mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white md:text-3xl">
           Welcome to CXF Console

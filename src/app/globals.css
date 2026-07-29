@@ -5,11 +5,13 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --workspace-canvas: #ececec;
 }
 
 :root.dark {
-  --background: #0a0a0a;
+  --background: #08080a;
   --foreground: #ededed;
+  --workspace-canvas: #000000;
 }
 
 @theme inline {
@@ -24,6 +26,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.workspace-canvas {
+  background-color: var(--workspace-canvas);
 }
 
 button,
