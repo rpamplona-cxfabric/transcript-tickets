@@ -2,16 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { FileAudio, X, Clock, Plus, CheckSquare, Download } from 'lucide-react';
+import { FileAudio, X, Clock, Plus, CheckSquare, Download, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
 import { Select } from '@/components/select';
-import { Transcript } from '@/types';
-
-interface SpeakerMapping {
-  speaker: string;
-  mappedName: string;
-}
+import { Transcript, LeadObject, SelectOption } from '@/types';
 
 export const TranscriptionDetailDrawer = () => {
   const {
@@ -20,17 +15,90 @@ export const TranscriptionDetailDrawer = () => {
     tasks,
     updateTranscript
   } = useTranscriptionStore();
+  const [leadFirstName, setLeadFirstName] = useState('');
+  const [leadLastName, setLeadLastName] = useState('');
+  const [leadPhone, setLeadPhone] = useState('');
+  const [leadEmail, setLeadEmail] = useState('');
+  const [creatingLead, setCreatingLead] = useState(false);
 
-  const [speakerMappings, setSpeakerMappings] = useState<SpeakerMapping[]>(() => {
-    if (activeTranscript) {
-      return Object.entries(activeTranscript.speakerNames || {}).map(([speaker, mappedName]) => ({
-        speaker,
-        mappedName
-      }));
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTranscript) return;
+    if (!leadFirstName.trim()) {
+      toast.error('First Name is required');
+      return;
     }
-    return [];
-  });
-  const [saving, setSaving] = useState(false);
+    setCreatingLead(true);
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstname: leadFirstName.trim(),
+          lastname: leadLastName.trim(),
+          phoneNumber: leadPhone.trim(),
+          email: leadEmail.trim(),
+          transcriptId: activeTranscript.transcriptId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit lead');
+      }
+
+      toast.success('Lead created and associated successfully!');
+      
+      if (data.updatedTranscript) {
+        updateTranscript(data.updatedTranscript);
+      }
+
+      setLeadFirstName('');
+      setLeadLastName('');
+      setLeadPhone('');
+      setLeadEmail('');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to submit lead details');
+    } finally {
+      setCreatingLead(false);
+    }
+  };
+
+  const handleMapSpeaker = async (speaker: string, mappedName: string) => {
+    if (!activeTranscript) return;
+    try {
+      const updatedSpeakerNames = {
+        ...(activeTranscript.speakerNames || {}),
+        [speaker]: mappedName
+      };
+
+      const response = await fetch('/api/transcriptions', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transcriptId: activeTranscript.transcriptId,
+          speakerNames: updatedSpeakerNames
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update speaker mapping');
+      }
+
+      const updatedTranscript = await response.json();
+      updateTranscript(updatedTranscript);
+      toast.success(`Mapped ${speaker} to ${mappedName}`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to update speaker mapping');
+    }
+  };
 
   if (!activeTranscript) return null;
 
@@ -48,105 +116,6 @@ export const TranscriptionDetailDrawer = () => {
       }
     });
     return Array.from(speakers).sort();
-  };
-
-  const getAvailableSpeakers = (currentIndex: number): string[] => {
-    const allSpeakers = getSpeakersFromTranscript(activeTranscript.transcript);
-    const selectedOtherSpeakers = speakerMappings
-      .filter((_, idx) => idx !== currentIndex)
-      .map(m => m.speaker)
-      .filter(Boolean);
-    return allSpeakers.filter(s => !selectedOtherSpeakers.includes(s));
-  };
-
-  const handleAddMapping = () => {
-    const allSpeakers = getSpeakersFromTranscript(activeTranscript.transcript);
-    const mappedSpeakers = speakerMappings.map(m => m.speaker).filter(Boolean);
-    const available = allSpeakers.filter(s => !mappedSpeakers.includes(s));
-
-    if (available.length === 0) return;
-
-    const nextSpeaker = available[0];
-    setSpeakerMappings([...speakerMappings, { speaker: nextSpeaker, mappedName: '' }]);
-  };
-
-  const handleSpeakerChange = (idx: number, value: string) => {
-    const newMappings = [...speakerMappings];
-    newMappings[idx].speaker = value;
-    if (!value) {
-      newMappings[idx].mappedName = '';
-    }
-    setSpeakerMappings(newMappings);
-  };
-
-  const handleMappedNameChange = (idx: number, value: string) => {
-    const newMappings = [...speakerMappings];
-    newMappings[idx].mappedName = value;
-    setSpeakerMappings(newMappings);
-  };
-
-  const handleRemoveMapping = (idx: number) => {
-    setSpeakerMappings(speakerMappings.filter((_, i) => i !== idx));
-  };
-
-  const getHasChanges = () => {
-    const currentObj: Record<string, string> = {};
-    speakerMappings.forEach(({ speaker, mappedName }) => {
-      if (speaker && mappedName.trim()) {
-        currentObj[speaker] = mappedName.trim();
-      }
-    });
-
-    const originalObj = activeTranscript.speakerNames || {};
-
-    const currentKeys = Object.keys(currentObj);
-    const originalKeys = Object.keys(originalObj);
-
-    if (currentKeys.length !== originalKeys.length) return true;
-
-    for (const key of currentKeys) {
-      if (currentObj[key] !== originalObj[key]) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  const handleSaveSpeakerNames = async () => {
-    setSaving(true);
-    try {
-      const speakerNamesObj: Record<string, string> = {};
-      speakerMappings.forEach(({ speaker, mappedName }) => {
-        if (speaker && mappedName.trim()) {
-          speakerNamesObj[speaker] = mappedName.trim();
-        }
-      });
-
-      const response = await fetch('/api/transcriptions', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          transcriptId: activeTranscript.transcriptId,
-          speakerNames: speakerNamesObj
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save speaker names');
-      }
-
-      const updatedTranscript = await response.json();
-      updateTranscript(updatedTranscript);
-      toast.success('Speaker mappings updated successfully!');
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Failed to update speaker names');
-    } finally {
-      setSaving(false);
-    }
   };
 
   const downloadTextFile = (transcript: Transcript) => {
@@ -270,68 +239,151 @@ ${transcript.transcript || 'No transcript text.'}
           </div>
 
           <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Speaker Mapping</h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Map generic speakers to their real names.</p>
-              </div>
-              {speakerMappings.length < getSpeakersFromTranscript(activeTranscript.transcript).length && (
-                <button
-                  onClick={handleAddMapping}
-                  className="flex items-center gap-1 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add Map
-                </button>
-              )}
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Speaker Mapping</h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Map generic speakers to their real names.</p>
             </div>
 
-            {speakerMappings.length > 0 ? (
+            {getSpeakersFromTranscript(activeTranscript.transcript).length > 0 ? (
               <div className="space-y-3">
-                {speakerMappings.map((mapping, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    <Select
-                      value={mapping.speaker}
-                      onChange={(val) => handleSpeakerChange(idx, val)}
-                      options={getAvailableSpeakers(idx).map((s) => ({ value: s, label: s }))}
-                      placeholder="Select Speaker"
-                      className="w-40"
-                    />
+                {getSpeakersFromTranscript(activeTranscript.transcript).map((speaker) => {
+                  let leadOptions: SelectOption[] = [];
+                  if (activeTranscript.leads) {
+                    try {
+                      const parsed = JSON.parse(activeTranscript.leads) as LeadObject[];
+                      if (Array.isArray(parsed)) {
+                        leadOptions = parsed.map(lead => ({
+                          value: lead.name,
+                          label: lead.name
+                        }));
+                      }
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }
 
-                    <input
-                      type="text"
-                      placeholder="Real Name"
-                      disabled={!mapping.speaker}
-                      value={mapping.mappedName}
-                      onChange={(e) => handleMappedNameChange(idx, e.target.value)}
-                      className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650 dark:disabled:bg-zinc-900/50"
-                    />
+                  const selectOptions: SelectOption[] = [
+                    { value: 'Seth', label: 'Seth' },
+                    ...leadOptions
+                  ];
 
-                    <button
-                      onClick={() => handleRemoveMapping(idx)}
-                      className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                  const mappedValue = activeTranscript.speakerNames?.[speaker] || '';
+
+                  return (
+                    <div key={speaker} className="flex items-center justify-between gap-4 py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0 text-sm">
+                      <span className="text-xs font-bold text-zinc-650 dark:text-zinc-400">{speaker}</span>
+                      <Select
+                        value={mappedValue}
+                        onChange={(val) => handleMapSpeaker(speaker, val)}
+                        options={selectOptions}
+                        placeholder="Select Lead or Agent"
+                        className="w-60"
+                      />
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-xs italic text-zinc-500 dark:text-zinc-400 font-medium">No speaker mapping configured.</p>
-            )}
-
-            {(getHasChanges() || speakerMappings.length > 0) && (
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  onClick={handleSaveSpeakerNames}
-                  disabled={saving || !getHasChanges() || speakerMappings.some(m => !m.speaker || !m.mappedName.trim())}
-                  className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
-                >
-                  {saving ? 'Saving...' : 'Save Speaker Map'}
-                </button>
-              </div>
+              <p className="text-xs italic text-zinc-500 dark:text-zinc-400 font-medium">No speakers identified in this transcript.</p>
             )}
           </div>
+
+          {(!activeTranscript.speakerNames || Object.keys(activeTranscript.speakerNames).length === 0) && (
+            <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400 flex items-center gap-1.5">
+                  <UserPlus className="h-4.5 w-4.5 text-zinc-500" />
+                  Identify Contact / Create Lead
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Create a new lead in Lofty for this transcription.</p>
+              </div>
+
+              <form onSubmit={handleCreateLead} className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">First Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={leadFirstName}
+                      onChange={(e) => setLeadFirstName(e.target.value)}
+                      placeholder="e.g. John"
+                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Last Name</label>
+                    <input
+                      type="text"
+                      value={leadLastName}
+                      onChange={(e) => setLeadLastName(e.target.value)}
+                      placeholder="e.g. Doe"
+                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold uppercase text-zinc-500">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={leadPhone}
+                    onChange={(e) => setLeadPhone(e.target.value)}
+                    placeholder="e.g. +1 555 123 4567"
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold uppercase text-zinc-500">Email Address</label>
+                  <input
+                    type="email"
+                    value={leadEmail}
+                    onChange={(e) => setLeadEmail(e.target.value)}
+                    placeholder="e.g. john.doe@example.com"
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={creatingLead || !leadFirstName.trim()}
+                    className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer flex items-center gap-1.5 transition-colors"
+                  >
+                    {creatingLead ? 'Creating...' : 'Create Lead'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {activeTranscript.leads && (() => {
+            try {
+              const leadsArray = JSON.parse(activeTranscript.leads);
+              if (Array.isArray(leadsArray) && leadsArray.length > 0) {
+                return (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Associated Leads</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {leadsArray.map((lead: LeadObject) => (
+                        <div
+                          key={lead.leadId}
+                          className="flex items-center gap-1.5 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-1.5 border border-indigo-100 dark:border-indigo-900 text-xs font-semibold text-indigo-700 dark:text-indigo-400"
+                        >
+                          <UserPlus className="h-3.5 w-3.5" />
+                          {lead.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+            } catch (e) {
+              console.error('Failed to parse leads array:', e);
+            }
+            return null;
+          })()}
 
           <div className="space-y-2">
             <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Full Audio Transcript</h3>

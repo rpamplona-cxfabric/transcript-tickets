@@ -2,7 +2,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 // @ts-ignore
 import snappy from 'snappy';
-import { Task, Transcript } from '../types';
+import { Task, Transcript, LeadObject } from '../types';
 
 // Initialize the DynamoDB Client
 const region = process.env.AWS_REGION || 'us-east-1';
@@ -62,10 +62,23 @@ export async function getTranscripts(): Promise<Transcript[]> {
       items.map(async (item) => {
         const transcript = await decompressField(item.transcript);
         const transcriptSummary = await decompressField(item.transcriptSummary);
+
+        let speakerNamesObj: Record<string, string> = {};
+        if (item.speakerNames) {
+          try {
+            speakerNamesObj = typeof item.speakerNames === 'string'
+              ? JSON.parse(item.speakerNames)
+              : item.speakerNames;
+          } catch (e) {
+            console.error('Error parsing speakerNames:', e);
+          }
+        }
+
         return {
           ...item,
           transcript,
           transcriptSummary,
+          speakerNames: speakerNamesObj,
         } as Transcript;
       })
     );
@@ -204,7 +217,64 @@ export async function updateTranscriptSpeakerNames(
 
     const updatedItem: any = {
       ...existing,
-      speakerNames: speakerNames,
+      speakerNames: JSON.stringify(speakerNames),
+    };
+
+    const command = new PutCommand({
+      TableName: 'contact-transcripts',
+      Item: updatedItem,
+    });
+    await docClient.send(command);
+
+    const transcript = await decompressField(updatedItem.transcript);
+    const transcriptSummary = await decompressField(updatedItem.transcriptSummary);
+
+    return {
+      ...updatedItem,
+      speakerNames,
+      transcript,
+      transcriptSummary,
+    } as Transcript;
+  } catch (error) {
+    console.error('Error updating transcript speakerNames:', error);
+    throw error;
+  }
+}
+
+export async function addTranscriptLead(
+  transcriptId: string,
+  leadObj: LeadObject
+): Promise<Transcript> {
+  try {
+    const scanCommand = new ScanCommand({
+      TableName: 'contact-transcripts',
+    });
+    const result = await docClient.send(scanCommand);
+    const existing = (result.Items || []).find((t) => t.transcriptId === transcriptId) as any;
+
+    if (!existing) {
+      throw new Error(`Transcript not found with id: ${transcriptId}`);
+    }
+
+    let leadsArray: LeadObject[] = [];
+    if (existing.leads) {
+      try {
+        const parsed = JSON.parse(existing.leads);
+        if (Array.isArray(parsed)) {
+          leadsArray = parsed;
+        }
+      } catch (e) {
+        console.error('Error parsing existing leads string:', e);
+      }
+    }
+
+    if (!leadsArray.some((l) => l.leadId === leadObj.leadId)) {
+      leadsArray.push(leadObj);
+    }
+
+    const updatedItem: any = {
+      ...existing,
+      leads: JSON.stringify(leadsArray),
     };
 
     const command = new PutCommand({
@@ -222,7 +292,7 @@ export async function updateTranscriptSpeakerNames(
       transcriptSummary,
     } as Transcript;
   } catch (error) {
-    console.error('Error updating transcript speakerNames:', error);
+    console.error('Error adding transcript lead:', error);
     throw error;
   }
 }

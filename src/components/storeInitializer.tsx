@@ -41,6 +41,17 @@ const loadWorkspaceData = async () => {
   };
 };
 
+let activeLoadPromise: Promise<Awaited<ReturnType<typeof loadWorkspaceData>>> | null = null;
+
+const loadWorkspaceDataDeduplicated = () => {
+  if (!activeLoadPromise) {
+    activeLoadPromise = loadWorkspaceData().finally(() => {
+      activeLoadPromise = null;
+    });
+  }
+  return activeLoadPromise;
+};
+
 export const StoreInitializer = ({ children }: StoreInitializerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -57,9 +68,15 @@ export const StoreInitializer = ({ children }: StoreInitializerProps) => {
   }, []);
 
   useEffect(() => {
+    // If store is already initialized, skip fetching again
+    if (useTaskStore.getState().isReady && useTranscriptionStore.getState().isReady) {
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
-    void loadWorkspaceData().then((result) => {
+    void loadWorkspaceDataDeduplicated().then((result) => {
       if (!cancelled) {
         applyWorkspaceData(result);
       }

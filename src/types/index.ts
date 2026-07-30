@@ -16,9 +16,17 @@ export interface Transcript {
   timestamp: string;
   tenantId: string;
   speakerNames?: Record<string, string>;
+  leads?: string;
 }
 
 export interface SelectOption {
   value: string;
   label: string;
+}
+
+export interface LeadObject {
+  leadId: string;
+  name: string;
+  phoneNumber?: string;
+  email?: string;
 }
