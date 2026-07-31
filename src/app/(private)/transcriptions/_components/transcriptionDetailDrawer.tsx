@@ -433,9 +433,10 @@ ${transcript.transcript || 'No transcript text.'}
                     .map(([_, val]) => val);
 
                   const selectOptions: SelectOption[] = [
+                    { value: '', label: 'None' },
                     { value: 'Seth', label: 'Seth' },
                     ...leadOptions
-                  ].filter(option => !otherMappedValues.includes(option.value));
+                  ].filter(option => option.value === '' || !otherMappedValues.includes(option.value));
 
                   return (
                     <div key={speaker} className="flex items-center justify-between gap-4 py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0 text-sm">
@@ -444,7 +445,7 @@ ${transcript.transcript || 'No transcript text.'}
                         value={mappedValue}
                         onChange={(val) => handleMapSpeaker(speaker, val)}
                         options={selectOptions}
-                        placeholder="Select Lead or Agent"
+                        placeholder="None"
                         className="w-60"
                       />
                     </div>
