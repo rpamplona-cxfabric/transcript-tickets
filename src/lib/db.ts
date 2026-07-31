@@ -58,6 +58,8 @@ export async function getTranscripts(): Promise<Transcript[]> {
     const result = await docClient.send(command);
     const items = result.Items || [];
 
+    const processedIds = await getProcessedTranscripts();
+
     const processedItems = await Promise.all(
       items.map(async (item) => {
         const transcript = await decompressField(item.transcript);
@@ -79,6 +81,7 @@ export async function getTranscripts(): Promise<Transcript[]> {
           transcript,
           transcriptSummary,
           speakerNames: speakerNamesObj,
+          isProcessed: processedIds.includes(item.transcriptId),
         } as Transcript;
       })
     );
@@ -229,11 +232,14 @@ export async function updateTranscriptSpeakerNames(
     const transcript = await decompressField(updatedItem.transcript);
     const transcriptSummary = await decompressField(updatedItem.transcriptSummary);
 
+    const processedIds = await getProcessedTranscripts();
+
     return {
       ...updatedItem,
       speakerNames,
       transcript,
       transcriptSummary,
+      isProcessed: processedIds.includes(updatedItem.transcriptId),
     } as Transcript;
   } catch (error) {
     console.error('Error updating transcript speakerNames:', error);
@@ -286,13 +292,41 @@ export async function addTranscriptLead(
     const transcript = await decompressField(updatedItem.transcript);
     const transcriptSummary = await decompressField(updatedItem.transcriptSummary);
 
+    const processedIds = await getProcessedTranscripts();
+
+    let speakerNamesObj: Record<string, string> = {};
+    if (updatedItem.speakerNames) {
+      try {
+        speakerNamesObj = typeof updatedItem.speakerNames === 'string'
+          ? JSON.parse(updatedItem.speakerNames)
+          : updatedItem.speakerNames;
+      } catch (e) {
+        console.error('Error parsing speakerNames:', e);
+      }
+    }
+
     return {
       ...updatedItem,
       transcript,
       transcriptSummary,
+      speakerNames: speakerNamesObj,
+      isProcessed: processedIds.includes(updatedItem.transcriptId),
     } as Transcript;
   } catch (error) {
     console.error('Error adding transcript lead:', error);
     throw error;
+  }
+}
+
+export async function getProcessedTranscripts(): Promise<string[]> {
+  try {
+    const command = new ScanCommand({
+      TableName: 'processed-transcripts',
+    });
+    const result = await docClient.send(command);
+    return (result.Items || []).map(item => item.transcriptId);
+  } catch (error) {
+    console.error('Error fetching processed transcripts:', error);
+    return [];
   }
 }

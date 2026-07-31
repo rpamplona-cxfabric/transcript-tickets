@@ -51,6 +51,7 @@ export const TableView = () => {
           <thead className="bg-zinc-50 text-xs font-bold uppercase text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-800">
             <tr>
               <th scope="col" className="px-6 py-4">Transcript ID</th>
+              <th scope="col" className="px-6 py-4">Status</th>
               <th scope="col" className="px-6 py-4">AI Summary</th>
               <th scope="col" className="px-6 py-4">Date & Time</th>
               <th scope="col" className="px-6 py-4 text-right">Actions</th>
@@ -65,6 +66,19 @@ export const TableView = () => {
               >
                 <td className="px-6 py-4 font-mono text-xs font-bold text-zinc-900 dark:text-zinc-200">
                   {t.transcriptId.slice(0, 8)}...
+                </td>
+                <td className="px-6 py-4">
+                  {t.isProcessed ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      Processed
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Pending
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 max-w-sm truncate text-zinc-650 dark:text-zinc-400 font-medium">
                   {t.transcriptSummary || 'No summary available.'}

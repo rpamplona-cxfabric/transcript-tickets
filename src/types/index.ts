@@ -17,6 +17,7 @@ export interface Transcript {
   tenantId: string;
   speakerNames?: Record<string, string>;
   leads?: string;
+  isProcessed?: boolean;
 }
 
 export interface SelectOption {

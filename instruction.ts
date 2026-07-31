@@ -163,14 +163,32 @@ Note: speakers must still be populated even when tool is "none", unless no names
 export { instruction };
 
 declare const triggers: any;
+declare const context: any;
+declare const variables: any;
 
-const transcriptSummary = triggers.webhook.inputData.body.transcriptSummary;
+const transcriptId = context.triggers.webhook.inputData.body.transcriptId;
+const speakerName = triggers.webhook.inputData.body.speakerName;
+const leadCount = triggers.webhook.inputData.body.leadCount;
 
-const message =
+let message;
+
+if (speakerName && leadCount > 1) {
+  message =
+    `Hey Seth, we just processed one of your recordings.\n\n` +
+    `We found multiple matching leads for "${speakerName}" in Lofty.\n\n` +
+    `Can you select the correct lead real quick so that we could create the ticket: https://transcript-tickets.vercel.app/transcriptions?open=${transcriptId}`;
+} else if (speakerName && leadCount === 0) {
+  message =
+    `Hey Seth, we just processed one of your recordings.\n\n` +
+    `We found the name "${speakerName}" in your recording but couldn't find a matching lead in Lofty.\n\n` +
+    `Can you fill up this form real quick so that we could create the ticket: https://transcript-tickets.vercel.app/transcriptions?open=${transcriptId}`;
+} else {
+  message =
     `Hey Seth, we just processed one of your recordings.\n\n` +
     `We couldn't identify who you were speaking with in this conversation.\n\n` +
-    `Here's a quick summary:\n` +
-    `"${transcriptSummary}"\n\n` +
-    `Can you tell us who you were talking with? Reply with their name, or their phone number if you have it.`;
+    `Can you fill up this form real quick so that we could create the ticket: https://transcript-tickets.vercel.app/transcriptions?open=${transcriptId}`;
+}
+
+variables.variables_1.smsMessage = message;
 
 message;
