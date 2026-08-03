@@ -26,7 +26,7 @@ export interface SelectOption {
 }
 
 export interface LeadObject {
-  leadId: string;
+  leadId: string | number;
   name: string;
   phoneNumber?: string;
   email?: string;

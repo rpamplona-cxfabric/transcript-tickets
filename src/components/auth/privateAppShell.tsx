@@ -58,7 +58,7 @@ export const PrivateAppShell = ({ children }: { children: React.ReactNode }) => 
   return (
     <div className="workspace-canvas flex min-h-screen flex-col text-zinc-900 md:flex-row dark:text-zinc-50">
       <Sidebar />
-      <main className="flex min-h-screen flex-1 flex-col overflow-x-hidden md:h-screen md:overflow-y-auto">
+      <main className="flex min-h-[calc(100svh-4rem)] flex-1 flex-col overflow-x-hidden md:min-h-screen md:h-screen md:overflow-y-auto">
         <StoreInitializer>{children}</StoreInitializer>
       </main>
     </div>

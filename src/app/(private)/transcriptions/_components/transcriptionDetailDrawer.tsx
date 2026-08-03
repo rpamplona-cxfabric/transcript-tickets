@@ -9,7 +9,7 @@ import { useTaskStore } from '@/lib/store/tasks';
 import { Select } from '@/components/select';
 import { Combobox, ComboboxLead } from '@/components/combobox';
 import { LeadModal } from './leadModal';
-import { Transcript, LeadObject, SelectOption } from '@/types';
+import { Transcript, SelectOption } from '@/types';
 
 export const TranscriptionDetailDrawer = () => {
   const {
@@ -19,6 +19,7 @@ export const TranscriptionDetailDrawer = () => {
     updateTranscript
   } = useTranscriptionStore();
   const [selectedLead, setSelectedLead] = useState<ComboboxLead | null>(null);
+  const [associatedLeads, setAssociatedLeads] = useState<ComboboxLead[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPrefill, setModalPrefill] = useState('');
   const [generatingTasks, setGeneratingTasks] = useState(false);
@@ -26,6 +27,9 @@ export const TranscriptionDetailDrawer = () => {
   const handleSelectLead = async (lead: ComboboxLead) => {
     if (!activeTranscript) return;
     setSelectedLead(lead);
+    setAssociatedLeads((prev) =>
+      prev.some((existingLead) => `${existingLead.leadId}` === `${lead.leadId}`) ? prev : [...prev, lead]
+    );
     try {
       const response = await fetch('/api/leads', {
         method: 'POST',
@@ -49,12 +53,58 @@ export const TranscriptionDetailDrawer = () => {
   const handleModalSuccess = (updatedTranscript: Transcript, leadName: string, leadId: string) => {
     updateTranscript(updatedTranscript);
     const parts = leadName.trim().split(/\s+/);
-    setSelectedLead({
+    const createdLead = {
       leadId: Number(leadId),
       firstName: parts[0] || '',
       lastName: parts.slice(1).join(' ') || ''
-    });
+    };
+    setSelectedLead(createdLead);
+    setAssociatedLeads((prev) =>
+      prev.some((existingLead) => `${existingLead.leadId}` === `${createdLead.leadId}`) ? prev : [...prev, createdLead]
+    );
   };
+
+  useEffect(() => {
+    const loadAssociatedLeads = async () => {
+      if (!activeTranscript?.leads) {
+        setAssociatedLeads([]);
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(activeTranscript.leads);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          setAssociatedLeads([]);
+          return;
+        }
+
+        const leadIds = parsed
+          .map((lead) => lead)
+          .filter((leadId) => leadId !== undefined && leadId !== null && `${leadId}`.trim() !== '');
+
+        if (leadIds.length === 0) {
+          setAssociatedLeads([]);
+          return;
+        }
+
+        const query = new URLSearchParams();
+        leadIds.forEach((leadId) => query.append('leadId', `${leadId}`));
+
+        const response = await fetch(`/api/leads/search?${query.toString()}`, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error('Failed to fetch associated leads');
+        }
+
+        const data = await response.json();
+        setAssociatedLeads(data.leads || []);
+      } catch (error) {
+        console.error('Failed to load associated leads:', error);
+        setAssociatedLeads([]);
+      }
+    };
+
+    loadAssociatedLeads();
+  }, [activeTranscript?.leads]);
 
   const handleMapSpeaker = async (speaker: string, mappedName: string) => {
     if (!activeTranscript) return;
@@ -263,8 +313,8 @@ ${transcript.transcript || 'No transcript text.'}
         className="fixed inset-0 z-40 bg-zinc-950/30 backdrop-blur-xs transition-opacity duration-300 cursor-pointer"
       />
 
-      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-3xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800">
-        <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6 dark:border-zinc-800">
+      <div className="fixed inset-y-0 right-0 z-50 flex h-[100svh] w-full flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 md:max-w-3xl">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 px-4 sm:px-6 dark:border-zinc-800">
           <div className="flex items-center gap-2">
             <FileAudio className="h-5 w-5 text-zinc-900 dark:text-white" />
             <h2 className="text-base font-bold text-zinc-900 dark:text-white">Transcription Details</h2>
@@ -286,9 +336,9 @@ ${transcript.transcript || 'No transcript text.'}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/30 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <Clock className="h-4.5 w-4.5 text-zinc-400" />
               <span className="text-xs text-zinc-500 font-medium">Recording Date & Time:</span>
               <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
@@ -329,29 +379,31 @@ ${transcript.transcript || 'No transcript text.'}
               </div>
 
               {selectedLead ? (
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900 animate-fade-in">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950/40">
-                      <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-zinc-900 dark:text-white">
-                        {selectedLead.firstName} {selectedLead.lastName}
-                      </p>
-                      {(selectedLead.phones?.[0] || selectedLead.emails?.[0]) && (
-                        <p className="text-[10px] font-medium text-zinc-450 dark:text-zinc-500">
-                          {selectedLead.phones?.[0] || selectedLead.emails?.[0]}
+                <div className="animate-fade-in divide-y divide-zinc-150 dark:divide-zinc-800">
+                  <div className="flex items-center justify-between gap-3 py-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950/40">
+                        <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-zinc-900 dark:text-white">
+                          {selectedLead.firstName} {selectedLead.lastName}
                         </p>
-                      )}
+                        {(selectedLead.phones?.[0] || selectedLead.emails?.[0]) && (
+                          <p className="truncate text-[10px] font-medium text-zinc-450 dark:text-zinc-500">
+                            {selectedLead.phones?.[0] || selectedLead.emails?.[0]}
+                          </p>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => setSelectedLead(null)}
+                      title="Remove selection"
+                      className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer transition-colors"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setSelectedLead(null)}
-                    title="Remove selection"
-                    className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 cursor-pointer transition-colors"
-                  >
-                    <XCircle className="h-4 w-4" />
-                  </button>
                 </div>
               ) : (
                 <Combobox
@@ -385,18 +437,11 @@ ${transcript.transcript || 'No transcript text.'}
               <div className="space-y-3">
                 {getSpeakersFromTranscript(activeTranscript.transcript).map((speaker) => {
                   let leadOptions: SelectOption[] = [];
-                  if (activeTranscript.leads) {
-                    try {
-                      const parsed = JSON.parse(activeTranscript.leads) as LeadObject[];
-                      if (Array.isArray(parsed)) {
-                        leadOptions = parsed.map(lead => ({
-                          value: lead.name,
-                          label: lead.name
-                        }));
-                      }
-                    } catch (e) {
-                      console.error(e);
-                    }
+                  if (associatedLeads.length > 0) {
+                    leadOptions = associatedLeads.map((lead) => ({
+                      value: `${lead.firstName || ''} ${lead.lastName || ''}`.trim(),
+                      label: `${lead.firstName || ''} ${lead.lastName || ''}`.trim()
+                    })).filter((lead) => lead.value);
                   }
 
                   const mappedValue = activeTranscript.speakerNames?.[speaker] || '';
@@ -413,14 +458,14 @@ ${transcript.transcript || 'No transcript text.'}
                   ].filter(option => option.value === '' || !otherMappedValues.includes(option.value));
 
                   return (
-                    <div key={speaker} className="flex items-center justify-between gap-4 py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0 text-sm">
+                    <div key={speaker} className="flex flex-col gap-2 border-b border-zinc-100 py-2 text-sm last:border-0 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                       <span className="text-xs font-bold text-zinc-650 dark:text-zinc-400">{speaker}</span>
                       <Select
                         value={mappedValue}
                         onChange={(val) => handleMapSpeaker(speaker, val)}
                         options={selectOptions}
                         placeholder="None"
-                        className="w-60"
+                        className="w-full sm:w-60"
                       />
                     </div>
                   );
@@ -431,32 +476,22 @@ ${transcript.transcript || 'No transcript text.'}
             )}
           </div>
 
-          {activeTranscript.leads && (() => {
-            try {
-              const leadsArray = JSON.parse(activeTranscript.leads);
-              if (Array.isArray(leadsArray) && leadsArray.length > 0) {
-                return (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Associated Leads</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {leadsArray.map((lead: LeadObject) => (
-                        <div
-                          key={lead.leadId}
-                          className="flex items-center gap-1.5 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-1.5 border border-indigo-100 dark:border-indigo-900 text-xs font-semibold text-indigo-700 dark:text-indigo-400"
-                        >
-                          <User className="h-3.5 w-3.5" />
-                          {lead.name}
-                        </div>
-                      ))}
-                    </div>
+          {associatedLeads.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Associated Leads</h3>
+              <div className="flex flex-wrap gap-2">
+                {associatedLeads.map((lead) => (
+                  <div
+                    key={lead.leadId}
+                    className="flex items-center gap-1.5 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-1.5 border border-indigo-100 dark:border-indigo-900 text-xs font-semibold text-indigo-700 dark:text-indigo-400"
+                  >
+                    <User className="h-3.5 w-3.5" />
+                    {`${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'Unknown Lead'}
                   </div>
-                );
-              }
-            } catch (e) {
-              console.error('Failed to parse leads array:', e);
-            }
-            return null;
-          })()}
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Full Audio Transcript</h3>
@@ -476,7 +511,7 @@ ${transcript.transcript || 'No transcript text.'}
                   <Link
                     key={task.ticketId}
                     href={`/tasks?open=${task.ticketId}`}
-                    className="flex items-center justify-between rounded-lg border border-zinc-200/60 bg-white p-3 hover:border-zinc-350 hover:shadow-xs transition duration-150 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 group cursor-pointer"
+                    className="flex flex-col gap-2 rounded-lg border border-zinc-200/60 bg-white p-3 transition duration-150 hover:border-zinc-350 hover:shadow-xs dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 group cursor-pointer sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex flex-col gap-0.5 overflow-hidden">
                       <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
@@ -486,7 +521,7 @@ ${transcript.transcript || 'No transcript text.'}
                         {task.description}
                       </span>
                     </div>
-                    <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${task.priority === 'high'
+                    <span className={`w-fit text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${task.priority === 'high'
                       ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400'
                       : 'bg-zinc-100 text-zinc-650 dark:bg-zinc-900 dark:text-zinc-400'
                       }`}>
@@ -500,7 +535,7 @@ ${transcript.transcript || 'No transcript text.'}
         </div>
 
         {!activeTranscript.isProcessed && (
-          <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 flex flex-col gap-2">
+          <div className="shrink-0 border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 flex flex-col gap-2">
             <div className="flex flex-col gap-1.5 pb-2">
               <button
                 disabled={generatingTasks || !canGenerateTasks}

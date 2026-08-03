@@ -97,7 +97,7 @@ export const Sidebar = () => {
 
   return (
     <>
-      <div className="flex h-16 items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200 bg-white/95 px-4 backdrop-blur md:hidden dark:border-zinc-800 dark:bg-zinc-950/95">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-black">
             <Terminal className="h-5 w-5" />
@@ -113,11 +113,11 @@ export const Sidebar = () => {
       </div>
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-zinc-800/80 bg-zinc-950 text-zinc-400 transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-[100svh] w-[min(18rem,85vw)] flex-col border-r border-zinc-800/80 bg-zinc-950 text-zinc-400 transition-transform duration-300 ease-in-out md:static md:h-auto md:w-64 md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <nav className="flex-1 space-y-1.5 px-4 py-6">
+        <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-6">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.path;

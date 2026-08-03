@@ -37,7 +37,7 @@ export const Select = ({
   const selectedOption = options.find((opt) => opt.value === value);
 
   return (
-    <div ref={containerRef} className={`relative inline-block ${className}`}>
+    <div ref={containerRef} className={`relative inline-block w-full ${className}`}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -50,7 +50,7 @@ export const Select = ({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 z-50 mt-1.5 max-h-60 w-full min-w-[160px] overflow-auto rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="absolute left-0 z-50 mt-1.5 max-h-60 w-full min-w-0 overflow-auto rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
           {options.length === 0 ? (
             <div className="px-3.5 py-2 text-xs italic text-zinc-400">No options available</div>
           ) : (

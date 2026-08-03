@@ -1,5 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, PutCommand, DeleteCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 // @ts-ignore
 import snappy from 'snappy';
 import { Task, Transcript, LeadObject } from '../types';
@@ -262,25 +262,27 @@ export async function addTranscriptLead(
       throw new Error(`Transcript not found with id: ${transcriptId}`);
     }
 
-    let leadsArray: LeadObject[] = [];
+    let leadIdsArray: Array<string | number> = [];
     if (existing.leads) {
       try {
         const parsed = JSON.parse(existing.leads);
         if (Array.isArray(parsed)) {
-          leadsArray = parsed;
+          leadIdsArray = parsed.filter(
+            (leadId) => leadId !== undefined && leadId !== null && `${leadId}`.trim() !== ''
+          );
         }
       } catch (e) {
         console.error('Error parsing existing leads string:', e);
       }
     }
 
-    if (!leadsArray.some((l) => l.leadId === leadObj.leadId)) {
-      leadsArray.push(leadObj);
+    if (!leadIdsArray.some((existingLeadId) => `${existingLeadId}` === `${leadObj.leadId}`)) {
+      leadIdsArray.push(leadObj.leadId);
     }
 
     const updatedItem: any = {
       ...existing,
-      leads: JSON.stringify(leadsArray),
+      leads: JSON.stringify(leadIdsArray),
     };
 
     const command = new PutCommand({
@@ -315,6 +317,43 @@ export async function addTranscriptLead(
   } catch (error) {
     console.error('Error adding transcript lead:', error);
     throw error;
+  }
+}
+
+export async function getSethLeadsByIds(leadIds: Array<string | number>): Promise<any[]> {
+  try {
+    const normalizedLeadIds = Array.from(
+      new Set(
+        leadIds
+          .map((leadId) => `${leadId}`.trim())
+          .filter(Boolean)
+      )
+    );
+
+    if (normalizedLeadIds.length === 0) {
+      return [];
+    }
+
+    const command = new BatchGetCommand({
+      RequestItems: {
+        'seth-leads': {
+          Keys: normalizedLeadIds.map((leadId) => ({
+            leadId: Number.isNaN(Number(leadId)) ? leadId : Number(leadId),
+          })),
+        },
+      },
+    });
+
+    const result = await docClient.send(command);
+    const items = result.Responses?.['seth-leads'] || [];
+    const itemsByLeadId = new Map(items.map((item: any) => [`${item.leadId}`, item]));
+
+    return normalizedLeadIds
+      .map((leadId) => itemsByLeadId.get(leadId))
+      .filter(Boolean);
+  } catch (error) {
+    console.error('Error fetching leads by ids from seth-leads:', error);
+    return [];
   }
 }
 

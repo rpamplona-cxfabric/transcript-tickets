@@ -35,9 +35,9 @@ export const TasksClient = () => {
 
   return (
     <div className="workspace-canvas relative flex flex-1">
-      <div className="flex flex-col flex-1 p-6 md:p-8 pb-32 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col px-4 pb-24 pt-4 sm:px-6 sm:pb-28 sm:pt-6 md:px-8 md:pb-32 md:pt-8">
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="mb-6 flex flex-col justify-between gap-4 md:mb-8 md:flex-row md:items-center">
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white md:text-3xl">
               Support Tickets
@@ -49,15 +49,15 @@ export const TasksClient = () => {
           
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-zinc-800 transition dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-zinc-800 sm:w-auto dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
           >
             <Plus className="h-4.5 w-4.5" />
             Create Ticket
           </button>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-3 flex-1">
+        <div className="mb-6 flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+          <div className="flex flex-1 flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-zinc-400" />
               <input
@@ -93,13 +93,13 @@ export const TasksClient = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-1 rounded-xl border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="flex w-full items-center gap-1 rounded-xl border border-zinc-200 bg-white p-1 sm:w-fit dark:border-zinc-800 dark:bg-zinc-950">
             <button
               onClick={() => {
                 setViewMode('kanban');
                 localStorage.setItem('cxf_task_view_mode', 'kanban');
               }}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-colors ${
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors sm:flex-none cursor-pointer ${
                 viewMode === 'kanban' 
                   ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
                   : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
@@ -112,7 +112,7 @@ export const TasksClient = () => {
                 setViewMode('list');
                 localStorage.setItem('cxf_task_view_mode', 'list');
               }}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer transition-colors ${
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors sm:flex-none cursor-pointer ${
                 viewMode === 'list' 
                   ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
                   : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
