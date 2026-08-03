@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FileAudio, X, Clock, Plus, CheckSquare, Download, UserPlus } from 'lucide-react';
+import { FileAudio, X, Clock, CheckSquare, Download, User, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
 import { useTaskStore } from '@/lib/store/tasks';
 import { Select } from '@/components/select';
+import { Combobox, ComboboxLead } from '@/components/combobox';
+import { LeadModal } from './leadModal';
 import { Transcript, LeadObject, SelectOption } from '@/types';
 
 export const TranscriptionDetailDrawer = () => {
@@ -16,58 +18,42 @@ export const TranscriptionDetailDrawer = () => {
     tasks,
     updateTranscript
   } = useTranscriptionStore();
-  const [leadFirstName, setLeadFirstName] = useState('');
-  const [leadLastName, setLeadLastName] = useState('');
-  const [leadPhone, setLeadPhone] = useState('');
-  const [leadEmail, setLeadEmail] = useState('');
-  const [creatingLead, setCreatingLead] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<ComboboxLead | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalPrefill, setModalPrefill] = useState('');
   const [generatingTasks, setGeneratingTasks] = useState(false);
 
-  const handleCreateLead = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSelectLead = async (lead: ComboboxLead) => {
     if (!activeTranscript) return;
-    if (!leadFirstName.trim()) {
-      toast.error('First Name is required');
-      return;
-    }
-    setCreatingLead(true);
+    setSelectedLead(lead);
     try {
       const response = await fetch('/api/leads', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          firstname: leadFirstName.trim(),
-          lastname: leadLastName.trim(),
-          phoneNumber: leadPhone.trim(),
-          email: leadEmail.trim(),
+          leadId: lead.leadId,
+          firstname: lead.firstName,
+          lastname: lead.lastName,
           transcriptId: activeTranscript.transcriptId
         })
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit lead');
-      }
-
-      toast.success('Lead created and associated successfully!');
-      
       if (data.updatedTranscript) {
         updateTranscript(data.updatedTranscript);
       }
-
-      setLeadFirstName('');
-      setLeadLastName('');
-      setLeadPhone('');
-      setLeadEmail('');
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Failed to submit lead details');
-    } finally {
-      setCreatingLead(false);
+    } catch (err) {
+      console.error('Failed to associate lead:', err);
     }
+  };
+
+  const handleModalSuccess = (updatedTranscript: Transcript, leadName: string, leadId: string) => {
+    updateTranscript(updatedTranscript);
+    const parts = leadName.trim().split(/\s+/);
+    setSelectedLead({
+      leadId: Number(leadId),
+      firstName: parts[0] || '',
+      lastName: parts.slice(1).join(' ') || ''
+    });
   };
 
   const handleMapSpeaker = async (speaker: string, mappedName: string) => {
@@ -105,13 +91,18 @@ export const TranscriptionDetailDrawer = () => {
     if (!activeTranscript) return;
     setGeneratingTasks(true);
     try {
+      const leadName = selectedLead
+        ? `${selectedLead.firstName} ${selectedLead.lastName}`.trim()
+        : undefined;
+      const leadId = selectedLead?.leadId;
+
       const response = await fetch('/api/transcriptions/generate-tasks', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transcriptId: activeTranscript.transcriptId,
+          leadName,
+          leadId
         }),
       });
 
@@ -263,10 +254,7 @@ ${transcript.transcript || 'No transcript text.'}
   const allSpeakersMapped = hasGenericSpeakers && speakers.every(
     speaker => activeTranscript.speakerNames?.[speaker] && activeTranscript.speakerNames[speaker].trim() !== ''
   );
-  const hasLeadMapped = speakers.some(
-    speaker => activeTranscript.speakerNames?.[speaker] && activeTranscript.speakerNames[speaker] !== 'Seth'
-  );
-  const canGenerateTasks = !hasGenericSpeakers || (allSpeakersMapped && hasLeadMapped);
+  const canGenerateTasks = selectedLead !== null;
 
   return (
     <>
@@ -332,74 +320,60 @@ ${transcript.transcript || 'No transcript text.'}
           </div>
 
           {!activeTranscript.isProcessed && (
-            <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400 flex items-center gap-1.5">
-                  <UserPlus className="h-4.5 w-4.5 text-zinc-500" />
-                  Identify Contact / Create Lead
+                <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">
+                  Identify Contact
                 </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Create a new lead in Lofty for this transcription.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Search for an existing lead or create a new one.</p>
               </div>
 
-              <form onSubmit={handleCreateLead} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-500">First Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={leadFirstName}
-                      onChange={(e) => setLeadFirstName(e.target.value)}
-                      placeholder="e.g. John"
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650"
-                    />
+              {selectedLead ? (
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900 animate-fade-in">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950/40">
+                      <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-white">
+                        {selectedLead.firstName} {selectedLead.lastName}
+                      </p>
+                      {(selectedLead.phones?.[0] || selectedLead.emails?.[0]) && (
+                        <p className="text-[10px] font-medium text-zinc-450 dark:text-zinc-500">
+                          {selectedLead.phones?.[0] || selectedLead.emails?.[0]}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold uppercase text-zinc-500">Last Name</label>
-                    <input
-                      type="text"
-                      value={leadLastName}
-                      onChange={(e) => setLeadLastName(e.target.value)}
-                      placeholder="e.g. Doe"
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={leadPhone}
-                    onChange={(e) => setLeadPhone(e.target.value)}
-                    placeholder="e.g. +1 555 123 4567"
-                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Email Address</label>
-                  <input
-                    type="email"
-                    value={leadEmail}
-                    onChange={(e) => setLeadEmail(e.target.value)}
-                    placeholder="e.g. john.doe@example.com"
-                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-650"
-                  />
-                </div>
-
-                <div className="flex justify-end pt-2">
                   <button
-                    type="submit"
-                    disabled={creatingLead || !leadFirstName.trim()}
-                    className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer flex items-center gap-1.5 transition-colors"
+                    onClick={() => setSelectedLead(null)}
+                    title="Remove selection"
+                    className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 cursor-pointer transition-colors"
                   >
-                    {creatingLead ? 'Creating...' : 'Create Lead'}
+                    <XCircle className="h-4 w-4" />
                   </button>
                 </div>
-              </form>
+              ) : (
+                <Combobox
+                  onSelect={handleSelectLead}
+                  onCreateNew={(text) => {
+                    setModalPrefill(text);
+                    setModalOpen(true);
+                  }}
+                  placeholder="Search leads by name..."
+                />
+              )}
             </div>
           )}
+
+          <LeadModal
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            prefillName={modalPrefill}
+            transcriptId={activeTranscript.transcriptId}
+            onSuccess={handleModalSuccess}
+          />
+
 
           <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
             <div>
@@ -470,7 +444,7 @@ ${transcript.transcript || 'No transcript text.'}
                           key={lead.leadId}
                           className="flex items-center gap-1.5 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-1.5 border border-indigo-100 dark:border-indigo-900 text-xs font-semibold text-indigo-700 dark:text-indigo-400"
                         >
-                          <UserPlus className="h-3.5 w-3.5" />
+                          <User className="h-3.5 w-3.5" />
                           {lead.name}
                         </div>
                       ))}
@@ -538,9 +512,7 @@ ${transcript.transcript || 'No transcript text.'}
               </button>
               {!canGenerateTasks && (
                 <p className="text-[10px] font-medium text-center text-red-550 dark:text-red-400 leading-normal animate-fade-in">
-                  {!allSpeakersMapped 
-                    ? '* Map all generic speakers (e.g. Speaker 1) above to enable task generation.'
-                    : '* Map at least one speaker to a lead (not Seth) to enable task generation.'}
+                  * Search and select a lead above to enable task generation.
                 </p>
               )}
             </div>

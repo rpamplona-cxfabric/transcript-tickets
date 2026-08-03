@@ -330,3 +330,52 @@ export async function getProcessedTranscripts(): Promise<string[]> {
     return [];
   }
 }
+
+export async function searchSethLeads(query: string): Promise<any[]> {
+  try {
+    const command = new ScanCommand({
+      TableName: 'seth-leads',
+    });
+    const result = await docClient.send(command);
+    const items = result.Items || [];
+
+    if (!query || query.trim() === '') {
+      return items.slice(0, 50);
+    }
+
+    const lowerQuery = query.toLowerCase().trim();
+    const filtered = items.filter((item: any) => {
+      const fullName = `${item.firstName || ''} ${item.lastName || ''}`.trim().toLowerCase();
+      return fullName.includes(lowerQuery) ||
+             (item.firstName && item.firstName.toLowerCase().includes(lowerQuery)) ||
+             (item.lastName && item.lastName.toLowerCase().includes(lowerQuery));
+    });
+
+    return filtered.slice(0, 50);
+  } catch (error) {
+    console.error('Error scanning seth-leads table:', error);
+    return [];
+  }
+}
+
+export async function checkLeadExists(firstName: string, lastName: string): Promise<boolean> {
+  try {
+    const command = new ScanCommand({
+      TableName: 'seth-leads',
+    });
+    const result = await docClient.send(command);
+    const items = result.Items || [];
+
+    const lowerFirst = firstName.trim().toLowerCase();
+    const lowerLast = lastName.trim().toLowerCase();
+
+    return items.some((item: any) => {
+      const itemFirst = (item.firstName || '').trim().toLowerCase();
+      const itemLast = (item.lastName || '').trim().toLowerCase();
+      return itemFirst === lowerFirst && itemLast === lowerLast;
+    });
+  } catch (error) {
+    console.error('Error checking duplicate lead in seth-leads:', error);
+    return false;
+  }
+}

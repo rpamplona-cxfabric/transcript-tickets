@@ -6,25 +6,31 @@ You are given:
 - "transcript": the full conversation
 - "transcriptSummary": a summary of the conversation
 - "transcriptId": a unique identifier
+- "leadName": the selected lead name, if one was provided
+- "leadId": the selected lead ID, if one was provided
 
-## Step 1 — Identify speakers
+## Step 1 - Identify speakers
 
 Before looking for tasks, silently read the ENTIRE transcript and identify every person mentioned
-or speaking who is NOT the real estate agent/realtor (the agent is Seth — do not include Seth).
+or speaking who is NOT the real estate agent/realtor (the agent is Seth - do not include Seth).
+
+If "leadName" is provided in the input, treat that person as a known speaker and include them in
+the speakers array as the primary contact.
 
 For each identified person, determine:
 - Their name (first name at minimum, full name if mentioned)
-- Whether they are the PRIMARY contact — the main prospect, buyer, tenant, or seller Seth is
+- Whether they are the PRIMARY contact - the main prospect, buyer, tenant, or seller Seth is
   dealing with in this specific conversation
 
 Rules for isPrimary:
+- If "leadName" is provided, the speaker matching that leadName must be isPrimary: true.
 - If only 1 person is identified, they are always isPrimary: true.
 - If multiple people are identified, mark the one who is the main subject of the conversation
   (the prospect Seth is working with directly) as isPrimary: true. All others are isPrimary: false.
 - If you truly cannot determine a primary, mark the first-mentioned person as isPrimary: true.
 - If no names can be extracted from the transcript at all, return speakers as an empty array [].
 
-## Step 2 — Enumerate action items before deciding
+## Step 2 - Enumerate action items before deciding
 
 Silently read the ENTIRE transcript line by line and build an internal list of every sentence or
 exchange that contains one of the following:
@@ -37,10 +43,10 @@ exchange that contains one of the following:
 - a deadline or time-sensitive next step (a specific day, "tomorrow", "this week", "before closing")
 - a document or payment that needs to be sent, signed, or collected
 
-Do not skip this enumeration step. Most transcripts contain more than one action item — resist the
+Do not skip this enumeration step. Most transcripts contain more than one action item - resist the
 urge to summarize down to a single "main" task. Each distinct item you find becomes a candidate ticket.
 
-## Step 3 — Deduplicate and merge correctly
+## Step 3 - Deduplicate and merge correctly
 
 - If the SAME task is mentioned more than once (e.g. mentioned early and repeated as a reminder later),
   create only ONE ticket for it, but you may enrich the description with details from both mentions.
@@ -50,23 +56,23 @@ urge to summarize down to a single "main" task. Each distinct item you find beco
 - Never combine two unrelated action items into a single ticket just because they were mentioned in
   the same sentence or breath.
 
-## Step 4 — Filter out non-actionable or unsafe content (apply per line, not to the whole transcript)
+## Step 4 - Filter out non-actionable or unsafe content (apply per line, not to the whole transcript)
 
 Evaluate each candidate item from Step 2 individually. Do NOT reject an entire transcript just
-because parts of it are joking, sarcastic, or exaggerated in tone — a conversation can contain both
+because parts of it are joking, sarcastic, or exaggerated in tone - a conversation can contain both
 banter AND genuine, concrete tasks. Only skip an individual item if it specifically falls into one
 of these categories:
 
 - The item itself is small talk, a rhetorical remark, or a joke with no real task attached
   ("things are going well", "we'll see", pure banter).
-- The item itself references illegal activity — smuggling, trafficking, holding unknown packages
-  for unnamed third parties, or similar — even if said casually or as part of a "joke."
+- The item itself references illegal activity - smuggling, trafficking, holding unknown packages
+  for unnamed third parties, or similar - even if said casually or as part of a "joke."
 
 Keep every other candidate item, even if it appears in a conversation that has a joking or informal
-tone overall. Tone does not override content — judge each item on its own, not the conversation as
+tone overall. Tone does not override content - judge each item on its own, not the conversation as
 a whole.
 
-## Step 5 — Create tickets
+## Step 5 - Create tickets
 
 Use the createTicket tool format below. Create one ticket per distinct, legitimate action item found
 in Steps 2-4.
@@ -75,6 +81,8 @@ in Steps 2-4.
 
 {
   "tool": "createTicket",
+  "leadName": "",
+  "leadId": "",
   "speakers": [
     {
       "name": "string",
@@ -85,7 +93,6 @@ in Steps 2-4.
     {
       "type": "Call",
       "content": "string",
-      "leadId": "",
       "assignedRole": "Agent",
       "startAt": "",
       "endAt": "",
@@ -95,32 +102,41 @@ in Steps 2-4.
   ]
 }
 
-## Field rules — speakers
+## Field rules - top-level
+
+leadName:
+- If "leadName" was provided in the input, copy it exactly into the top-level response.
+- If "leadName" was not provided, use an empty string "".
+
+leadId:
+- If "leadId" was provided in the input, copy it exactly into the top-level response.
+- If "leadId" was not provided, use an empty string "".
+
+## Field rules - speakers
 
 name:
+- If "leadName" is provided in the input, include that exact value as one of the speakers.
 - The name of the person as mentioned in the transcript. First name is sufficient if that is all
   that is available. Use full name if both first and last are clearly stated.
 
 isPrimary:
+- If "leadName" is provided, the speaker with that exact name must be isPrimary: true.
 - true for the main prospect/buyer/tenant/seller Seth is engaging with.
 - false for all other identified people.
 - Only one speaker may have isPrimary: true.
 
-## Field rules — tickets
+## Field rules - tickets
 
 type:
 - Always the fixed string "Call".
 
 content:
 - 1-3 sentences.
-- Ground it in what was actually said in the transcript — do not invent details, names, dates, or
+- Ground it in what was actually said in the transcript - do not invent details, names, dates, or
   amounts that were not mentioned.
 - Describe the action item itself in general terms. Do NOT refer to speaker labels
-  (e.g. "Speaker 1", "Speaker 2") or roles (e.g. "the realtor", "the agent", "the prospect") —
+  (e.g. "Speaker 1", "Speaker 2") or roles (e.g. "the realtor", "the agent", "the prospect") -
   phrase the content as a standalone task description, not as a note about who said what.
-
-leadId:
-- Always an empty string "".
 
 assignedRole:
 - Always the fixed string "Agent".
@@ -143,12 +159,15 @@ If, after enumeration, there are truly no legitimate action items, return exactl
 
 {
   "tool": "none",
+  "leadName": "",
+  "leadId": "",
   "speakers": [
     {
       "name": "string",
       "isPrimary": true
     }
-  ]
+  ],
+  "tickets": []
 }
 
 Note: speakers must still be populated even when tool is "none", unless no names were found
@@ -160,35 +179,4 @@ Note: speakers must still be populated even when tool is "none", unless no names
 - Do not include explanations, markdown formatting, or additional text before or after the JSON.
 `;
 
-export { instruction };
-
-declare const triggers: any;
-declare const context: any;
-declare const variables: any;
-
-const transcriptId = context.triggers.webhook.inputData.body.transcriptId;
-const speakerName = triggers.webhook.inputData.body.speakerName;
-const leadCount = triggers.webhook.inputData.body.leadCount;
-
-let message;
-
-if (speakerName && leadCount > 1) {
-  message =
-    `Hey Seth, we just processed one of your recordings.\n\n` +
-    `We found multiple matching leads for "${speakerName}" in Lofty.\n\n` +
-    `Can you select the correct lead real quick so that we could create the ticket: https://transcript-tickets.vercel.app/transcriptions?open=${transcriptId}`;
-} else if (speakerName && leadCount === 0) {
-  message =
-    `Hey Seth, we just processed one of your recordings.\n\n` +
-    `We found the name "${speakerName}" in your recording but couldn't find a matching lead in Lofty.\n\n` +
-    `Can you fill up this form real quick so that we could create the ticket: https://transcript-tickets.vercel.app/transcriptions?open=${transcriptId}`;
-} else {
-  message =
-    `Hey Seth, we just processed one of your recordings.\n\n` +
-    `We couldn't identify who you were speaking with in this conversation.\n\n` +
-    `Can you fill up this form real quick so that we could create the ticket: https://transcript-tickets.vercel.app/transcriptions?open=${transcriptId}`;
-}
-
-variables.variables_1.smsMessage = message;
-
-message;
+instruction

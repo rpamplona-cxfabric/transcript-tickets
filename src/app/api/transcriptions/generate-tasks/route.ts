@@ -3,7 +3,7 @@ import { getTranscripts } from '../../../../lib/db';
 
 export async function POST(request: Request) {
   try {
-    const { transcriptId } = await request.json();
+    const { transcriptId, leadName, leadId } = await request.json();
 
     if (!transcriptId) {
       return NextResponse.json(
@@ -12,7 +12,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Fetch transcript from DynamoDB
     const transcripts = await getTranscripts();
     const transcript = transcripts.find(t => t.transcriptId === transcriptId);
 
@@ -23,13 +22,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Perform speaker replacement to build the mapped transcript
     let mappedTranscript = transcript.transcript;
     if (transcript.speakerNames) {
       for (const [genericName, mappedName] of Object.entries(transcript.speakerNames)) {
         if (mappedName) {
-          // Replace generic name with mapped name (e.g. "Speaker 1:" -> "Cathy Moore:")
-          // Handles optional timestamp prefix in brackets, e.g. "[00:01:23] Speaker 1:"
           const escapedGeneric = genericName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
           const regex = new RegExp(`(^|\\n|\\r)(\\[.*?\\])?\\s*${escapedGeneric}\\s*:`, 'g');
           mappedTranscript = mappedTranscript.replace(regex, `$1$2 ${mappedName}:`);
@@ -37,18 +33,18 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Retrieve Flow A webhook URL
     const webhookUrl = process.env.FLOW_A_WEBHOOK_URL;
     if (!webhookUrl) {
       console.warn('FLOW_A_WEBHOOK_URL environment variable is not set. Task generation will proceed in mock mode.');
       return NextResponse.json({
         success: true,
         message: 'Task generation triggered (mock mode - FLOW_A_WEBHOOK_URL not configured)',
-        mappedTranscript
+        mappedTranscript,
+        leadName,
+        leadId
       });
     }
 
-    // 4. Trigger Flow A Webhook
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
@@ -57,7 +53,9 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         transcriptId: transcript.transcriptId,
         transcript: mappedTranscript,
-        transcriptSummary: transcript.transcriptSummary
+        transcriptSummary: transcript.transcriptSummary,
+        leadName,
+        leadId
       })
     });
 
