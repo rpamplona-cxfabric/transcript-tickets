@@ -24,7 +24,6 @@ export const TasksClient = () => {
     isCreateModalOpen,
     setIsCreateModalOpen,
     openEditModal,
-    fetchTasks,
     handleQuickUpdate,
     filteredTasks
   } = useTasksClient();
@@ -140,11 +139,8 @@ export const TasksClient = () => {
         )}
       </div>
 
-      <TaskModal 
-        key={editingTask ? editingTask.ticketId : (isCreateModalOpen ? 'create' : 'closed')} 
-        onRefresh={fetchTasks} 
-      />
-      <DeleteConfirmationModal onRefresh={fetchTasks} />
+      <TaskModal key={editingTask ? editingTask.ticketId : (isCreateModalOpen ? 'create' : 'closed')} />
+      <DeleteConfirmationModal />
     </div>
   );
 };

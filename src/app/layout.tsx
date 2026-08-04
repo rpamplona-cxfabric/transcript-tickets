@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from 'react-hot-toast';
 import { AppAuthProvider } from "@/components/auth/authProvider";
+import { QueryProvider } from "@/components/queryProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,8 +29,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 font-sans">
         <AppAuthProvider>
-          {children}
-          <Toaster position="top-right" toastOptions={{ className: 'dark:bg-zinc-900 dark:text-white dark:border dark:border-zinc-800' }} />
+          <QueryProvider>
+            {children}
+            <Toaster position="top-right" toastOptions={{ className: 'dark:bg-zinc-900 dark:text-white dark:border dark:border-zinc-800' }} />
+          </QueryProvider>
         </AppAuthProvider>
         <Script id="theme-initializer" strategy="beforeInteractive">
           {`

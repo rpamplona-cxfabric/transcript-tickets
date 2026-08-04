@@ -1,25 +1,23 @@
 'use client';
 
-import { useTaskStore } from '@/lib/store/tasks';
-import { useTranscriptionStore } from '@/lib/store/transcriptions';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTasks } from '@/lib/api/tasks';
+import { fetchTranscriptions } from '@/lib/api/transcriptions';
+import { queryKeys } from '@/lib/queryKeys';
 import { DashboardMetrics } from './metrics';
 import { RecentTranscriptions } from './recentTranscriptions';
 import { RecentTasks } from './recentTasks';
 
 export const DashboardClient = () => {
-  const tasks = useTaskStore((state) => state.tasks);
-  const isTasksReady = useTaskStore((state) => state.isReady);
-  const transcripts = useTranscriptionStore((state) => state.transcripts);
-  const isTranscriptionsReady = useTranscriptionStore((state) => state.isReady);
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery({ queryKey: queryKeys.tasks, queryFn: fetchTasks });
+  const { data: transcripts = [], isLoading: transcriptsLoading } = useQuery({ queryKey: queryKeys.transcriptions, queryFn: fetchTranscriptions });
 
-  if (!isTasksReady || !isTranscriptionsReady) {
-    return null;
-  }
+  if (tasksLoading || transcriptsLoading) return null;
 
   const totalTranscripts = transcripts.length;
   const totalTasks = tasks.length;
-  const openTasks = tasks.filter(t => t.status === 'open' || t.status === 'in-progress').length;
-  const highPriorityTasks = tasks.filter(t => t.priority === 'high' && t.status !== 'resolved').length;
+  const openTasks = tasks.filter((t) => t.status === 'open' || t.status === 'in-progress').length;
+  const highPriorityTasks = tasks.filter((t) => t.priority === 'high' && t.status !== 'resolved').length;
 
   return (
     <div className="workspace-canvas flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">

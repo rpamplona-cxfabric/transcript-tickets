@@ -1,54 +1,31 @@
 'use client';
 
-import { useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTaskStore } from '@/lib/store/tasks';
+import { deleteTask } from '@/lib/api/tasks';
+import { queryKeys } from '@/lib/queryKeys';
 
-interface DeleteConfirmationModalProps {
-  onRefresh: () => Promise<void> | void;
-}
+export const DeleteConfirmationModal = () => {
+  const qc = useQueryClient();
+  const { deletingTaskId, setDeletingTaskId } = useTaskStore();
 
-export const DeleteConfirmationModal = ({ onRefresh }: DeleteConfirmationModalProps) => {
-  const {
-    deletingTaskId,
-    setDeletingTaskId
-  } = useTaskStore();
-
-  const [loading, setLoading] = useState(false);
+  const mutation = useMutation({
+    mutationFn: () => deleteTask(deletingTaskId!),
+    onSuccess: () => {
+      toast.success('Task deleted successfully!');
+      qc.invalidateQueries({ queryKey: queryKeys.tasks });
+      setDeletingTaskId(null);
+    },
+    onError: (err: Error) => toast.error(`Failed to delete task: ${err.message}`),
+  });
 
   if (!deletingTaskId) return null;
 
-  const handleClose = () => {
-    setDeletingTaskId(null);
-  };
-
-  const handleDelete = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/tasks/${deletingTaskId}`, {
-        method: 'DELETE'
-      });
-
-      if (!res.ok) throw new Error('Could not delete task');
-
-      toast.success('Task deleted successfully!');
-      handleClose();
-      await onRefresh();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`Failed to delete task: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <>
-      <div
-        onClick={handleClose}
-        className="fixed inset-0 z-50 bg-zinc-950/35 backdrop-blur-xs transition-opacity duration-200 cursor-pointer"
-      />
+      <div onClick={() => setDeletingTaskId(null)} className="fixed inset-0 z-50 bg-zinc-950/35 backdrop-blur-xs transition-opacity duration-200 cursor-pointer" />
 
       <div className="fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex items-start gap-4">
@@ -66,22 +43,22 @@ export const DeleteConfirmationModal = ({ onRefresh }: DeleteConfirmationModalPr
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
-            onClick={handleClose}
-            disabled={loading}
+            onClick={() => setDeletingTaskId(null)}
+            disabled={mutation.isPending}
             className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="button"
-            onClick={handleDelete}
-            disabled={loading}
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
             className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-red-500 cursor-pointer disabled:opacity-50"
           >
-            {loading ? 'Deleting...' : 'Delete'}
+            {mutation.isPending ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>
     </>
   );
-}
+};

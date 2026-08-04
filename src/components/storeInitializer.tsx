@@ -1,98 +1,41 @@
 'use client';
 
 import { AlertTriangle, RotateCw } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTaskStore } from '@/lib/store/tasks';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
-import { Task, Transcript } from '@/types';
+import { fetchTasks } from '@/lib/api/tasks';
+import { fetchTranscriptions } from '@/lib/api/transcriptions';
+import { queryKeys } from '@/lib/queryKeys';
 
-interface StoreInitializerProps {
-  children: React.ReactNode;
-}
+export const StoreInitializer = ({ children }: { children: React.ReactNode }) => {
+  const tasksQuery = useQuery({ queryKey: queryKeys.tasks, queryFn: fetchTasks });
+  const transcriptionsQuery = useQuery({ queryKey: queryKeys.transcriptions, queryFn: fetchTranscriptions });
 
-const getJson = async <T,>(path: string, label: string): Promise<T> => {
-  const response = await fetch(path, { cache: 'no-store' });
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new Error(body?.error || `Failed to load ${label}`);
-  }
-
-  return response.json();
-};
-
-const loadWorkspaceData = async () => {
-  const [tasksResult, transcriptsResult] = await Promise.allSettled([
-    getJson<Task[]>('/api/tasks', 'tasks'),
-    getJson<Transcript[]>('/api/transcriptions', 'transcriptions'),
-  ]);
-
-  const tasks = tasksResult.status === 'fulfilled' ? tasksResult.value : [];
-  const transcripts =
-    transcriptsResult.status === 'fulfilled' ? transcriptsResult.value : [];
-  const failures = [tasksResult, transcriptsResult]
-    .filter((result) => result.status === 'rejected')
-    .map((result) => (result as PromiseRejectedResult).reason?.message)
-    .filter(Boolean);
-
-  return {
-    tasks,
-    transcripts,
-    errorMessage: failures.join(' '),
-  };
-};
-
-let activeLoadPromise: Promise<Awaited<ReturnType<typeof loadWorkspaceData>>> | null = null;
-
-const loadWorkspaceDataDeduplicated = () => {
-  if (!activeLoadPromise) {
-    activeLoadPromise = loadWorkspaceData().finally(() => {
-      activeLoadPromise = null;
-    });
-  }
-  return activeLoadPromise;
-};
-
-export const StoreInitializer = ({ children }: StoreInitializerProps) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const applyWorkspaceData = useCallback(({
-    tasks,
-    transcripts,
-    errorMessage: nextErrorMessage,
-  }: Awaited<ReturnType<typeof loadWorkspaceData>>) => {
-    useTaskStore.setState({ tasks, isReady: true });
-    useTranscriptionStore.setState({ transcripts, tasks, isReady: true });
-    setErrorMessage(nextErrorMessage);
-    setIsLoading(false);
-  }, []);
+  const setTasks = useTaskStore((s) => s.setTasks);
+  const setTranscriptions = useTranscriptionStore((s) => s.setTranscripts);
+  const setTranscriptionTasks = useTranscriptionStore((s) => s.setTasks);
 
   useEffect(() => {
-    // If store is already initialized, skip fetching again
-    if (useTaskStore.getState().isReady && useTranscriptionStore.getState().isReady) {
-      setIsLoading(false);
-      return;
+    if (tasksQuery.data) {
+      setTasks(tasksQuery.data);
+      setTranscriptionTasks(tasksQuery.data);
     }
+  }, [tasksQuery.data, setTasks, setTranscriptionTasks]);
 
-    let cancelled = false;
+  useEffect(() => {
+    if (transcriptionsQuery.data) {
+      setTranscriptions(transcriptionsQuery.data);
+    }
+  }, [transcriptionsQuery.data, setTranscriptions]);
 
-    void loadWorkspaceDataDeduplicated().then((result) => {
-      if (!cancelled) {
-        applyWorkspaceData(result);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [applyWorkspaceData]);
+  const isLoading = tasksQuery.isLoading || transcriptionsQuery.isLoading;
+  const errors = [tasksQuery.error, transcriptionsQuery.error].filter(Boolean) as Error[];
 
   const retry = () => {
-    setIsLoading(true);
-    setErrorMessage('');
-    useTaskStore.setState({ isReady: false });
-    useTranscriptionStore.setState({ isReady: false });
-    void loadWorkspaceData().then(applyWorkspaceData);
+    tasksQuery.refetch();
+    transcriptionsQuery.refetch();
   };
 
   if (isLoading) {
@@ -108,14 +51,14 @@ export const StoreInitializer = ({ children }: StoreInitializerProps) => {
 
   return (
     <>
-      {errorMessage && (
+      {errors.length > 0 && (
         <div className="flex items-start justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-3 text-amber-950 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
           <div className="flex min-w-0 items-start gap-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <div>
               <p className="text-sm font-semibold">Workspace data is temporarily unavailable</p>
               <p className="mt-0.5 text-xs opacity-80">
-                Check the server console and AWS credentials. The workspace is running with empty data.
+                {errors.map((e) => e.message).join(' ')}
               </p>
             </div>
           </div>

@@ -1,116 +1,83 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTaskStore } from '@/lib/store/tasks';
+import { fetchTasks, updateTask } from '@/lib/api/tasks';
+import { queryKeys } from '@/lib/queryKeys';
 import { Task } from '@/types';
 
 export const useTasksClient = () => {
+  const qc = useQueryClient();
+
   const {
-    tasks,
-    setTasks,
-    searchQuery,
-    setSearchQuery,
-    priorityFilter,
-    setPriorityFilter,
-    statusFilter,
-    setStatusFilter,
-    viewMode,
-    setViewMode,
-    editingTask,
-    setEditingTask,
+    searchQuery, setSearchQuery,
+    priorityFilter, setPriorityFilter,
+    statusFilter, setStatusFilter,
+    viewMode, setViewMode,
+    editingTask, setEditingTask,
     setDeletingTaskId,
-    isCreateModalOpen,
-    setIsCreateModalOpen,
-    isReady
+    isCreateModalOpen, setIsCreateModalOpen,
   } = useTaskStore();
 
-  const openEditModal = useCallback((task: Task) => {
-    setEditingTask(task);
-  }, [setEditingTask]);
+  const { data: tasks = [], isLoading } = useQuery({
+    queryKey: queryKeys.tasks,
+    queryFn: fetchTasks,
+  });
+
+  const quickUpdateMutation = useMutation({
+    mutationFn: ({ task, updates }: { task: Task; updates: Partial<Task> }) =>
+      updateTask({ id: task.ticketId, ...task, ...updates }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.tasks });
+      toast.success('Task updated successfully!');
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to update task'),
+  });
+
+  const openEditModal = useCallback((task: Task) => setEditingTask(task), [setEditingTask]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedMode = localStorage.getItem('cxf_task_view_mode');
-      if (savedMode && (savedMode === 'kanban' || savedMode === 'list')) {
-        setViewMode(savedMode as 'kanban' | 'list');
-      }
-    }
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem('cxf_task_view_mode');
+    if (saved === 'kanban' || saved === 'list') setViewMode(saved);
   }, [setViewMode]);
 
-  const fetchTasks = async () => {
-    try {
-      const res = await fetch('/api/tasks');
-      if (!res.ok) throw new Error('Failed to load tasks');
-      const data = await res.json();
-      setTasks(data);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to reload tasks');
-    }
-  };
-
   useEffect(() => {
-    if (tasks.length > 0) {
-      const params = new URLSearchParams(window.location.search);
-      const openId = params.get('open');
-      if (openId) {
-        const matchedTask = tasks.find(t => t.ticketId === openId);
-        if (matchedTask) {
-          openEditModal(matchedTask);
-        }
-      }
+    if (tasks.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const openId = params.get('open');
+    if (openId) {
+      const matched = tasks.find((t) => t.ticketId === openId);
+      if (matched) openEditModal(matched);
     }
   }, [tasks, openEditModal]);
 
   const handleQuickUpdate = async (task: Task, updates: Partial<Task>) => {
-    try {
-      const res = await fetch(`/api/tasks/${task.ticketId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...task,
-          ...updates
-        })
-      });
-
-      if (!res.ok) throw new Error('Quick update failed');
-      await fetchTasks();
-      toast.success('Task updated successfully!');
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to update task');
-    }
+    await quickUpdateMutation.mutateAsync({ task, updates });
   };
 
-  const filteredTasks = tasks.filter(t => {
-    const matchesSearch = 
-      t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredTasks = tasks.filter((t) => {
+    const matchesSearch =
+      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.ticketId.includes(searchQuery);
-
     const matchesPriority = priorityFilter === 'all' || t.priority === priorityFilter;
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
-
     return matchesSearch && matchesPriority && matchesStatus;
   });
 
   return {
     tasks,
-    isReady,
-    searchQuery,
-    setSearchQuery,
-    priorityFilter,
-    setPriorityFilter,
-    statusFilter,
-    setStatusFilter,
-    viewMode,
-    setViewMode,
+    isReady: !isLoading,
+    searchQuery, setSearchQuery,
+    priorityFilter, setPriorityFilter,
+    statusFilter, setStatusFilter,
+    viewMode, setViewMode,
     editingTask,
     setDeletingTaskId,
-    isCreateModalOpen,
-    setIsCreateModalOpen,
+    isCreateModalOpen, setIsCreateModalOpen,
     openEditModal,
-    fetchTasks,
     handleQuickUpdate,
-    filteredTasks
+    filteredTasks,
   };
 };

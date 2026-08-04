@@ -1,275 +1,173 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
-import { X, CalendarDays, FileAudio } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTaskStore } from '@/lib/store/tasks';
+import { createTask, updateTask } from '@/lib/api/tasks';
+import { queryKeys } from '@/lib/queryKeys';
 import { Select } from '@/components/select';
 
-interface TaskModalProps {
-  onRefresh: () => Promise<void> | void;
-}
+const schema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  priority: z.enum(['low', 'high']),
+  status: z.enum(['open', 'in-progress', 'resolved']),
+  transcriptId: z.string().optional(),
+});
 
-interface FormData {
-  title: string;
-  description: string;
-  priority: 'low' | 'high';
-  status: 'open' | 'in-progress' | 'resolved';
-  transcriptId: string;
-}
+type FormValues = z.infer<typeof schema>;
 
-export const TaskModal = ({ onRefresh }: TaskModalProps) => {
-  const {
-    isCreateModalOpen,
-    setIsCreateModalOpen,
-    editingTask,
-    setEditingTask
-  } = useTaskStore();
+export const TaskModal = () => {
+  const qc = useQueryClient();
+  const { isCreateModalOpen, setIsCreateModalOpen, editingTask, setEditingTask } = useTaskStore();
 
-  const [formData, setFormData] = useState<FormData>(() => {
+  const isOpen = isCreateModalOpen || !!editingTask;
+
+  const getDefaultValues = (): FormValues => {
     if (editingTask) {
       return {
         title: editingTask.title || '',
         description: editingTask.description || '',
         priority: editingTask.priority || 'low',
         status: editingTask.status || 'open',
-        transcriptId: editingTask.transcriptId || ''
+        transcriptId: editingTask.transcriptId || '',
       };
     }
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const createFromId = params.get('createFrom');
+      const createFromId = new URLSearchParams(window.location.search).get('createFrom');
       if (createFromId && isCreateModalOpen) {
         return {
           title: `Follow-up for Call ${createFromId.slice(0, 8)}`,
           description: `This task was created based on call transcript ${createFromId}.\n\nNext Steps:\n- [ ] Review call details\n- [ ] Action item`,
           priority: 'low',
           status: 'open',
-          transcriptId: createFromId
+          transcriptId: createFromId,
         };
       }
     }
-    return {
-      title: '',
-      description: '',
-      priority: 'low',
-      status: 'open',
-      transcriptId: ''
-    };
+    return { title: '', description: '', priority: 'low', status: 'open', transcriptId: '' };
+  };
+
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: getDefaultValues(),
   });
-  const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
 
-  const isOpen = isCreateModalOpen || !!editingTask;
-
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) reset(getDefaultValues());
+  }, [isOpen, editingTask]);
 
   const handleClose = () => {
     setIsCreateModalOpen(false);
     setEditingTask(null);
-    setFormData({ title: '', description: '', priority: 'low', status: 'open', transcriptId: '' });
-    setFormError(null);
   };
 
-  const hasChanges = () => {
-    if (isCreateModalOpen) return true;
-    if (!editingTask) return false;
-
-    return (
-      formData.title.trim() !== (editingTask.title || '') ||
-      formData.description.trim() !== (editingTask.description || '') ||
-      formData.priority !== (editingTask.priority || 'low') ||
-      formData.status !== (editingTask.status || 'open')
-    );
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!formData.title.trim() || !formData.description.trim()) {
-      setFormError('Title and description are required.');
-      return;
-    }
-
-    setFormLoading(true);
-    setFormError(null);
-
-    try {
-      if (isCreateModalOpen) {
-        const res = await fetch('/api/tasks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: formData.title.trim(),
-            description: formData.description.trim(),
-            priority: formData.priority,
-            status: 'open',
-            transcriptId: formData.transcriptId || ''
-          })
-        });
-
-        if (!res.ok) throw new Error('Could not create task');
-        toast.success('Task created successfully!');
-      } else if (editingTask) {
-        const res = await fetch(`/api/tasks/${editingTask.ticketId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: formData.title.trim(),
-            description: formData.description.trim(),
-            priority: formData.priority,
-            status: formData.status
-          })
-        });
-
-        if (!res.ok) throw new Error('Could not update task');
-        toast.success('Task updated successfully!');
-      }
-
+  const createMutation = useMutation({
+    mutationFn: createTask,
+    onSuccess: () => {
+      toast.success('Task created successfully!');
+      qc.invalidateQueries({ queryKey: queryKeys.tasks });
       handleClose();
-      await onRefresh();
-    } catch (err: any) {
-      setFormError(err.message);
-      toast.error(err.message || 'Failed to save task');
-    } finally {
-      setFormLoading(false);
-    }
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to create task'),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (values: FormValues) => updateTask({ id: editingTask!.ticketId, ...values }),
+    onSuccess: () => {
+      toast.success('Task updated successfully!');
+      qc.invalidateQueries({ queryKey: queryKeys.tasks });
+      handleClose();
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to update task'),
+  });
+
+  const onSubmit = (values: FormValues) => {
+    if (isCreateModalOpen) createMutation.mutate(values);
+    else updateMutation.mutate(values);
   };
 
-  const formatTime = (timeStr: string | undefined) => {
-    if (!timeStr) return 'N/A';
-    try {
-      const date = new Date(timeStr);
-      return date.toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      });
-    } catch {
-      return timeStr;
-    }
-  };
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  if (!isOpen) return null;
 
   return (
     <>
-      <div
-        onClick={handleClose}
-        className="fixed inset-0 z-40 bg-zinc-950/30 backdrop-blur-xs transition-opacity duration-200 cursor-pointer"
-      />
+      <div onClick={handleClose} className="fixed inset-0 z-40 bg-zinc-950/30 backdrop-blur-xs transition-opacity duration-200 cursor-pointer" />
 
       <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800">
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6 dark:border-zinc-800">
           <h2 className="text-base font-bold text-zinc-900 dark:text-white">
             {isCreateModalOpen ? 'Create Support Ticket' : 'Edit Support Ticket'}
           </h2>
-          <button
-            onClick={handleClose}
-            className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer"
-          >
+          <button onClick={handleClose} className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
-            {formError && (
-              <div className="rounded-xl bg-red-50 p-4 text-xs font-semibold text-red-800 border border-red-100 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30">
-                {formError}
-              </div>
-            )}
-
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-zinc-700 dark:text-zinc-400">Ticket Title</label>
               <input
-                type="text"
-                required
+                {...register('title')}
                 placeholder="Brief summary of the issue..."
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-zinc-950 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white/40"
               />
+              {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-zinc-700 dark:text-zinc-400">Detailed Description</label>
               <textarea
-                required
+                {...register('description')}
                 rows={5}
                 placeholder="Describe the task details..."
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-zinc-950 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-white focus:ring-1 focus:ring-zinc-950 dark:focus:ring-white/40"
               />
+              {errors.description && <p className="text-xs text-red-500">{errors.description.message}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-bold text-zinc-700 dark:text-zinc-400">Priority</label>
                 <Select
-                  value={formData.priority}
-                  onChange={(val) => setFormData({ ...formData, priority: val as 'low' | 'high' })}
+                  value={watch('priority')}
+                  onChange={(val) => setValue('priority', val as 'low' | 'high')}
                   options={[
                     { value: 'low', label: 'Low Priority' },
-                    { value: 'high', label: 'High Priority' }
+                    { value: 'high', label: 'High Priority' },
                   ]}
                   className="w-full"
                 />
               </div>
-
               <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-bold text-zinc-700 dark:text-zinc-400">Status</label>
                 <Select
-                  value={formData.status}
-                  onChange={(val) => setFormData({ ...formData, status: val as 'open' | 'in-progress' | 'resolved' })}
+                  value={watch('status')}
+                  onChange={(val) => setValue('status', val as 'open' | 'in-progress' | 'resolved')}
                   options={[
                     { value: 'open', label: 'Open' },
                     { value: 'in-progress', label: 'In Progress' },
-                    { value: 'resolved', label: 'Resolved' }
+                    { value: 'resolved', label: 'Resolved' },
                   ]}
                   className="w-full"
-                  placeholder="Status"
                 />
               </div>
             </div>
-
-            {!isCreateModalOpen && editingTask && (
-              <div className="border-t border-zinc-100 pt-4 dark:border-zinc-900/60 mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-zinc-500">
-                <div className="flex items-center gap-1.5">
-                  <CalendarDays className="h-4 w-4 text-zinc-400" />
-                  <span>Created:</span>
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    {formatTime(editingTask.createdAt)}
-                  </span>
-                </div>
-                {editingTask.transcriptId && (
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-zinc-500 dark:text-zinc-400">Associated Transcript:</span>
-                    <Link
-                      href={`/transcriptions?open=${editingTask.transcriptId}`}
-                      className="flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
-                    >
-                      <FileAudio className="h-3.5 w-3.5" />
-                      View Call
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
-          <div className="border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 cursor-pointer"
-            >
+          <div className="shrink-0 border-t border-zinc-200 p-6 dark:border-zinc-800 flex justify-end gap-3">
+            <button type="button" onClick={handleClose} className="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 cursor-pointer">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={formLoading || !hasChanges()}
-              className="rounded-xl bg-zinc-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer"
-            >
-              {formLoading ? 'Saving...' : 'Save Ticket'}
+            <button type="submit" disabled={isPending} className="rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer">
+              {isPending ? 'Saving...' : isCreateModalOpen ? 'Create Ticket' : 'Save Changes'}
             </button>
           </div>
         </form>
