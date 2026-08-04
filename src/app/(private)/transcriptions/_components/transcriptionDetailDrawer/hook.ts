@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
 import { associateLead, fetchLeadsByIds } from '@/lib/api/leads';
-import { patchSpeakerNames, generateTasks } from '@/lib/api/transcriptions';
+import { patchSpeakerNames, generateTasks, pollUntilProcessed } from '@/lib/api/transcriptions';
 import { queryKeys } from '@/lib/queryKeys';
 import { ComboboxLead } from '@/components/combobox';
-import { Transcript, SelectOption } from '@/types';
+import { Transcript } from '@/types';
 
 export const useTranscriptionDetailDrawer = () => {
   const qc = useQueryClient();
@@ -15,6 +15,11 @@ export const useTranscriptionDetailDrawer = () => {
   const [selectedLead, setSelectedLead] = useState<ComboboxLead | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPrefill, setModalPrefill] = useState('');
+  const [isPolling, setIsPolling] = useState(false);
+  const [pollingLeadName, setPollingLeadName] = useState<string>('');
+  const pollingTranscriptIdRef = useRef<string | null>(null);
+  const activeTranscriptRef = useRef(activeTranscript);
+  activeTranscriptRef.current = activeTranscript;
 
   const leadIds: string[] = (() => {
     if (!activeTranscript?.leads) return [];
@@ -44,7 +49,6 @@ export const useTranscriptionDetailDrawer = () => {
 
   const generateMutation = useMutation({
     mutationFn: generateTasks,
-    onSuccess: () => toast.success('Task generation triggered successfully!'),
     onError: (err: Error) => toast.error(err.message),
   });
 
@@ -60,6 +64,34 @@ export const useTranscriptionDetailDrawer = () => {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const startPolling = async (transcriptId: string, leadName: string) => {
+    pollingTranscriptIdRef.current = transcriptId;
+    setPollingLeadName(leadName);
+    setIsPolling(true);
+    try {
+      const processed = await pollUntilProcessed(transcriptId);
+      if (pollingTranscriptIdRef.current !== transcriptId) return;
+      if (processed) {
+        setSelectedLead(null);
+        const current = activeTranscriptRef.current;
+        if (current && current.transcriptId === transcriptId) {
+          updateTranscript({ ...current, isProcessed: true });
+        }
+        qc.invalidateQueries({ queryKey: queryKeys.tasks });
+        qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
+        toast.success('Tasks created successfully!');
+      } else {
+        toast.error('Task processing timed out. Please check back later.');
+      }
+    } finally {
+      if (pollingTranscriptIdRef.current === transcriptId) {
+        setIsPolling(false);
+        setPollingLeadName('');
+        pollingTranscriptIdRef.current = null;
+      }
+    }
+  };
+
   const handleSelectLead = async (lead: ComboboxLead) => {
     if (!activeTranscript) return;
     setSelectedLead(lead);
@@ -70,11 +102,13 @@ export const useTranscriptionDetailDrawer = () => {
       transcriptId: activeTranscript.transcriptId,
     });
     if (!activeTranscript.isProcessed) {
+      const name = `${lead.firstName} ${lead.lastName}`.trim();
       generateMutation.mutate({
         transcriptId: activeTranscript.transcriptId,
-        leadName: `${lead.firstName} ${lead.lastName}`.trim(),
+        leadName: name,
         leadId: lead.leadId,
       });
+      startPolling(activeTranscript.transcriptId, name);
     }
   };
 
@@ -84,6 +118,7 @@ export const useTranscriptionDetailDrawer = () => {
     setSelectedLead({ leadId: Number(leadId), firstName: parts[0] || '', lastName: parts.slice(1).join(' ') || '' });
     if (!updatedTranscript.isProcessed) {
       generateMutation.mutate({ transcriptId: updatedTranscript.transcriptId, leadName, leadId: Number(leadId) });
+      startPolling(updatedTranscript.transcriptId, leadName);
     }
   };
 
@@ -106,23 +141,18 @@ export const useTranscriptionDetailDrawer = () => {
     return Array.from(speakers).sort();
   };
 
-  const getSpeakerSelectOptions = (speaker: string): SelectOption[] => {
-    const leadOptions: SelectOption[] = associatedLeads
-      .map((lead) => ({
-        value: `${lead.firstName || ''} ${lead.lastName || ''}`.trim(),
-        label: `${lead.firstName || ''} ${lead.lastName || ''}`.trim(),
-      }))
-      .filter((o) => o.value);
+  const getSpeakerOptions = (speaker: string): string[] => {
+    const leadNames = associatedLeads
+      .map((lead) => `${lead.firstName || ''} ${lead.lastName || ''}`.trim())
+      .filter(Boolean);
 
     const otherMapped = Object.entries(activeTranscript?.speakerNames || {})
       .filter(([k, v]) => k !== speaker && v !== '')
       .map(([, v]) => v);
 
-    return [
-      { value: '', label: 'None' },
-      { value: 'Seth', label: 'Seth' },
-      ...leadOptions,
-    ].filter((o) => o.value === '' || !otherMapped.includes(o.value));
+    return ['Seth', ...leadNames].filter(
+      (name, idx, arr) => arr.indexOf(name) === idx && !otherMapped.includes(name)
+    );
   };
 
   const downloadTextFile = (transcript: Transcript) => {
@@ -159,10 +189,12 @@ export const useTranscriptionDetailDrawer = () => {
     associatedLeads,
     relatedTasks,
     speakers,
+    isPolling,
+    pollingLeadName,
     handleSelectLead,
     handleModalSuccess,
     handleMapSpeaker,
-    getSpeakerSelectOptions,
+    getSpeakerOptions,
     downloadTextFile,
     formatTime,
   };

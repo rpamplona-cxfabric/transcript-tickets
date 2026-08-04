@@ -1,3 +1,5 @@
+import axios, { AxiosError } from 'axios';
+
 interface GraphQlError {
   message?: string;
 }
@@ -43,25 +45,32 @@ const makeRequest = async <T>(
     throw new UdasRequestError('An Auth0 access token is required.', 401);
   }
 
-  const response = await fetch(udasApiUrl, {
-    method: 'POST',
-    headers: {
-      'Apollo-Require-Preflight': 'true',
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-    cache: 'no-store',
-    signal,
-  });
+  let payload: GraphQlResponse<T> | null = null;
+  let status = 0;
 
-  const payload = (await response.json().catch(() => null)) as GraphQlResponse<T> | null;
-
-  if (!response.ok) {
-    throw new UdasRequestError(
-      payload?.errors?.[0]?.message || `UDAS request failed with status ${response.status}.`,
-      response.status
-    );
+  try {
+    const response = await axios.post<GraphQlResponse<T>>(udasApiUrl, request, {
+      headers: {
+        'Apollo-Require-Preflight': 'true',
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      signal,
+    });
+    payload = response.data;
+    status = response.status;
+  } catch (err) {
+    const axiosErr = err as AxiosError<GraphQlResponse<T>>;
+    if (axiosErr.response) {
+      payload = axiosErr.response.data ?? null;
+      status = axiosErr.response.status;
+      throw new UdasRequestError(
+        payload?.errors?.[0]?.message || `UDAS request failed with status ${status}.`,
+        status
+      );
+    }
+    // network error or abort
+    throw err;
   }
 
   if (payload?.errors?.length) {

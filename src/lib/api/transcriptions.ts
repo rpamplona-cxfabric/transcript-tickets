@@ -28,3 +28,40 @@ export const generateTasks = async ({
 }): Promise<void> => {
   await api.post('/transcriptions/generate-tasks', { transcriptId, leadName, leadId });
 };
+
+export const checkProcessedStatus = async (transcriptId: string): Promise<boolean> => {
+  const { data } = await api.get<{ isProcessed: boolean }>(
+    `/transcriptions/processed-status?transcriptId=${encodeURIComponent(transcriptId)}`
+  );
+  return data.isProcessed;
+};
+
+export const pollUntilProcessed = (
+  transcriptId: string,
+  intervalMs = 1500,
+  timeoutMs = 20000
+): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const start = Date.now();
+
+    const tick = async () => {
+      try {
+        const processed = await checkProcessedStatus(transcriptId);
+        if (processed) {
+          resolve(true);
+          return;
+        }
+      } catch(error) {
+      }
+
+      if (Date.now() - start >= timeoutMs) {
+        resolve(false);
+        return;
+      }
+
+      setTimeout(tick, intervalMs);
+    };
+
+    tick();
+  });
+};

@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { FileAudio, X, Clock, CheckSquare, Download, User, XCircle } from 'lucide-react';
-import { Select } from '@/components/select';
+import { FileAudio, X, Clock, CheckSquare, Download, User, XCircle, Loader2 } from 'lucide-react';
 import { Combobox } from '@/components/combobox';
 import { LeadModal } from '../leadModal';
+import { SpeakerCombobox } from './speakerCombobox';
 import { useTranscriptionDetailDrawer } from './hook';
 
 export const TranscriptionDetailDrawer = () => {
@@ -20,10 +20,12 @@ export const TranscriptionDetailDrawer = () => {
     associatedLeads,
     relatedTasks,
     speakers,
+    isPolling,
+    pollingLeadName,
     handleSelectLead,
     handleModalSuccess,
     handleMapSpeaker,
-    getSpeakerSelectOptions,
+    getSpeakerOptions,
     downloadTextFile,
     formatTime,
   } = useTranscriptionDetailDrawer();
@@ -113,7 +115,18 @@ export const TranscriptionDetailDrawer = () => {
                 <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Identify Contact</h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Search for an existing lead or create a new one.</p>
               </div>
-              {selectedLead ? (
+
+              {isPolling ? (
+                <div className="animate-fade-in flex items-center gap-3 rounded-lg border border-indigo-100 bg-indigo-50/60 px-4 py-3 dark:border-indigo-900/50 dark:bg-indigo-950/20">
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-indigo-500" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                      Processing tasks for {pollingLeadName}&hellip;
+                    </p>
+                    <p className="text-[10px] font-medium text-indigo-500 dark:text-indigo-400">Waiting for AI to generate tasks from this transcript. This may take a moment.</p>
+                  </div>
+                </div>
+              ) : selectedLead ? (
                 <div className="animate-fade-in divide-y divide-zinc-150 dark:divide-zinc-800">
                   <div className="flex items-center justify-between gap-3 py-3">
                     <div className="flex min-w-0 items-center gap-2.5">
@@ -160,12 +173,11 @@ export const TranscriptionDetailDrawer = () => {
                 {speakers.map((speaker) => (
                   <div key={speaker} className="flex flex-col gap-2 border-b border-zinc-100 py-2 text-sm last:border-0 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <span className="text-xs font-bold text-zinc-650 dark:text-zinc-400">{speaker}</span>
-                    <Select
+                    <SpeakerCombobox
+                      speaker={speaker}
                       value={activeTranscript.speakerNames?.[speaker] || ''}
-                      onChange={(val) => handleMapSpeaker(speaker, val)}
-                      options={getSpeakerSelectOptions(speaker)}
-                      placeholder="None"
-                      className="w-full sm:w-60"
+                      options={getSpeakerOptions(speaker)}
+                      onChange={handleMapSpeaker}
                     />
                   </div>
                 ))}

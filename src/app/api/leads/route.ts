@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import axios from 'axios';
 import { addTranscriptLead } from '@/lib/db';
 
 export async function POST(request: Request) {
@@ -19,13 +20,13 @@ export async function POST(request: Request) {
         leadId,
         name: leadName,
         phoneNumber: phoneNumber || undefined,
-        email: email || undefined
+        email: email || undefined,
       });
       return NextResponse.json({
         success: true,
         action: 'associateLead',
         leadId,
-        updatedTranscript
+        updatedTranscript,
       });
     }
 
@@ -43,51 +44,42 @@ export async function POST(request: Request) {
       );
     }
 
-    const cxfResponse = await fetch(
+    const { data: cxfData } = await axios.post(
       'https://cxf-executor-qa.cxfabric.io/restendpoint?tenant_id=1f23a6b3-fb9a-4af4-84fb-4ba01dad68e8&flow_id=c276db63-834c-4306-9888-a3597860e686&draft=true&targetUserId=auth0_6a58fa6f7d004d7b0c57bac3&displayExecutionLogs=true',
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstname,
-          lastname,
-          phoneNumber: phoneNumber ?? '',
-          email: email ?? '',
-        }),
+        firstname,
+        lastname,
+        phoneNumber: phoneNumber ?? '',
+        email: email ?? '',
       }
     );
 
-    if (!cxfResponse.ok) {
-      throw new Error(`CXFabric endpoint returned status: ${cxfResponse.status}`);
-    }
-
-    const cxfData = await cxfResponse.json();
-    const createdLeadId = cxfData?.leadId || cxfData?.result?.leadId;
+    const createdLeadId = cxfData?.leadId;
 
     if (!createdLeadId) {
       throw new Error('CXFabric did not return a valid leadId');
     }
 
-    const leadName = `${firstname || ''} ${lastname || ''}`.trim() || 'Unknown Lead';
+    // prefer names/contact info from the returned lead object
+    const leadName = `${cxfData.firstName || firstname || ''} ${cxfData.lastName || lastname || ''}`.trim() || 'Unknown Lead';
+    const resolvedPhone = cxfData.phones?.[0] || phoneNumber || undefined;
+    const resolvedEmail = cxfData.emails?.[0] || email || undefined;
 
     const updatedTranscript = await addTranscriptLead(transcriptId, {
       leadId: createdLeadId,
       name: leadName,
-      phoneNumber: phoneNumber || undefined,
-      email: email || undefined
+      phoneNumber: resolvedPhone,
+      email: resolvedEmail,
     });
 
     return NextResponse.json({
       success: true,
       action: 'createOrUpdateLead',
-      operation: cxfData.operation || 'created',
       leadId: createdLeadId,
       result: {
         leadId: createdLeadId,
       },
-      updatedTranscript
+      updatedTranscript,
     });
   } catch (error: any) {
     console.error('API Error in POST /api/leads:', error);

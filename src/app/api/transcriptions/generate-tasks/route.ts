@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import axios from 'axios';
 import { getTranscripts } from '../../../../lib/db';
 
 export async function POST(request: Request) {
@@ -45,24 +46,13 @@ export async function POST(request: Request) {
       });
     }
 
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        transcriptId: transcript.transcriptId,
-        transcript: mappedTranscript,
-        transcriptSummary: transcript.transcriptSummary,
-        leadName,
-        leadId
-      })
+    await axios.post(webhookUrl, {
+      transcriptId: transcript.transcriptId,
+      transcript: mappedTranscript,
+      transcriptSummary: transcript.transcriptSummary,
+      leadName,
+      leadId,
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Flow A webhook returned status ${response.status}: ${errorText}`);
-    }
 
     return NextResponse.json({
       success: true,
