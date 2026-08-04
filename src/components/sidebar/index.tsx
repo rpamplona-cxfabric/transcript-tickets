@@ -11,7 +11,6 @@ import {
   Moon,
   LayoutDashboard,
   FileAudio,
-  CheckSquare,
   LogOut,
 } from 'lucide-react';
 import { useSidebar } from './hook';
@@ -74,7 +73,6 @@ export const Sidebar = () => {
   const menuItems: MenuItem[] = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Transcriptions', path: '/transcriptions', icon: FileAudio },
-    { name: 'Tasks', path: '/tasks', icon: CheckSquare },
   ];
 
   const udasDisplayName = [

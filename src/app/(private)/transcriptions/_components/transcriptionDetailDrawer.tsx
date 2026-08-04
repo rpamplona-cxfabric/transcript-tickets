@@ -22,7 +22,25 @@ export const TranscriptionDetailDrawer = () => {
   const [associatedLeads, setAssociatedLeads] = useState<ComboboxLead[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPrefill, setModalPrefill] = useState('');
-  const [generatingTasks, setGeneratingTasks] = useState(false);
+
+
+  const triggerGenerateTasks = async (transcriptId: string, leadName: string | undefined, leadId: number | undefined) => {
+    try {
+      const response = await fetch('/api/transcriptions/generate-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcriptId, leadName, leadId }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate tasks');
+      }
+      toast.success('Task generation triggered successfully!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to trigger task generation');
+    }
+  };
 
   const handleSelectLead = async (lead: ComboboxLead) => {
     if (!activeTranscript) return;
@@ -48,6 +66,11 @@ export const TranscriptionDetailDrawer = () => {
     } catch (err) {
       console.error('Failed to associate lead:', err);
     }
+
+    if (!activeTranscript.isProcessed) {
+      const leadName = `${lead.firstName} ${lead.lastName}`.trim();
+      await triggerGenerateTasks(activeTranscript.transcriptId, leadName, lead.leadId);
+    }
   };
 
   const handleModalSuccess = (updatedTranscript: Transcript, leadName: string, leadId: string) => {
@@ -62,6 +85,10 @@ export const TranscriptionDetailDrawer = () => {
     setAssociatedLeads((prev) =>
       prev.some((existingLead) => `${existingLead.leadId}` === `${createdLead.leadId}`) ? prev : [...prev, createdLead]
     );
+
+    if (!updatedTranscript.isProcessed) {
+      triggerGenerateTasks(updatedTranscript.transcriptId, leadName, Number(leadId));
+    }
   };
 
   useEffect(() => {
@@ -131,45 +158,13 @@ export const TranscriptionDetailDrawer = () => {
 
       const updatedTranscript = await response.json();
       updateTranscript(updatedTranscript);
-      toast.success(`Mapped ${speaker} to ${mappedName}`);
+      toast.success(mappedName ? `Mapped ${speaker} to ${mappedName}` : `Removed ${speaker} mapped name`);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Failed to update speaker mapping');
     }
   };
-  const handleGenerateTasks = async () => {
-    if (!activeTranscript) return;
-    setGeneratingTasks(true);
-    try {
-      const leadName = selectedLead
-        ? `${selectedLead.firstName} ${selectedLead.lastName}`.trim()
-        : undefined;
-      const leadId = selectedLead?.leadId;
 
-      const response = await fetch('/api/transcriptions/generate-tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transcriptId: activeTranscript.transcriptId,
-          leadName,
-          leadId
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate tasks');
-      }
-
-      toast.success('Task generation triggered successfully!');
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Failed to trigger task generation');
-    } finally {
-      setGeneratingTasks(false);
-    }
-  };
   useEffect(() => {
     if (!activeTranscript || activeTranscript.isProcessed) return;
 
@@ -298,13 +293,6 @@ ${transcript.transcript || 'No transcript text.'}
   };
 
   const relatedTasks = tasks.filter(t => t.transcriptId === activeTranscript.transcriptId);
-
-  const speakers = getSpeakersFromTranscript(activeTranscript.transcript);
-  const hasGenericSpeakers = speakers.length > 0;
-  const allSpeakersMapped = hasGenericSpeakers && speakers.every(
-    speaker => activeTranscript.speakerNames?.[speaker] && activeTranscript.speakerNames[speaker].trim() !== ''
-  );
-  const canGenerateTasks = selectedLead !== null;
 
   return (
     <>
@@ -533,26 +521,6 @@ ${transcript.transcript || 'No transcript text.'}
             </div>
           )}
         </div>
-
-        {!activeTranscript.isProcessed && (
-          <div className="shrink-0 border-t border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 flex flex-col gap-2">
-            <div className="flex flex-col gap-1.5 pb-2">
-              <button
-                disabled={generatingTasks || !canGenerateTasks}
-                onClick={handleGenerateTasks}
-                className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold shadow transition duration-150 disabled:cursor-not-allowed cursor-pointer bg-indigo-600 text-white hover:bg-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none dark:disabled:bg-zinc-900 dark:disabled:text-zinc-600"
-              >
-                <CheckSquare className="h-4 w-4" />
-                {generatingTasks ? 'Generating Tasks...' : 'Generate Tasks'}
-              </button>
-              {!canGenerateTasks && (
-                <p className="text-[10px] font-medium text-center text-red-550 dark:text-red-400 leading-normal animate-fade-in">
-                  * Search and select a lead above to enable task generation.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </>
   );

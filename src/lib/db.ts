@@ -4,7 +4,6 @@ import { DynamoDBDocumentClient, ScanCommand, PutCommand, DeleteCommand, BatchGe
 import snappy from 'snappy';
 import { Task, Transcript, LeadObject } from '../types';
 
-// Initialize the DynamoDB Client
 const region = process.env.AWS_REGION || 'us-east-1';
 const accessKeyId = process.env.AMAZON_ACCESS_KEY || '';
 const secretAccessKey = process.env.AMAZON_SECRET_KEY || '';
@@ -277,7 +276,7 @@ export async function addTranscriptLead(
     }
 
     if (!leadIdsArray.some((existingLeadId) => `${existingLeadId}` === `${leadObj.leadId}`)) {
-      leadIdsArray.push(leadObj.leadId);
+      leadIdsArray.push(`${leadObj.leadId}`);
     }
 
     const updatedItem: any = {
@@ -322,35 +321,16 @@ export async function addTranscriptLead(
 
 export async function getSethLeadsByIds(leadIds: Array<string | number>): Promise<any[]> {
   try {
-    const normalizedLeadIds = Array.from(
-      new Set(
-        leadIds
-          .map((leadId) => `${leadId}`.trim())
-          .filter(Boolean)
-      )
-    );
+    const uniqueIds = Array.from(new Set(leadIds.map((id) => `${id}`.trim()).filter(Boolean)));
+    if (uniqueIds.length === 0) return [];
 
-    if (normalizedLeadIds.length === 0) {
-      return [];
-    }
+    const result = await docClient.send(new BatchGetCommand({
+      RequestItems: { 'seth-leads': { Keys: uniqueIds.map((id) => ({ leadId: id })) } },
+    }));
 
-    const command = new BatchGetCommand({
-      RequestItems: {
-        'seth-leads': {
-          Keys: normalizedLeadIds.map((leadId) => ({
-            leadId: Number.isNaN(Number(leadId)) ? leadId : Number(leadId),
-          })),
-        },
-      },
-    });
-
-    const result = await docClient.send(command);
     const items = result.Responses?.['seth-leads'] || [];
-    const itemsByLeadId = new Map(items.map((item: any) => [`${item.leadId}`, item]));
-
-    return normalizedLeadIds
-      .map((leadId) => itemsByLeadId.get(leadId))
-      .filter(Boolean);
+    const byId = new Map(items.map((item: any) => [`${item.leadId}`, item]));
+    return uniqueIds.map((id) => byId.get(id)).filter(Boolean);
   } catch (error) {
     console.error('Error fetching leads by ids from seth-leads:', error);
     return [];
