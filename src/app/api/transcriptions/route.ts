@@ -7,13 +7,10 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    // Retrieve all transcripts, already sorted descending by timestamp in db.ts
     const transcripts = await getTranscripts();
     
-    // Always restrict the dataset to the 20 most recent transcripts
     const recent20 = transcripts.slice(0, 20);
 
-    // If pagination parameters are requested, return paginated structure
     if (searchParams.has('page') || searchParams.has('limit')) {
       const startIndex = (page - 1) * limit;
       const paginatedItems = recent20.slice(startIndex, startIndex + limit);
@@ -27,7 +24,6 @@ export async function GET(request: Request) {
       });
     }
 
-    // Default response: return the recent 20 flat array for backward compatibility
     return NextResponse.json(recent20);
   } catch (error) {
     console.error('API Error in GET /api/transcriptions:', error);

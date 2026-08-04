@@ -1,150 +1,34 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { FileAudio, X, Clock, CheckSquare, Download, User, XCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTranscriptionStore } from '@/lib/store/transcriptions';
-import { useTaskStore } from '@/lib/store/tasks';
 import { Select } from '@/components/select';
-import { Combobox, ComboboxLead } from '@/components/combobox';
-import { LeadModal } from './leadModal';
-import { associateLead } from '@/lib/api/leads';
-import { patchSpeakerNames, generateTasks } from '@/lib/api/transcriptions';
-import { fetchLeadsByIds } from '@/lib/api/leads';
-import { queryKeys } from '@/lib/queryKeys';
-import { Transcript, SelectOption } from '@/types';
+import { Combobox } from '@/components/combobox';
+import { LeadModal } from '../leadModal';
+import { useTranscriptionDetailDrawer } from './hook';
 
 export const TranscriptionDetailDrawer = () => {
-  const qc = useQueryClient();
-
-  const { activeTranscript, setActiveTranscript, tasks, updateTranscript } = useTranscriptionStore();
-  const [selectedLead, setSelectedLead] = useState<ComboboxLead | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalPrefill, setModalPrefill] = useState('');
-
-  const leadIds: string[] = (() => {
-    if (!activeTranscript?.leads) return [];
-    try {
-      const parsed = JSON.parse(activeTranscript.leads);
-      return Array.isArray(parsed) ? parsed.map(String).filter(Boolean) : [];
-    } catch {
-      return [];
-    }
-  })();
-
-  const { data: associatedLeads = [] } = useQuery({
-    queryKey: queryKeys.leadsByIds(leadIds),
-    queryFn: () => fetchLeadsByIds(leadIds),
-    enabled: leadIds.length > 0,
-    staleTime: 30_000,
-  });
-
-  const associateMutation = useMutation({
-    mutationFn: associateLead,
-    onSuccess: (data) => {
-      if (data.updatedTranscript) updateTranscript(data.updatedTranscript);
-      qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const generateMutation = useMutation({
-    mutationFn: generateTasks,
-    onSuccess: () => toast.success('Task generation triggered successfully!'),
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const speakerMutation = useMutation({
-    mutationFn: patchSpeakerNames,
-    onSuccess: (updated, { speakerNames, transcriptId: _id }) => {
-      updateTranscript(updated);
-      qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
-      const entries = Object.entries(speakerNames);
-      const last = entries[entries.length - 1];
-      if (last) {
-        toast.success(last[1] ? `Mapped ${last[0]} to ${last[1]}` : `Removed ${last[0]} mapped name`);
-      }
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  const handleSelectLead = async (lead: ComboboxLead) => {
-    if (!activeTranscript) return;
-    setSelectedLead(lead);
-    await associateMutation.mutateAsync({
-      leadId: lead.leadId,
-      firstname: lead.firstName,
-      lastname: lead.lastName,
-      transcriptId: activeTranscript.transcriptId,
-    });
-    if (!activeTranscript.isProcessed) {
-      generateMutation.mutate({
-        transcriptId: activeTranscript.transcriptId,
-        leadName: `${lead.firstName} ${lead.lastName}`.trim(),
-        leadId: lead.leadId,
-      });
-    }
-  };
-
-  const handleModalSuccess = (updatedTranscript: Transcript, leadName: string, leadId: string) => {
-    updateTranscript(updatedTranscript);
-    const parts = leadName.trim().split(/\s+/);
-    const createdLead: ComboboxLead = {
-      leadId: Number(leadId),
-      firstName: parts[0] || '',
-      lastName: parts.slice(1).join(' ') || '',
-    };
-    setSelectedLead(createdLead);
-    if (!updatedTranscript.isProcessed) {
-      generateMutation.mutate({
-        transcriptId: updatedTranscript.transcriptId,
-        leadName,
-        leadId: Number(leadId),
-      });
-    }
-  };
-
-  const handleMapSpeaker = (speaker: string, mappedName: string) => {
-    if (!activeTranscript) return;
-    const updatedSpeakerNames = { ...(activeTranscript.speakerNames || {}), [speaker]: mappedName };
-    speakerMutation.mutate({ transcriptId: activeTranscript.transcriptId, speakerNames: updatedSpeakerNames });
-  };
+  const {
+    activeTranscript,
+    setActiveTranscript,
+    selectedLead,
+    setSelectedLead,
+    modalOpen,
+    setModalOpen,
+    modalPrefill,
+    setModalPrefill,
+    associatedLeads,
+    relatedTasks,
+    speakers,
+    handleSelectLead,
+    handleModalSuccess,
+    handleMapSpeaker,
+    getSpeakerSelectOptions,
+    downloadTextFile,
+    formatTime,
+  } = useTranscriptionDetailDrawer();
 
   if (!activeTranscript) return null;
-
-  const getSpeakersFromTranscript = (text: string | undefined): string[] => {
-    if (!text) return [];
-    const speakers = new Set<string>();
-    text.split('\n').forEach((line) => {
-      const m = line.match(/^(\[.*?\])?\s*(Speaker\s*\d+|[^:]+):(.*)$/);
-      if (m) {
-        const name = m[2].trim();
-        if (name.toLowerCase() !== 'transcript') speakers.add(name);
-      }
-    });
-    return Array.from(speakers).sort();
-  };
-
-  const downloadTextFile = (transcript: Transcript) => {
-    const text = `CXF Transcription Report\n------------------------\nTenant ID: ${transcript.tenantId}\nTranscript ID: ${transcript.transcriptId}\nDate: ${transcript.timestamp || 'N/A'}\n\n--- Summary ---\n${transcript.transcriptSummary || 'No summary available.'}\n\n--- Transcript ---\n${transcript.transcript || 'No transcript text.'}`;
-    const el = document.createElement('a');
-    el.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
-    el.download = `transcript-${transcript.transcriptId.slice(0, 8)}.txt`;
-    document.body.appendChild(el);
-    el.click();
-    document.body.removeChild(el);
-  };
-
-  const formatTime = (timeStr: string | undefined) => {
-    if (!timeStr) return 'N/A';
-    try {
-      return new Date(timeStr).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-    } catch {
-      return timeStr;
-    }
-  };
 
   const renderFormattedTranscript = (text: string | undefined) => {
     if (!text) return <p className="text-zinc-500 italic">No transcript text available.</p>;
@@ -157,7 +41,7 @@ export const TranscriptionDetailDrawer = () => {
             const timeTag = m[1] || '';
             const speakerName = m[2] || '';
             const speakerText = m[3] || '';
-            const displayName = activeTranscript?.speakerNames?.[speakerName] || speakerName;
+            const displayName = activeTranscript.speakerNames?.[speakerName] || speakerName;
             return (
               <div key={idx} className="flex flex-col gap-1 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
@@ -173,9 +57,6 @@ export const TranscriptionDetailDrawer = () => {
       </div>
     );
   };
-
-  const relatedTasks = tasks.filter((t) => t.transcriptId === activeTranscript.transcriptId);
-  const speakers = getSpeakersFromTranscript(activeTranscript.transcript);
 
   return (
     <>
@@ -276,30 +157,18 @@ export const TranscriptionDetailDrawer = () => {
             </div>
             {speakers.length > 0 ? (
               <div className="space-y-3">
-                {speakers.map((speaker) => {
-                  const leadOptions: SelectOption[] = associatedLeads.map((lead) => ({
-                    value: `${lead.firstName || ''} ${lead.lastName || ''}`.trim(),
-                    label: `${lead.firstName || ''} ${lead.lastName || ''}`.trim(),
-                  })).filter((o) => o.value);
-
-                  const mappedValue = activeTranscript.speakerNames?.[speaker] || '';
-                  const otherMapped = Object.entries(activeTranscript.speakerNames || {})
-                    .filter(([k, v]) => k !== speaker && v !== '')
-                    .map(([, v]) => v);
-
-                  const selectOptions: SelectOption[] = [
-                    { value: '', label: 'None' },
-                    { value: 'Seth', label: 'Seth' },
-                    ...leadOptions,
-                  ].filter((o) => o.value === '' || !otherMapped.includes(o.value));
-
-                  return (
-                    <div key={speaker} className="flex flex-col gap-2 border-b border-zinc-100 py-2 text-sm last:border-0 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                      <span className="text-xs font-bold text-zinc-650 dark:text-zinc-400">{speaker}</span>
-                      <Select value={mappedValue} onChange={(val) => handleMapSpeaker(speaker, val)} options={selectOptions} placeholder="None" className="w-full sm:w-60" />
-                    </div>
-                  );
-                })}
+                {speakers.map((speaker) => (
+                  <div key={speaker} className="flex flex-col gap-2 border-b border-zinc-100 py-2 text-sm last:border-0 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <span className="text-xs font-bold text-zinc-650 dark:text-zinc-400">{speaker}</span>
+                    <Select
+                      value={activeTranscript.speakerNames?.[speaker] || ''}
+                      onChange={(val) => handleMapSpeaker(speaker, val)}
+                      options={getSpeakerSelectOptions(speaker)}
+                      placeholder="None"
+                      className="w-full sm:w-60"
+                    />
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="text-xs italic text-zinc-500 dark:text-zinc-400 font-medium">No speakers identified in this transcript.</p>

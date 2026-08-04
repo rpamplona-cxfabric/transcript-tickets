@@ -1,24 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { X, UserPlus, AlertTriangle } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { createLead, checkLeadExists } from '@/lib/api/leads';
-import { queryKeys } from '@/lib/queryKeys';
 import { Transcript } from '@/types';
-
-const schema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  phone: z.string().optional(),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-});
-
-type FormValues = z.infer<typeof schema>;
+import { useLeadModal } from './hook';
 
 interface LeadModalProps {
   isOpen: boolean;
@@ -29,50 +13,16 @@ interface LeadModalProps {
 }
 
 export const LeadModal = ({ isOpen, onClose, prefillName, transcriptId, onSuccess }: LeadModalProps) => {
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  });
-
-  const firstName = watch('firstName') ?? '';
-  const lastName = watch('lastName') ?? '';
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const parts = prefillName.trim().split(/\s+/);
-    reset({
-      firstName: parts[0] || '',
-      lastName: parts.slice(1).join(' ') || '',
-      phone: '',
-      email: '',
-    });
-  }, [isOpen, prefillName, reset]);
-
-  const { data: exists } = useQuery({
-    queryKey: queryKeys.leadExists(firstName.trim(), lastName.trim()),
-    queryFn: () => checkLeadExists(firstName.trim(), lastName.trim()),
-    enabled: isOpen && firstName.trim().length > 0 && lastName.trim().length > 0,
-    staleTime: 10_000,
-  });
-
-  const mutation = useMutation({
-    mutationFn: (values: FormValues) =>
-      createLead({
-        firstname: values.firstName.trim(),
-        lastname: values.lastName.trim(),
-        phoneNumber: values.phone?.trim(),
-        email: values.email?.trim(),
-        transcriptId,
-      }),
-    onSuccess: (data, values) => {
-      const leadName = `${values.firstName.trim()} ${values.lastName.trim()}`.trim();
-      toast.success(`Lead "${leadName}" created successfully!`);
-      onSuccess(data.updatedTranscript, leadName, data.leadId);
-      onClose();
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || 'Failed to create lead');
-    },
-  });
+  const {
+    register,
+    errors,
+    isSubmitting,
+    firstName,
+    lastName,
+    duplicateExists,
+    isPending,
+    onSubmit,
+  } = useLeadModal({ isOpen, prefillName, transcriptId, onSuccess, onClose });
 
   if (!isOpen) return null;
 
@@ -92,7 +42,7 @@ export const LeadModal = ({ isOpen, onClose, prefillName, transcriptId, onSucces
           </button>
         </div>
 
-        <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-bold uppercase text-zinc-500">First Name *</label>
@@ -135,7 +85,7 @@ export const LeadModal = ({ isOpen, onClose, prefillName, transcriptId, onSucces
             {errors.email && <p className="text-[10px] text-red-500">{errors.email.message}</p>}
           </div>
 
-          {exists && (
+          {duplicateExists && (
             <div className="flex items-start gap-2.5 rounded-xl bg-amber-50 p-3.5 text-xs text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30 animate-shake">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <p className="font-semibold leading-normal">
@@ -154,10 +104,10 @@ export const LeadModal = ({ isOpen, onClose, prefillName, transcriptId, onSucces
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || mutation.isPending}
+              disabled={isSubmitting || isPending}
               className="rounded-xl bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer flex items-center gap-1.5 transition-colors"
             >
-              {mutation.isPending ? 'Creating...' : 'Create Lead'}
+              {isPending ? 'Creating...' : 'Create Lead'}
             </button>
           </div>
         </form>
