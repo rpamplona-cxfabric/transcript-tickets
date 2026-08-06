@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       transcriptSummary: transcript.transcriptSummary,
       leadName,
       leadId,
+      fromPortal: true,
     });
 
     return NextResponse.json({
