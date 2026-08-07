@@ -12,7 +12,10 @@ export const useTranscriptionDetailDrawer = () => {
   const qc = useQueryClient();
   const { activeTranscript, setActiveTranscript, updateTranscript } = useTranscriptionStore();
 
-  const [selectedLead, setSelectedLead] = useState<ComboboxLead | null>(null);
+  const [selectedLeadState, setSelectedLeadState] = useState<{
+    transcriptId: string;
+    lead: ComboboxLead;
+  } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPrefill, setModalPrefill] = useState('');
   const [isPolling, setIsPolling] = useState(false);
@@ -23,6 +26,11 @@ export const useTranscriptionDetailDrawer = () => {
   useEffect(() => {
     activeTranscriptRef.current = activeTranscript;
   }, [activeTranscript]);
+
+  const selectedLead =
+    activeTranscript && selectedLeadState?.transcriptId === activeTranscript.transcriptId
+      ? selectedLeadState.lead
+      : null;
 
   const leadIds: string[] = (() => {
     if (!activeTranscript?.leads) return [];
@@ -41,6 +49,8 @@ export const useTranscriptionDetailDrawer = () => {
     staleTime: 30_000,
   });
 
+  const displayedLead = selectedLead ?? associatedLeads[0] ?? null;
+
   const associateMutation = useMutation({
     mutationFn: associateLead,
     onSuccess: (data) => {
@@ -52,14 +62,13 @@ export const useTranscriptionDetailDrawer = () => {
 
   const generateMutation = useMutation({
     mutationFn: generateTasks,
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message || 'Failed to trigger task generation'),
   });
 
   const speakerMutation = useMutation({
     mutationFn: patchSpeakerNames,
     onSuccess: (updated, { speakerNames }) => {
       updateTranscript(updated);
-      qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
       const entries = Object.entries(speakerNames);
       const last = entries[entries.length - 1];
       if (last) toast.success(last[1] ? `Mapped ${last[0]} to ${last[1]}` : `Removed ${last[0]} mapped name`);
@@ -75,7 +84,7 @@ export const useTranscriptionDetailDrawer = () => {
       const processed = await pollUntilProcessed(transcriptId);
       if (pollingTranscriptIdRef.current !== transcriptId) return;
       if (processed) {
-        setSelectedLead(null);
+        setSelectedLeadState(null);
         const current = activeTranscriptRef.current;
         if (current && current.transcriptId === transcriptId) {
           updateTranscript({ ...current, isProcessed: true });
@@ -94,34 +103,61 @@ export const useTranscriptionDetailDrawer = () => {
     }
   };
 
-  const handleSelectLead = async (lead: ComboboxLead) => {
-    if (!activeTranscript) return;
-    setSelectedLead(lead);
-    await associateMutation.mutateAsync({
-      leadId: lead.leadId,
-      firstname: lead.firstName,
-      lastname: lead.lastName,
-      transcriptId: activeTranscript.transcriptId,
-    });
-    if (!activeTranscript.isProcessed) {
-      const name = `${lead.firstName} ${lead.lastName}`.trim();
-      generateMutation.mutate({
-        transcriptId: activeTranscript.transcriptId,
-        leadName: name,
+  const triggerTaskGeneration = async (transcriptId: string, lead: ComboboxLead) => {
+    if (generateMutation.isPending || isPolling) return;
+
+    const leadName = `${lead.firstName} ${lead.lastName}`.trim();
+    try {
+      await generateMutation.mutateAsync({
+        transcriptId,
+        leadName,
         leadId: lead.leadId,
       });
-      startPolling(activeTranscript.transcriptId, name);
+      void startPolling(transcriptId, leadName);
+    } catch {
+      // The mutation's onError callback already shows the failure message.
+    }
+  };
+
+  const handleSelectLead = async (lead: ComboboxLead) => {
+    if (!activeTranscript) return;
+
+    try {
+      await associateMutation.mutateAsync({
+        leadId: lead.leadId,
+        firstname: lead.firstName,
+        lastname: lead.lastName,
+        transcriptId: activeTranscript.transcriptId,
+      });
+    } catch {
+      return;
+    }
+
+    setSelectedLeadState({ transcriptId: activeTranscript.transcriptId, lead });
+    if (!activeTranscript.isProcessed) {
+      void triggerTaskGeneration(activeTranscript.transcriptId, lead);
     }
   };
 
   const handleModalSuccess = (updatedTranscript: Transcript, leadName: string, leadId: string) => {
     updateTranscript(updatedTranscript);
     const parts = leadName.trim().split(/\s+/);
-    setSelectedLead({ leadId: Number(leadId), firstName: parts[0] || '', lastName: parts.slice(1).join(' ') || '' });
+    const lead: ComboboxLead = {
+      leadId: Number(leadId),
+      firstName: parts[0] || '',
+      lastName: parts.slice(1).join(' ') || '',
+    };
+    setSelectedLeadState({ transcriptId: updatedTranscript.transcriptId, lead });
+
     if (!updatedTranscript.isProcessed) {
-      generateMutation.mutate({ transcriptId: updatedTranscript.transcriptId, leadName, leadId: Number(leadId) });
-      startPolling(updatedTranscript.transcriptId, leadName);
+      void triggerTaskGeneration(updatedTranscript.transcriptId, lead);
     }
+  };
+
+  const handleRegenerateTasks = () => {
+    const lead = displayedLead;
+    if (!activeTranscript || !lead || activeTranscript.isProcessed) return;
+    void triggerTaskGeneration(activeTranscript.transcriptId, lead);
   };
 
   const handleMapSpeaker = (speaker: string, mappedName: string) => {
@@ -181,8 +217,7 @@ export const useTranscriptionDetailDrawer = () => {
   return {
     activeTranscript,
     setActiveTranscript,
-    selectedLead,
-    setSelectedLead,
+    selectedLead: displayedLead,
     modalOpen,
     setModalOpen,
     modalPrefill,
@@ -190,9 +225,11 @@ export const useTranscriptionDetailDrawer = () => {
     associatedLeads,
     speakers,
     isPolling,
+    isGeneratingTasks: generateMutation.isPending,
     pollingLeadName,
     handleSelectLead,
     handleModalSuccess,
+    handleRegenerateTasks,
     handleMapSpeaker,
     getSpeakerOptions,
     downloadTextFile,

@@ -55,13 +55,27 @@ export async function POST(request: Request) {
       });
     }
 
+    const processorBearer = process.env.TRANSCRIPT_PROCESSOR_BEARER;
+    if (!processorBearer) {
+      console.error('TRANSCRIPT_PROCESSOR_BEARER environment variable is not set.');
+      return NextResponse.json(
+        { error: 'Transcript processor authentication is not configured' },
+        { status: 500 }
+      );
+    }
+
     await axios.post(webhookUrl, {
+      tenantId,
       transcriptId: transcript.transcriptId,
       transcript: mappedTranscript,
       transcriptSummary: transcript.transcriptSummary,
       leadName,
       leadId,
       fromPortal: true,
+    }, {
+      headers: {
+        Authorization: `Bearer ${processorBearer}`,
+      },
     });
 
     return NextResponse.json({
