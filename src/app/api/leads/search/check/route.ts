@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
-import { checkLeadExists } from '@/lib/db';
+import { checkLeadExists } from '@/lib/db/seth-leads';
+import { getApiSession, unauthorized } from '@/lib/auth/requireSession';
 
 export async function GET(request: Request) {
+  const session = await getApiSession();
+  if (!session) return unauthorized();
+
   try {
     const { searchParams } = new URL(request.url);
     const firstName = searchParams.get('firstName') || '';
@@ -12,11 +16,7 @@ export async function GET(request: Request) {
     }
 
     const exists = await checkLeadExists(firstName, lastName);
-
-    return NextResponse.json({
-      success: true,
-      exists
-    });
+    return NextResponse.json({ success: true, exists });
   } catch (error: any) {
     console.error('API Error in GET /api/leads/search/check:', error);
     return NextResponse.json(

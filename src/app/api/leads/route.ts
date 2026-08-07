@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { addTranscriptLead } from '@/lib/db';
+import { addTranscriptLead } from '@/lib/db/transcriptions';
+import { getApiSession, unauthorized } from '@/lib/auth/requireSession';
+import { getTenantId } from '@/lib/tenant';
 
 export async function POST(request: Request) {
+  const session = await getApiSession();
+  if (!session) return unauthorized();
+
+  const tenantId = await getTenantId();
+  if (!tenantId) {
+    return NextResponse.json({ error: 'Tenant ID is unavailable for this user' }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const { firstname, lastname, phoneNumber, email, transcriptId, leadId } = body;
@@ -16,7 +26,7 @@ export async function POST(request: Request) {
 
     if (leadId) {
       const leadName = `${firstname || ''} ${lastname || ''}`.trim() || 'Unknown Lead';
-      const updatedTranscript = await addTranscriptLead(transcriptId, {
+      const updatedTranscript = await addTranscriptLead(tenantId, transcriptId, {
         leadId,
         name: leadName,
         phoneNumber: phoneNumber || undefined,
@@ -55,17 +65,15 @@ export async function POST(request: Request) {
     );
 
     const createdLeadId = cxfData?.leadId;
-
     if (!createdLeadId) {
       throw new Error('CXFabric did not return a valid leadId');
     }
 
-    // prefer names/contact info from the returned lead object
     const leadName = `${cxfData.firstName || firstname || ''} ${cxfData.lastName || lastname || ''}`.trim() || 'Unknown Lead';
     const resolvedPhone = cxfData.phones?.[0] || phoneNumber || undefined;
     const resolvedEmail = cxfData.emails?.[0] || email || undefined;
 
-    const updatedTranscript = await addTranscriptLead(transcriptId, {
+    const updatedTranscript = await addTranscriptLead(tenantId, transcriptId, {
       leadId: createdLeadId,
       name: leadName,
       phoneNumber: resolvedPhone,
@@ -76,9 +84,7 @@ export async function POST(request: Request) {
       success: true,
       action: 'createOrUpdateLead',
       leadId: createdLeadId,
-      result: {
-        leadId: createdLeadId,
-      },
+      result: { leadId: createdLeadId },
       updatedTranscript,
     });
   } catch (error: any) {

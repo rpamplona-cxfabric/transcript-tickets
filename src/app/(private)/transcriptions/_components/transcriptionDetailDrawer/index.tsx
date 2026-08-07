@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { FileAudio, X, Clock, CheckSquare, Download, User, XCircle, Loader2 } from 'lucide-react';
+import { FileAudio, X, Clock, Download, User, XCircle, Loader2 } from 'lucide-react';
 import { Combobox } from '@/components/combobox';
 import { LeadModal } from '../leadModal';
 import { SpeakerCombobox } from './speakerCombobox';
@@ -18,7 +17,6 @@ export const TranscriptionDetailDrawer = () => {
     modalPrefill,
     setModalPrefill,
     associatedLeads,
-    relatedTasks,
     speakers,
     isPolling,
     pollingLeadName,
@@ -206,27 +204,6 @@ export const TranscriptionDetailDrawer = () => {
             <div>{renderFormattedTranscript(activeTranscript.transcript)}</div>
           </div>
 
-          {relatedTasks.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-450 flex items-center gap-1.5">
-                <CheckSquare className="h-4.5 w-4.5 text-zinc-500" />
-                Identified Tasks
-              </h3>
-              <div className="rounded-xl border border-zinc-150 p-4 bg-zinc-50/50 dark:bg-zinc-900 dark:border-zinc-800 space-y-2.5">
-                {relatedTasks.map((task) => (
-                  <Link key={task.ticketId} href={`/tasks?open=${task.ticketId}`} className="flex flex-col gap-2 rounded-lg border border-zinc-200/60 bg-white p-3 transition duration-150 hover:border-zinc-350 hover:shadow-xs dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 group cursor-pointer sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-col gap-0.5 overflow-hidden">
-                      <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">{task.title}</span>
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 line-clamp-1">{task.description}</span>
-                    </div>
-                    <span className={`w-fit text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${task.priority === 'high' ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400' : 'bg-zinc-100 text-zinc-650 dark:bg-zinc-900 dark:text-zinc-400'}`}>
-                      {task.priority}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>

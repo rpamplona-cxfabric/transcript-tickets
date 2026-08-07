@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, Plus, User, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { searchLeads } from '@/lib/api/leads';
-import { queryKeys } from '@/lib/queryKeys';
+import { queryKeys } from '@/lib/queries/queryKeys';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
 export interface ComboboxLead {

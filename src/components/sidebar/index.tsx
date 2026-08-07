@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuth0 } from '@auth0/auth0-react';
 import Link from 'next/link';
 import {
   Terminal,
@@ -21,6 +20,18 @@ interface MenuItem {
   name: string;
   path: string;
   icon: ElementType;
+}
+
+export interface AuthenticatedUser {
+  sub?: string;
+  name?: string;
+  nickname?: string;
+  email?: string;
+  picture?: string;
+}
+
+interface SidebarProps {
+  authUser: AuthenticatedUser;
 }
 
 interface SidebarAvatarProps {
@@ -59,8 +70,7 @@ const cleanProfileValue = (value: string | null | undefined) => {
   return normalized && normalized !== 'null' && normalized !== 'undefined' ? normalized : '';
 };
 
-export const Sidebar = () => {
-  const { logout, user } = useAuth0();
+export const Sidebar = ({ authUser }: SidebarProps) => {
   const profile = useUserStore((state) => state.profile);
   const {
     pathname,
@@ -82,10 +92,10 @@ export const Sidebar = () => {
     .filter(Boolean)
     .join(' ');
   const displayName =
-    udasDisplayName || user?.name || user?.nickname || user?.email || 'Workspace user';
+    udasDisplayName || authUser.name || authUser.nickname || authUser.email || 'Workspace user';
   const displayEmail =
-    cleanProfileValue(profile?.email_address) || user?.email || '';
-  const profileImage = cleanProfileValue(profile?.image);
+    cleanProfileValue(profile?.email_address) || authUser.email || '';
+  const profileImage = cleanProfileValue(profile?.image) || authUser.picture || '';
   const initials = displayName
     .split(/\s+/)
     .slice(0, 2)
@@ -124,15 +134,14 @@ export const Sidebar = () => {
                 key={item.path}
                 href={item.path}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 group ${
+                className={`group flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? 'bg-white text-zinc-950 shadow-sm'
                     : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-zinc-950' : 'text-zinc-400 group-hover:text-white'}`}
-                  />
+                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-zinc-950' : 'text-zinc-400 group-hover:text-white'}`} />
                   <span>{item.name}</span>
                 </div>
                 {isActive && <ChevronRight className="h-4 w-4 text-zinc-950" />}
@@ -158,27 +167,20 @@ export const Sidebar = () => {
           </div>
           <button
             onClick={toggleTheme}
-            className="w-full flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all duration-150 cursor-pointer"
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-zinc-400 transition-all duration-150 hover:bg-zinc-900 hover:text-white"
           >
             <span className="flex items-center gap-2.5">
               {theme === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
               <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
             </span>
           </button>
-          <button
-            type="button"
-            onClick={() =>
-              logout({
-                logoutParams: {
-                  returnTo: window.location.origin,
-                },
-              })
-            }
+          <a
+            href="/auth/logout"
             className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-zinc-400 transition-all duration-150 hover:bg-zinc-900 hover:text-white"
           >
             <LogOut className="h-4.5 w-4.5" />
             <span>Sign out</span>
-          </button>
+          </a>
         </div>
       </aside>
 
@@ -190,4 +192,4 @@ export const Sidebar = () => {
       )}
     </>
   );
-}
+};

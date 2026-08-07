@@ -1,27 +1,24 @@
 import { useEffect } from 'react';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
-import { useTaskStore } from '@/lib/store/tasks';
 
 export const useTranscriptionsClient = () => {
   const {
     transcripts,
-    isReady: isTranscriptionsReady,
+    isReady,
     activeTranscript,
     setActiveTranscript,
     searchQuery,
     setSearchQuery,
     selectedTenant,
-    setSelectedTenant
+    setSelectedTenant,
   } = useTranscriptionStore();
-
-  const isTasksReady = useTaskStore((state) => state.isReady);
 
   useEffect(() => {
     if (transcripts.length > 0) {
       const params = new URLSearchParams(window.location.search);
       const openId = params.get('open');
       if (openId) {
-        const matchedTranscript = transcripts.find(t => t.transcriptId === openId);
+        const matchedTranscript = transcripts.find((transcript) => transcript.transcriptId === openId);
         if (matchedTranscript) {
           setActiveTranscript(matchedTranscript);
         }
@@ -29,21 +26,16 @@ export const useTranscriptionsClient = () => {
     }
   }, [transcripts, setActiveTranscript]);
 
-  const tenants = ['all', ...new Set(transcripts.map(t => t.tenantId).filter(Boolean))];
-
-  const filteredTranscripts = transcripts.filter(t => {
+  const tenants = ['all', ...new Set(transcripts.map((transcript) => transcript.tenantId).filter(Boolean))];
+  const filteredTranscripts = transcripts.filter((transcript) => {
     const matchesSearch =
-      (t.transcript && t.transcript.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (t.transcriptSummary && t.transcriptSummary.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (t.transcriptId && t.transcriptId.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    const matchesTenant = selectedTenant === 'all' || t.tenantId === selectedTenant;
+      (transcript.transcript && transcript.transcript.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (transcript.transcriptSummary && transcript.transcriptSummary.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (transcript.transcriptId && transcript.transcriptId.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesTenant = selectedTenant === 'all' || transcript.tenantId === selectedTenant;
 
     return matchesSearch && matchesTenant;
   });
-
-  const isReady = isTranscriptionsReady && isTasksReady;
-  const hasTranscripts = filteredTranscripts.length > 0;
 
   return {
     isReady,
@@ -53,6 +45,6 @@ export const useTranscriptionsClient = () => {
     selectedTenant,
     setSelectedTenant,
     tenants,
-    hasTranscripts
+    hasTranscripts: filteredTranscripts.length > 0,
   };
 };

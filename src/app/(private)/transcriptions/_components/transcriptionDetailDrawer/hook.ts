@@ -1,16 +1,16 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
 import { associateLead, fetchLeadsByIds } from '@/lib/api/leads';
 import { patchSpeakerNames, generateTasks, pollUntilProcessed } from '@/lib/api/transcriptions';
-import { queryKeys } from '@/lib/queryKeys';
+import { queryKeys } from '@/lib/queries/queryKeys';
 import { ComboboxLead } from '@/components/combobox';
 import { Transcript } from '@/types';
 
 export const useTranscriptionDetailDrawer = () => {
   const qc = useQueryClient();
-  const { activeTranscript, setActiveTranscript, tasks, updateTranscript } = useTranscriptionStore();
+  const { activeTranscript, setActiveTranscript, updateTranscript } = useTranscriptionStore();
 
   const [selectedLead, setSelectedLead] = useState<ComboboxLead | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -19,7 +19,10 @@ export const useTranscriptionDetailDrawer = () => {
   const [pollingLeadName, setPollingLeadName] = useState<string>('');
   const pollingTranscriptIdRef = useRef<string | null>(null);
   const activeTranscriptRef = useRef(activeTranscript);
-  activeTranscriptRef.current = activeTranscript;
+
+  useEffect(() => {
+    activeTranscriptRef.current = activeTranscript;
+  }, [activeTranscript]);
 
   const leadIds: string[] = (() => {
     if (!activeTranscript?.leads) return [];
@@ -77,7 +80,6 @@ export const useTranscriptionDetailDrawer = () => {
         if (current && current.transcriptId === transcriptId) {
           updateTranscript({ ...current, isProcessed: true });
         }
-        qc.invalidateQueries({ queryKey: queryKeys.tasks });
         qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
         toast.success('Tasks created successfully!');
       } else {
@@ -174,7 +176,6 @@ export const useTranscriptionDetailDrawer = () => {
     }
   };
 
-  const relatedTasks = tasks.filter((t) => t.transcriptId === activeTranscript?.transcriptId);
   const speakers = getSpeakers(activeTranscript?.transcript);
 
   return {
@@ -187,7 +188,6 @@ export const useTranscriptionDetailDrawer = () => {
     modalPrefill,
     setModalPrefill,
     associatedLeads,
-    relatedTasks,
     speakers,
     isPolling,
     pollingLeadName,

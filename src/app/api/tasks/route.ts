@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getTasks, createTask } from '../../../lib/db';
+import { getTasks, createTask } from '@/lib/db/tasks';
+import { getApiSession, unauthorized } from '@/lib/auth/requireSession';
 
 export async function GET() {
+  const session = await getApiSession();
+  if (!session) return unauthorized();
+
   try {
     const tasks = await getTasks();
     return NextResponse.json(tasks);
@@ -15,6 +19,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await getApiSession();
+  if (!session) return unauthorized();
+
   try {
     const body = await request.json();
     if (!body.title || !body.description) {
@@ -23,7 +30,7 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
+
     const newTask = await createTask(body);
     return NextResponse.json(newTask, { status: 201 });
   } catch (error) {

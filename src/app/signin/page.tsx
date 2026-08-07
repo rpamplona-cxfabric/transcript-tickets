@@ -1,41 +1,29 @@
-'use client';
-
-import { useAuth0 } from '@auth0/auth0-react';
+import { redirect } from 'next/navigation';
 import { ArrowRight, Headphones, ShieldCheck } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { auth0 } from '@/lib/auth/auth0';
 
-const getReturnTo = () => {
-  if (typeof window === 'undefined') {
+const getSafeReturnTo = (requested: string | undefined) => {
+  if (!requested?.startsWith('/') || requested.startsWith('//')) {
     return '/';
   }
 
-  const requested = new URLSearchParams(window.location.search).get('returnTo');
-  if (!requested) {
-    return '/';
-  }
-
-  try {
-    const url = new URL(requested, window.location.origin);
-    if (url.origin !== window.location.origin) {
-      return '/';
-    }
-
-    return `${url.pathname}${url.search}${url.hash}`;
-  } catch {
-    return '/';
-  }
+  return requested;
 };
 
-export default function SignInPage() {
-  const { error, isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
-  const router = useRouter();
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string }>;
+}) {
+  const { returnTo: requestedReturnTo } = await searchParams;
+  const returnTo = getSafeReturnTo(requestedReturnTo);
+  const session = await auth0.getSession();
 
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace(getReturnTo());
-    }
-  }, [isAuthenticated, isLoading, router]);
+  if (session) {
+    redirect(returnTo);
+  }
+
+  const loginUrl = `/auth/login?returnTo=${encodeURIComponent(returnTo)}`;
 
   return (
     <main className="relative flex min-h-screen overflow-hidden bg-zinc-950 text-white">
@@ -78,25 +66,13 @@ export default function SignInPage() {
             You’ll be redirected to your organization’s secure Auth0 sign-in page.
           </p>
 
-          {error && (
-            <div className="mt-6 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200">
-              {error.message}
-            </div>
-          )}
-
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={() =>
-              loginWithRedirect({
-                appState: { returnTo: getReturnTo() },
-              })
-            }
-            className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-zinc-200 disabled:cursor-wait disabled:opacity-70"
+          <a
+            href={loginUrl}
+            className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-zinc-200"
           >
-            {isLoading ? 'Checking session…' : 'Continue with Auth0'}
-            {!isLoading && <ArrowRight className="h-4 w-4" />}
-          </button>
+            Continue with Auth0
+            <ArrowRight className="h-4 w-4" />
+          </a>
 
           <p className="mt-5 text-center text-xs leading-5 text-zinc-500">
             Access is limited to authorized CXF workspace users.

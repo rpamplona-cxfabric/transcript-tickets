@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getProcessedTranscripts } from '@/lib/db';
+import { isTranscriptProcessed } from '@/lib/db/processed-transcriptions';
+import { getApiSession, unauthorized } from '@/lib/auth/requireSession';
+import { getTenantId } from '@/lib/tenant';
 
 export async function GET(request: Request) {
+  const session = await getApiSession();
+  if (!session) return unauthorized();
+
+  const tenantId = await getTenantId();
+  if (!tenantId) {
+    return NextResponse.json({ error: 'Tenant ID is unavailable for this user' }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const transcriptId = searchParams.get('transcriptId');
@@ -10,8 +20,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'transcriptId is required' }, { status: 400 });
     }
 
-    const processedIds = await getProcessedTranscripts();
-    const isProcessed = processedIds.includes(transcriptId);
+    const isProcessed = await isTranscriptProcessed(tenantId, transcriptId);
 
     return NextResponse.json({ isProcessed });
   } catch (error: any) {

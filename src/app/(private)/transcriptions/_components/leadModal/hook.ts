@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { createLead, checkLeadExists } from '@/lib/api/leads';
-import { queryKeys } from '@/lib/queryKeys';
+import { queryKeys } from '@/lib/queries/queryKeys';
 import { Transcript } from '@/types';
 
 export const leadModalSchema = z.object({

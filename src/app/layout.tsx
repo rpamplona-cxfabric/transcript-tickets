@@ -1,23 +1,22 @@
-import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
+import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
 import { Toaster } from 'react-hot-toast';
-import { AppAuthProvider } from "@/components/auth/authProvider";
-import { QueryProvider } from "@/components/queryProvider";
-import "./globals.css";
+import { QueryProvider } from '@/components/queryProvider';
+import './globals.css';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 export const metadata = {
-  title: "CXF Workspace | Support & Transcripts",
-  description: "CXF Portal for managing call transcriptions and support tickets",
+  title: 'CXF Workspace | Support & Transcripts',
+  description: 'CXF Portal for managing call transcriptions and support tickets',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -27,13 +26,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 font-sans">
-        <AppAuthProvider>
-          <QueryProvider>
-            {children}
-            <Toaster position="top-right" toastOptions={{ className: 'dark:bg-zinc-900 dark:text-white dark:border dark:border-zinc-800' }} />
-          </QueryProvider>
-        </AppAuthProvider>
+      <body className="min-h-full bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
+        <QueryProvider>
+          {children}
+          <Toaster position="top-right" toastOptions={{ className: 'dark:bg-zinc-900 dark:text-white dark:border dark:border-zinc-800' }} />
+        </QueryProvider>
         <Script id="theme-initializer" strategy="beforeInteractive">
           {`
             try {

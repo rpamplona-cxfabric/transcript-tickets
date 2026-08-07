@@ -1,9 +1,8 @@
 import { create } from 'zustand';
-import { Task, Transcript } from '@/types';
+import { Transcript } from '@/types';
 
 interface TranscriptionState {
   transcripts: Transcript[];
-  tasks: Task[];
   isReady: boolean;
   activeTranscript: Transcript | null;
   searchQuery: string;
@@ -11,7 +10,6 @@ interface TranscriptionState {
   currentPage: number;
 
   setTranscripts: (transcripts: Transcript[]) => void;
-  setTasks: (tasks: Task[]) => void;
   setActiveTranscript: (activeTranscript: Transcript | null) => void;
   setSearchQuery: (searchQuery: string) => void;
   setSelectedTenant: (selectedTenant: string) => void;
@@ -21,7 +19,6 @@ interface TranscriptionState {
 
 export const useTranscriptionStore = create<TranscriptionState>((set) => ({
   transcripts: [],
-  tasks: [],
   isReady: false,
   activeTranscript: null,
   searchQuery: '',
@@ -29,14 +26,18 @@ export const useTranscriptionStore = create<TranscriptionState>((set) => ({
   currentPage: 1,
 
   setTranscripts: (transcripts) => set({ transcripts, isReady: true }),
-  setTasks: (tasks) => set({ tasks }),
   setActiveTranscript: (activeTranscript) => set({ activeTranscript }),
   setSearchQuery: (searchQuery) => set({ searchQuery, currentPage: 1 }),
   setSelectedTenant: (selectedTenant) => set({ selectedTenant, currentPage: 1 }),
   setCurrentPage: (currentPage) => set({ currentPage }),
 
   updateTranscript: (updated) => set((state) => ({
-    transcripts: state.transcripts.map(t => t.transcriptId === updated.transcriptId ? updated : t),
-    activeTranscript: state.activeTranscript?.transcriptId === updated.transcriptId ? updated : state.activeTranscript
-  }))
+    transcripts: state.transcripts.map((transcript) =>
+      transcript.transcriptId === updated.transcriptId ? updated : transcript
+    ),
+    activeTranscript:
+      state.activeTranscript?.transcriptId === updated.transcriptId
+        ? updated
+        : state.activeTranscript,
+  })),
 }));

@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { getTranscripts } from '../../../../lib/db';
+import { getTranscript } from '@/lib/db/transcriptions';
+import { getApiSession, unauthorized } from '@/lib/auth/requireSession';
+import { getTenantId } from '@/lib/tenant';
 
 export async function POST(request: Request) {
+  const session = await getApiSession();
+  if (!session) return unauthorized();
+
+  const tenantId = await getTenantId();
+  if (!tenantId) {
+    return NextResponse.json({ error: 'Tenant ID is unavailable for this user' }, { status: 403 });
+  }
+
   try {
     const { transcriptId, leadName, leadId } = await request.json();
 
@@ -13,8 +23,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const transcripts = await getTranscripts();
-    const transcript = transcripts.find(t => t.transcriptId === transcriptId);
+    const transcript = await getTranscript(tenantId, transcriptId);
 
     if (!transcript) {
       return NextResponse.json(
@@ -27,7 +36,7 @@ export async function POST(request: Request) {
     if (transcript.speakerNames) {
       for (const [genericName, mappedName] of Object.entries(transcript.speakerNames)) {
         if (mappedName) {
-          const escapedGeneric = genericName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          const escapedGeneric = genericName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
           const regex = new RegExp(`(^|\\n|\\r)(\\[.*?\\])?\\s*${escapedGeneric}\\s*:`, 'g');
           mappedTranscript = mappedTranscript.replace(regex, `$1$2 ${mappedName}:`);
         }
@@ -42,7 +51,7 @@ export async function POST(request: Request) {
         message: 'Task generation triggered (mock mode - FLOW_A_WEBHOOK_URL not configured)',
         mappedTranscript,
         leadName,
-        leadId
+        leadId,
       });
     }
 
@@ -57,7 +66,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Task generation triggered successfully'
+      message: 'Task generation triggered successfully',
     });
   } catch (error: any) {
     console.error('API Error in POST /api/transcriptions/generate-tasks:', error);
