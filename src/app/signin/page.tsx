@@ -63,14 +63,14 @@ export default async function SignInPage({
           </p>
           <h2 className="mt-3 text-2xl font-semibold">Sign in to continue</h2>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            You’ll be redirected to your organization’s secure Auth0 sign-in page.
+            You’ll be redirected to the CXF authentication page.
           </p>
 
           <a
             href={loginUrl}
             className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-zinc-200"
           >
-            Continue with Auth0
+            Signin
             <ArrowRight className="h-4 w-4" />
           </a>
 
