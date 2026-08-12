@@ -10,7 +10,8 @@ export const TableView = () => {
     setCurrentPage,
     setActiveTranscript,
     searchQuery,
-    selectedTenant
+    selectedTenant,
+    selectedStatus,
   } = useTranscriptionStore();
 
   const itemsPerPage = 20;
@@ -22,8 +23,15 @@ export const TableView = () => {
       (t.transcriptId && t.transcriptId.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesTenant = selectedTenant === 'all' || t.tenantId === selectedTenant;
+    const matchesStatus = selectedStatus === 'ignored'
+      ? t.isIgnored
+      : selectedStatus === 'processed'
+        ? !t.isIgnored && t.isProcessed
+        : selectedStatus === 'pending'
+          ? !t.isIgnored && !t.isProcessed
+          : !t.isIgnored;
 
-    return matchesSearch && matchesTenant;
+    return matchesSearch && matchesTenant && matchesStatus;
   });
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -56,17 +64,16 @@ export const TableView = () => {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
-                    {t.transcriptId.slice(0, 8)}
-                  </p>
-                </div>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                   <Clock3 className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
                   {formatTime(t.timestamp)}
                 </div>
               </div>
-              {t.isProcessed ? (
+              {t.isIgnored ? (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2 py-1 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" /> Ignored
+                </span>
+              ) : t.isProcessed ? (
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   Processed
@@ -98,10 +105,9 @@ export const TableView = () => {
         <table className="w-full border-collapse text-left text-sm text-zinc-500 dark:text-zinc-400">
           <thead className="bg-zinc-50 text-xs font-bold uppercase text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-800">
             <tr>
-              <th scope="col" className="px-6 py-4">Transcript ID</th>
+              <th scope="col" className="px-6 py-4">Date & Time</th>
               <th scope="col" className="px-6 py-4">Status</th>
               <th scope="col" className="px-6 py-4">AI Summary</th>
-              <th scope="col" className="px-6 py-4">Date & Time</th>
               <th scope="col" className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -112,11 +118,15 @@ export const TableView = () => {
                 onClick={() => setActiveTranscript(t)}
                 className="hover:bg-zinc-50 cursor-pointer transition-colors dark:hover:bg-zinc-900/30"
               >
-                <td className="px-6 py-4 font-mono text-xs font-bold text-zinc-900 dark:text-zinc-200">
-                  {t.transcriptId.slice(0, 8)}...
+                <td className="px-6 py-4 text-zinc-500 dark:text-zinc-400 font-medium">
+                  {formatTime(t.timestamp)}
                 </td>
                 <td className="px-6 py-4">
-                  {t.isProcessed ? (
+                  {t.isIgnored ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" /> Ignored
+                    </span>
+                  ) : t.isProcessed ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       Processed
@@ -130,9 +140,6 @@ export const TableView = () => {
                 </td>
                 <td className="px-6 py-4 max-w-sm truncate text-zinc-650 dark:text-zinc-400 font-medium">
                   {t.transcriptSummary || 'No summary available.'}
-                </td>
-                <td className="px-6 py-4 text-zinc-500 dark:text-zinc-400 font-medium">
-                  {formatTime(t.timestamp)}
                 </td>
                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-end gap-2">

@@ -1,6 +1,7 @@
 'use client';
 
-import { FileAudio, X, Clock, Download, User, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { FileAudio, X, Clock, Download, User, Loader2, AlertTriangle } from 'lucide-react';
 import { Combobox } from '@/components/combobox';
 import { LeadModal } from '../leadModal';
 import { SpeakerCombobox } from './speakerCombobox';
@@ -19,15 +20,20 @@ export const TranscriptionDetailDrawer = () => {
     speakers,
     isPolling,
     isGeneratingTasks,
+    isIgnoring,
+    isRecovering,
     pollingLeadName,
     handleSelectLead,
     handleModalSuccess,
     handleRegenerateTasks,
     handleMapSpeaker,
+    handleIgnore,
+    handleRecover,
     getSpeakerOptions,
     downloadTextFile,
     formatTime,
   } = useTranscriptionDetailDrawer();
+  const [isIgnoreDialogOpen, setIsIgnoreDialogOpen] = useState(false);
 
   if (!activeTranscript) return null;
 
@@ -67,12 +73,17 @@ export const TranscriptionDetailDrawer = () => {
 
       <div className="fixed inset-y-0 right-0 z-50 flex h-[100svh] w-full flex-col bg-white shadow-2xl transition-transform duration-300 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 md:max-w-3xl">
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 px-4 sm:px-6 dark:border-zinc-800">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <FileAudio className="h-5 w-5 text-zinc-900 dark:text-white" />
-            <h2 className="text-base font-bold text-zinc-900 dark:text-white">Transcription Details</h2>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-zinc-900 dark:text-white">Transcription Details</h2>
+              <p className="truncate font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400" title={activeTranscript.transcriptId}>
+                {activeTranscript.transcriptId}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={() => downloadTextFile(activeTranscript)} title="Download Report" className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer animate-fade-in">
+            <button onClick={() => downloadTextFile(activeTranscript)} title="Download Transcript" className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer animate-fade-in">
               <Download className="h-5 w-5" />
             </button>
             <button onClick={() => setActiveTranscript(null)} className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer">
@@ -89,7 +100,11 @@ export const TranscriptionDetailDrawer = () => {
               <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{formatTime(activeTranscript.timestamp)}</span>
             </div>
             <div>
-              {activeTranscript.isProcessed ? (
+              {activeTranscript.isIgnored ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" /> Ignored
+                </span>
+              ) : activeTranscript.isProcessed ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Processed
                 </span>
@@ -110,7 +125,7 @@ export const TranscriptionDetailDrawer = () => {
             </div>
           </div>
 
-          {!activeTranscript.isProcessed && (
+          {!activeTranscript.isProcessed && !activeTranscript.isIgnored && (
             <div className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Identify Contact</h3>
@@ -160,9 +175,9 @@ export const TranscriptionDetailDrawer = () => {
                   placeholder="Search leads by name..."
                 />
               )}
+
             </div>
           )}
-
           <LeadModal
             isOpen={modalOpen}
             onClose={() => setModalOpen(false)}
@@ -214,8 +229,56 @@ export const TranscriptionDetailDrawer = () => {
             <div>{renderFormattedTranscript(activeTranscript.transcript)}</div>
           </div>
 
+          {activeTranscript.isIgnored && (
+            <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={handleRecover}
+                disabled={isRecovering}
+                className="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-indigo-900/70 dark:text-indigo-300 dark:hover:bg-indigo-950/30"
+              >
+                {isRecovering ? 'Recovering...' : 'Recover transcription'}
+              </button>
+            </div>
+          )}
+
+          {!activeTranscript.isProcessed && !activeTranscript.isIgnored && (
+            <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setIsIgnoreDialogOpen(true)}
+                disabled={isPolling || isGeneratingTasks}
+                className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/70 dark:text-red-300 dark:hover:bg-red-950/30"
+              >
+                Ignore transcription
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
+
+      {isIgnoreDialogOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Close ignore confirmation"
+            onClick={() => setIsIgnoreDialogOpen(false)}
+            className="absolute inset-0 bg-zinc-950/40"
+          />
+          <div role="dialog" aria-modal="true" aria-labelledby="ignore-transcription-title" className="relative w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-300">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <h3 id="ignore-transcription-title" className="mt-4 text-lg font-bold text-zinc-900 dark:text-white">Ignore this transcription?</h3>
+            <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">This transcription will be marked as ignored and hidden from the default list. You can find it later using the Ignored filter.</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setIsIgnoreDialogOpen(false)} disabled={isIgnoring} className="rounded-lg px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:text-zinc-300 dark:hover:bg-zinc-900">Cancel</button>
+              <button type="button" onClick={handleIgnore} disabled={isIgnoring} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">{isIgnoring ? 'Ignoring...' : 'Ignore transcription'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

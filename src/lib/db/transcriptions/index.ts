@@ -55,7 +55,58 @@ async function formatTranscript(
     transcriptSummary,
     speakerNames: parseSpeakerNames(item.speakerNames),
     isProcessed: processedIds.includes(item.transcriptId),
+    isIgnored: item.isIgnored === true,
   } as Transcript;
+}
+
+export async function ignoreTranscript(
+  tenantId: string,
+  transcriptId: string
+): Promise<{ transcriptId: string; isIgnored: true }> {
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: CONTACT_TRANSCRIPTS_TABLE,
+      Key: { tenantId, transcriptId },
+      UpdateExpression: 'SET #isIgnored = :isIgnored',
+      ConditionExpression: 'attribute_exists(#tenantId) AND attribute_exists(#transcriptId)',
+      ExpressionAttributeNames: {
+        '#isIgnored': 'isIgnored',
+        '#tenantId': 'tenantId',
+        '#transcriptId': 'transcriptId',
+      },
+      ExpressionAttributeValues: { ':isIgnored': true },
+    }));
+
+    return { transcriptId, isIgnored: true };
+  } catch (error) {
+    console.error('Error ignoring transcript:', error);
+    throw error;
+  }
+}
+
+export async function recoverTranscript(
+  tenantId: string,
+  transcriptId: string
+): Promise<{ transcriptId: string; isIgnored: false }> {
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: CONTACT_TRANSCRIPTS_TABLE,
+      Key: { tenantId, transcriptId },
+      UpdateExpression: 'SET #isIgnored = :isIgnored',
+      ConditionExpression: 'attribute_exists(#tenantId) AND attribute_exists(#transcriptId)',
+      ExpressionAttributeNames: {
+        '#isIgnored': 'isIgnored',
+        '#tenantId': 'tenantId',
+        '#transcriptId': 'transcriptId',
+      },
+      ExpressionAttributeValues: { ':isIgnored': false },
+    }));
+
+    return { transcriptId, isIgnored: false };
+  } catch (error) {
+    console.error('Error recovering transcript:', error);
+    throw error;
+  }
 }
 
 export async function getTranscripts(tenantId: string): Promise<Transcript[]> {

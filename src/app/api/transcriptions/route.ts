@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getTranscripts, updateTranscriptSpeakerNames } from '@/lib/db/transcriptions';
+import { getTranscripts, ignoreTranscript, recoverTranscript, updateTranscriptSpeakerNames } from '@/lib/db/transcriptions';
 import { getApiSession, unauthorized } from '@/lib/auth/requireSession';
 import { getTenantId } from '@/lib/tenant';
 
@@ -52,10 +52,9 @@ export async function PATCH(request: Request) {
   if (!tenantId) return tenantUnavailable();
 
   try {
-    console.log('[PATCH /api/transcriptions] User:', session.user.sub);
 
     const body = await request.json();
-    const { transcriptId, speakerNames } = body;
+    const { transcriptId, speakerNames, isIgnored } = body;
 
     if (!transcriptId) {
       return NextResponse.json(
@@ -64,7 +63,11 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const updated = await updateTranscriptSpeakerNames(tenantId, transcriptId, speakerNames);
+    const updated = isIgnored === true
+      ? await ignoreTranscript(tenantId, transcriptId)
+      : isIgnored === false
+        ? await recoverTranscript(tenantId, transcriptId)
+        : await updateTranscriptSpeakerNames(tenantId, transcriptId, speakerNames);
     return NextResponse.json(updated);
   } catch (error: any) {
     console.error('API Error in PATCH /api/transcriptions:', error);

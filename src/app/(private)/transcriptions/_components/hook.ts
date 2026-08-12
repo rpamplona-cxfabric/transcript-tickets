@@ -11,6 +11,8 @@ export const useTranscriptionsClient = () => {
     setSearchQuery,
     selectedTenant,
     setSelectedTenant,
+    selectedStatus,
+    setSelectedStatus,
   } = useTranscriptionStore();
 
   useEffect(() => {
@@ -33,8 +35,15 @@ export const useTranscriptionsClient = () => {
       (transcript.transcriptSummary && transcript.transcriptSummary.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (transcript.transcriptId && transcript.transcriptId.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesTenant = selectedTenant === 'all' || transcript.tenantId === selectedTenant;
+    const matchesStatus = selectedStatus === 'ignored'
+      ? transcript.isIgnored
+      : selectedStatus === 'processed'
+        ? !transcript.isIgnored && transcript.isProcessed
+        : selectedStatus === 'pending'
+          ? !transcript.isIgnored && !transcript.isProcessed
+          : !transcript.isIgnored;
 
-    return matchesSearch && matchesTenant;
+    return matchesSearch && matchesTenant && matchesStatus;
   });
 
   return {
@@ -44,6 +53,8 @@ export const useTranscriptionsClient = () => {
     setSearchQuery,
     selectedTenant,
     setSelectedTenant,
+    selectedStatus,
+    setSelectedStatus,
     tenants,
     hasTranscripts: filteredTranscripts.length > 0,
   };

@@ -17,6 +17,16 @@ export const patchSpeakerNames = async ({
   return data;
 };
 
+export const ignoreTranscript = async (transcriptId: string): Promise<{ transcriptId: string; isIgnored: true }> => {
+  const { data } = await api.patch<{ transcriptId: string; isIgnored: true }>('/transcriptions', { transcriptId, isIgnored: true });
+  return data;
+};
+
+export const recoverTranscript = async (transcriptId: string): Promise<{ transcriptId: string; isIgnored: false }> => {
+  const { data } = await api.patch<{ transcriptId: string; isIgnored: false }>('/transcriptions', { transcriptId, isIgnored: false });
+  return data;
+};
+
 export const generateTasks = async ({
   transcriptId,
   leadName,

@@ -1,6 +1,7 @@
 'use client';
 
 import { Search, FileAudio } from 'lucide-react';
+import { Select } from '@/components/select';
 import { TranscriptionDetailDrawer } from './transcriptionDetailDrawer';
 import { TableView } from './tableView';
 import { useTranscriptionsClient } from './hook';
@@ -11,6 +12,8 @@ export const TranscriptionsClient = () => {
     activeTranscript,
     searchQuery,
     setSearchQuery,
+    selectedStatus,
+    setSelectedStatus,
     hasTranscripts
   } = useTranscriptionsClient();
 
@@ -32,7 +35,7 @@ export const TranscriptionsClient = () => {
           </div>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-zinc-400" />
             <input
@@ -43,6 +46,17 @@ export const TranscriptionsClient = () => {
               className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:focus:border-white"
             />
           </div>
+          <Select
+            value={selectedStatus}
+            onChange={(value) => setSelectedStatus(value as typeof selectedStatus)}
+            options={[
+              { value: 'active', label: 'All active' },
+              { value: 'pending', label: 'Pending' },
+              { value: 'processed', label: 'Processed' },
+              { value: 'ignored', label: 'Ignored' },
+            ]}
+            className="sm:w-44"
+          />
         </div>
 
         {!hasTranscripts ? (

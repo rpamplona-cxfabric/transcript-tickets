@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
 import { associateLead, fetchLeadsByIds } from '@/lib/api/leads';
-import { patchSpeakerNames, generateTasks, pollUntilProcessed } from '@/lib/api/transcriptions';
+import { ignoreTranscript, recoverTranscript, patchSpeakerNames, generateTasks, pollUntilProcessed } from '@/lib/api/transcriptions';
 import { queryKeys } from '@/lib/queries/queryKeys';
 import { ComboboxLead } from '@/components/combobox';
 import { Transcript } from '@/types';
@@ -74,6 +74,31 @@ export const useTranscriptionDetailDrawer = () => {
       if (last) toast.success(last[1] ? `Mapped ${last[0]} to ${last[1]}` : `Removed ${last[0]} mapped name`);
     },
     onError: (err: Error) => toast.error(err.message),
+  });
+
+  const ignoreMutation = useMutation({
+    mutationFn: ignoreTranscript,
+    onSuccess: (updated) => {
+      const current = activeTranscriptRef.current;
+      if (current?.transcriptId === updated.transcriptId) {
+        updateTranscript({ ...current, isIgnored: true });
+        setActiveTranscript(null);
+      }
+      toast.success('Transcription ignored');
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to ignore transcription'),
+  });
+
+  const recoverMutation = useMutation({
+    mutationFn: recoverTranscript,
+    onSuccess: (updated) => {
+      const current = activeTranscriptRef.current;
+      if (current?.transcriptId === updated.transcriptId) {
+        updateTranscript({ ...current, isIgnored: false });
+      }
+      toast.success('Transcription recovered');
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to recover transcription'),
   });
 
   const startPolling = async (transcriptId: string, leadName: string) => {
@@ -166,6 +191,18 @@ export const useTranscriptionDetailDrawer = () => {
     speakerMutation.mutate({ transcriptId: activeTranscript.transcriptId, speakerNames: updatedSpeakerNames });
   };
 
+  const handleIgnore = () => {
+    if (activeTranscript && !activeTranscript.isProcessed && !activeTranscript.isIgnored) {
+      ignoreMutation.mutate(activeTranscript.transcriptId);
+    }
+  };
+
+  const handleRecover = () => {
+    if (activeTranscript?.isIgnored) {
+      recoverMutation.mutate(activeTranscript.transcriptId);
+    }
+  };
+
   const getSpeakers = (text: string | undefined): string[] => {
     if (!text) return [];
     const speakers = new Set<string>();
@@ -226,11 +263,15 @@ export const useTranscriptionDetailDrawer = () => {
     speakers,
     isPolling,
     isGeneratingTasks: generateMutation.isPending,
+    isIgnoring: ignoreMutation.isPending,
+    isRecovering: recoverMutation.isPending,
     pollingLeadName,
     handleSelectLead,
     handleModalSuccess,
     handleRegenerateTasks,
     handleMapSpeaker,
+    handleIgnore,
+    handleRecover,
     getSpeakerOptions,
     downloadTextFile,
     formatTime,

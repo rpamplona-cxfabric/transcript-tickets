@@ -18,6 +18,7 @@ export interface Transcript {
   speakerNames?: Record<string, string>;
   leads?: string;
   isProcessed?: boolean;
+  isIgnored?: boolean;
 }
 
 export interface SelectOption {
