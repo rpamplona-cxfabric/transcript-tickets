@@ -119,9 +119,9 @@ export const TranscriptionDetailDrawer = () => {
           <div className="space-y-2">
             <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">AI Summary</h3>
             <div className="rounded-xl bg-zinc-50 border border-zinc-100 p-4 dark:bg-zinc-900 dark:border-zinc-800">
-              <p className="text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 font-medium">
+              <pre className="whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 font-medium">
                 {activeTranscript.transcriptSummary || 'Summary not available.'}
-              </p>
+              </pre>
             </div>
           </div>
 
