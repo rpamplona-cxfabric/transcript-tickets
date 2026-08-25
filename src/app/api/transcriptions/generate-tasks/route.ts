@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     }
 
     await axios.post(webhookUrl, {
-      tenantId,
+      clientId: tenantId,
       transcriptId: transcript.transcriptId,
       transcript: mappedTranscript,
       transcriptSummary: transcript.transcriptSummary,
