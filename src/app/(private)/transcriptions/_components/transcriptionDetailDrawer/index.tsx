@@ -19,13 +19,14 @@ export const TranscriptionDetailDrawer = () => {
     associatedLeads,
     speakers,
     isPolling,
-    isGeneratingTasks,
+    isSubmitting,
+    canChangeLead,
     isIgnoring,
     isRecovering,
     pollingLeadName,
     handleSelectLead,
     handleModalSuccess,
-    handleRegenerateTasks,
+    handleSubmit,
     handleMapSpeaker,
     handleIgnore,
     handleRecover,
@@ -142,11 +143,11 @@ export const TranscriptionDetailDrawer = () => {
                     <p className="text-[10px] font-medium text-indigo-500 dark:text-indigo-400">Waiting for AI to generate tasks from this transcript. This may take a moment.</p>
                   </div>
                 </div>
-              ) : selectedLead ? (
-                <div className="animate-fade-in divide-y divide-zinc-150 dark:divide-zinc-800">
-                  <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950/40">
+              ) : (
+                <>
+                  {selectedLead && (
+                    <div className="animate-fade-in flex items-center gap-2.5 rounded-lg border border-indigo-100 bg-indigo-50/40 px-3 py-2.5 dark:border-indigo-900/50 dark:bg-indigo-950/20">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950/40">
                         <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                       </div>
                       <div className="min-w-0">
@@ -154,26 +155,30 @@ export const TranscriptionDetailDrawer = () => {
                         {(selectedLead.phones?.[0] || selectedLead.emails?.[0]) && (
                           <p className="truncate text-[10px] font-medium text-zinc-450 dark:text-zinc-500">{selectedLead.phones?.[0] || selectedLead.emails?.[0]}</p>
                         )}
-                        <p className="mt-0.5 text-[10px] font-medium text-zinc-500 dark:text-zinc-400">Contact associated. Regenerate tasks if a previous attempt did not complete.</p>
                       </div>
                     </div>
+                  )}
+
+                  {canChangeLead && (
+                    <Combobox
+                      onSelect={handleSelectLead}
+                      onCreateNew={(text) => { setModalPrefill(text); setModalOpen(true); }}
+                      placeholder={selectedLead ? 'Search a different lead...' : 'Search leads by name...'}
+                    />
+                  )}
+
+                  {selectedLead && (
                     <button
                       type="button"
-                      onClick={handleRegenerateTasks}
-                      disabled={isGeneratingTasks}
-                      className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-300 dark:hover:bg-indigo-950/50 cursor-pointer transition-colors"
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-indigo-600 dark:hover:bg-indigo-500 cursor-pointer transition-colors"
                     >
-                      <Loader2 className={`h-3.5 w-3.5 ${isGeneratingTasks ? 'animate-spin' : ''}`} />
-                      {isGeneratingTasks ? 'Starting...' : 'Regenerate tasks'}
+                      <Loader2 className={`h-3.5 w-3.5 ${isSubmitting ? 'animate-spin' : 'hidden'}`} />
+                      {isSubmitting ? 'Submitting...' : 'Submit'}
                     </button>
-                  </div>
-                </div>
-              ) : (
-                <Combobox
-                  onSelect={handleSelectLead}
-                  onCreateNew={(text) => { setModalPrefill(text); setModalOpen(true); }}
-                  placeholder="Search leads by name..."
-                />
+                  )}
+                </>
               )}
 
             </div>
@@ -247,7 +252,7 @@ export const TranscriptionDetailDrawer = () => {
               <button
                 type="button"
                 onClick={() => setIsIgnoreDialogOpen(true)}
-                disabled={isPolling || isGeneratingTasks}
+                disabled={isSubmitting}
                 className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/70 dark:text-red-300 dark:hover:bg-red-950/30"
               >
                 Ignore transcription

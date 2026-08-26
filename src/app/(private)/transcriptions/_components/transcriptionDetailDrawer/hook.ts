@@ -51,18 +51,50 @@ export const useTranscriptionDetailDrawer = () => {
 
   const displayedLead = selectedLead ?? associatedLeads[0] ?? null;
 
-  const associateMutation = useMutation({
-    mutationFn: associateLead,
-    onSuccess: (data) => {
-      if (data.updatedTranscript) updateTranscript(data.updatedTranscript);
-      qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
+  const startPolling = async (transcriptId: string, leadName: string) => {
+    pollingTranscriptIdRef.current = transcriptId;
+    setPollingLeadName(leadName);
+    setIsPolling(true);
+    try {
+      const processed = await pollUntilProcessed(transcriptId);
+      if (pollingTranscriptIdRef.current !== transcriptId) return;
+      if (processed) {
+        const current = activeTranscriptRef.current;
+        if (current && current.transcriptId === transcriptId) {
+          updateTranscript({ ...current, isProcessed: true });
+        }
+        qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
+        toast.success('Tasks created successfully!');
+      } else {
+        toast.error('Task processing timed out. Please check back later.');
+      }
+    } finally {
+      if (pollingTranscriptIdRef.current === transcriptId) {
+        setIsPolling(false);
+        setPollingLeadName('');
+        pollingTranscriptIdRef.current = null;
+      }
+    }
+  };
 
   const generateMutation = useMutation({
     mutationFn: generateTasks,
+    onSuccess: (_data, { transcriptId, leadName }) => {
+      void startPolling(transcriptId, leadName || '');
+    },
     onError: (err: Error) => toast.error(err.message || 'Failed to trigger task generation'),
+  });
+
+  const associateMutation = useMutation({
+    mutationFn: associateLead,
+    onSuccess: (data, { transcriptId, firstname, lastname, leadId }) => {
+      if (data.updatedTranscript) updateTranscript(data.updatedTranscript);
+      qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
+
+      const leadName = `${firstname} ${lastname}`.trim();
+      generateMutation.mutate({ transcriptId, leadName, leadId });
+    },
+    onError: (err: Error) => toast.error(err.message || 'Failed to associate lead'),
   });
 
   const speakerMutation = useMutation({
@@ -101,67 +133,9 @@ export const useTranscriptionDetailDrawer = () => {
     onError: (err: Error) => toast.error(err.message || 'Failed to recover transcription'),
   });
 
-  const startPolling = async (transcriptId: string, leadName: string) => {
-    pollingTranscriptIdRef.current = transcriptId;
-    setPollingLeadName(leadName);
-    setIsPolling(true);
-    try {
-      const processed = await pollUntilProcessed(transcriptId);
-      if (pollingTranscriptIdRef.current !== transcriptId) return;
-      if (processed) {
-        setSelectedLeadState(null);
-        const current = activeTranscriptRef.current;
-        if (current && current.transcriptId === transcriptId) {
-          updateTranscript({ ...current, isProcessed: true });
-        }
-        qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
-        toast.success('Tasks created successfully!');
-      } else {
-        toast.error('Task processing timed out. Please check back later.');
-      }
-    } finally {
-      if (pollingTranscriptIdRef.current === transcriptId) {
-        setIsPolling(false);
-        setPollingLeadName('');
-        pollingTranscriptIdRef.current = null;
-      }
-    }
-  };
-
-  const triggerTaskGeneration = async (transcriptId: string, lead: ComboboxLead) => {
-    if (generateMutation.isPending || isPolling) return;
-
-    const leadName = `${lead.firstName} ${lead.lastName}`.trim();
-    try {
-      await generateMutation.mutateAsync({
-        transcriptId,
-        leadName,
-        leadId: lead.leadId,
-      });
-      void startPolling(transcriptId, leadName);
-    } catch {
-      // The mutation's onError callback already shows the failure message.
-    }
-  };
-
-  const handleSelectLead = async (lead: ComboboxLead) => {
+  const handleSelectLead = (lead: ComboboxLead) => {
     if (!activeTranscript) return;
-
-    try {
-      await associateMutation.mutateAsync({
-        leadId: lead.leadId,
-        firstname: lead.firstName,
-        lastname: lead.lastName,
-        transcriptId: activeTranscript.transcriptId,
-      });
-    } catch {
-      return;
-    }
-
     setSelectedLeadState({ transcriptId: activeTranscript.transcriptId, lead });
-    if (!activeTranscript.isProcessed) {
-      void triggerTaskGeneration(activeTranscript.transcriptId, lead);
-    }
   };
 
   const handleModalSuccess = (updatedTranscript: Transcript, leadName: string, leadId: string) => {
@@ -173,16 +147,20 @@ export const useTranscriptionDetailDrawer = () => {
       lastName: parts.slice(1).join(' ') || '',
     };
     setSelectedLeadState({ transcriptId: updatedTranscript.transcriptId, lead });
-
-    if (!updatedTranscript.isProcessed) {
-      void triggerTaskGeneration(updatedTranscript.transcriptId, lead);
-    }
   };
 
-  const handleRegenerateTasks = () => {
+  const isSubmitting = associateMutation.isPending || generateMutation.isPending || isPolling;
+
+  const handleSubmit = () => {
     const lead = displayedLead;
-    if (!activeTranscript || !lead || activeTranscript.isProcessed) return;
-    void triggerTaskGeneration(activeTranscript.transcriptId, lead);
+    if (!activeTranscript || !lead || activeTranscript.isProcessed || isSubmitting) return;
+
+    associateMutation.mutate({
+      leadId: lead.leadId,
+      firstname: lead.firstName,
+      lastname: lead.lastName,
+      transcriptId: activeTranscript.transcriptId,
+    });
   };
 
   const handleMapSpeaker = (speaker: string, mappedName: string) => {
@@ -250,6 +228,7 @@ export const useTranscriptionDetailDrawer = () => {
   };
 
   const speakers = getSpeakers(activeTranscript?.transcript);
+  const canChangeLead = !activeTranscript?.isProcessed && !isSubmitting;
 
   return {
     activeTranscript,
@@ -262,13 +241,14 @@ export const useTranscriptionDetailDrawer = () => {
     associatedLeads,
     speakers,
     isPolling,
-    isGeneratingTasks: generateMutation.isPending,
+    isSubmitting,
+    canChangeLead,
     isIgnoring: ignoreMutation.isPending,
     isRecovering: recoverMutation.isPending,
     pollingLeadName,
     handleSelectLead,
     handleModalSuccess,
-    handleRegenerateTasks,
+    handleSubmit,
     handleMapSpeaker,
     handleIgnore,
     handleRecover,

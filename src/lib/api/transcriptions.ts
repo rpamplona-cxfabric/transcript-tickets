@@ -49,7 +49,7 @@ export const checkProcessedStatus = async (transcriptId: string): Promise<boolea
 export const pollUntilProcessed = (
   transcriptId: string,
   intervalMs = 1500,
-  timeoutMs = 20000
+  timeoutMs = 40000
 ): Promise<boolean> => {
   return new Promise((resolve) => {
     const start = Date.now();
