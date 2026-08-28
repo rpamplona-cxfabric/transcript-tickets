@@ -101,6 +101,7 @@ export const useTranscriptionDetailDrawer = () => {
     mutationFn: patchSpeakerNames,
     onSuccess: (updated, { speakerNames }) => {
       updateTranscript(updated);
+      qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
       const entries = Object.entries(speakerNames);
       const last = entries[entries.length - 1];
       if (last) toast.success(last[1] ? `Mapped ${last[0]} to ${last[1]}` : `Removed ${last[0]} mapped name`);
@@ -116,6 +117,7 @@ export const useTranscriptionDetailDrawer = () => {
         updateTranscript({ ...current, isIgnored: true });
         setActiveTranscript(null);
       }
+      qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
       toast.success('Transcription ignored');
     },
     onError: (err: Error) => toast.error(err.message || 'Failed to ignore transcription'),
@@ -128,6 +130,7 @@ export const useTranscriptionDetailDrawer = () => {
       if (current?.transcriptId === updated.transcriptId) {
         updateTranscript({ ...current, isIgnored: false });
       }
+      qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
       toast.success('Transcription recovered');
     },
     onError: (err: Error) => toast.error(err.message || 'Failed to recover transcription'),

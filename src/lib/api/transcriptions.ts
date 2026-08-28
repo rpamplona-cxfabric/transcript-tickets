@@ -1,8 +1,27 @@
 import api from '@/lib/axios';
-import { Transcript } from '@/types';
+import { PaginatedTranscriptsResponse, Transcript } from '@/types';
 
-export const fetchTranscriptions = async (): Promise<Transcript[]> => {
-  const { data } = await api.get<Transcript[]>('/transcriptions');
+export interface FetchTranscriptionsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: 'active' | 'pending' | 'processed' | 'ignored';
+  tenant?: string;
+}
+
+export const fetchTranscriptions = async (
+  params: FetchTranscriptionsParams = {}
+): Promise<PaginatedTranscriptsResponse> => {
+  const { page = 1, limit = 20, search, status, tenant } = params;
+
+  const query = new URLSearchParams();
+  query.set('page', String(page));
+  query.set('limit', String(limit));
+  if (search) query.set('search', search);
+  if (status) query.set('status', status);
+  if (tenant) query.set('tenant', tenant);
+
+  const { data } = await api.get<PaginatedTranscriptsResponse>(`/transcriptions?${query.toString()}`);
   return data;
 };
 

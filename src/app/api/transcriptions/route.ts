@@ -17,24 +17,18 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
+    const search = searchParams.get('search') || undefined;
+    const status = (searchParams.get('status') || undefined) as
+      | 'active' | 'pending' | 'processed' | 'ignored' | undefined;
+    const tenant = searchParams.get('tenant') || undefined;
 
-    const transcripts = await getTranscripts(tenantId);
-    const recent20 = transcripts.slice(0, 20);
+    const result = await getTranscripts(tenantId, {
+      page,
+      limit,
+      filters: { search, status, tenantId: tenant },
+    });
 
-    if (searchParams.has('page') || searchParams.has('limit')) {
-      const startIndex = (page - 1) * limit;
-      const paginatedItems = recent20.slice(startIndex, startIndex + limit);
-
-      return NextResponse.json({
-        items: paginatedItems,
-        total: recent20.length,
-        page,
-        limit,
-        totalPages: Math.ceil(recent20.length / limit),
-      });
-    }
-
-    return NextResponse.json(recent20);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('API Error in GET /api/transcriptions:', error);
     return NextResponse.json(

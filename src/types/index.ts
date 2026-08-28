@@ -21,6 +21,14 @@ export interface Transcript {
   isIgnored?: boolean;
 }
 
+export interface PaginatedTranscriptsResponse {
+  items: Transcript[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface SelectOption {
   value: string;
   label: string;

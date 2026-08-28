@@ -7,12 +7,15 @@ import { DashboardMetrics } from './metrics';
 import { RecentTranscriptions } from './recentTranscriptions';
 
 export const DashboardClient = () => {
-  const { data: transcripts = [], isLoading } = useQuery({
-    queryKey: queryKeys.transcriptions,
-    queryFn: fetchTranscriptions,
+  const { data, isLoading } = useQuery({
+    queryKey: queryKeys.transcriptionsList({ page: 1, limit: 3 }),
+    queryFn: () => fetchTranscriptions({ page: 1, limit: 3 }),
   });
 
   if (isLoading) return null;
+
+  const transcripts = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <div className="workspace-canvas flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
@@ -25,7 +28,7 @@ export const DashboardClient = () => {
         </p>
       </div>
 
-      <DashboardMetrics totalTranscripts={transcripts.length} />
+      <DashboardMetrics totalTranscripts={total} />
       <RecentTranscriptions transcripts={transcripts} />
     </div>
   );

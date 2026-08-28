@@ -1,58 +1,5 @@
 'use client';
 
-import { AlertTriangle, RotateCw } from 'lucide-react';
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useTranscriptionStore } from '@/lib/store/transcriptions';
-import { fetchTranscriptions } from '@/lib/api/transcriptions';
-import { queryKeys } from '@/lib/queries/queryKeys';
-
 export const StoreInitializer = ({ children }: { children: React.ReactNode }) => {
-  const transcriptionsQuery = useQuery({
-    queryKey: queryKeys.transcriptions,
-    queryFn: fetchTranscriptions,
-  });
-  const setTranscriptions = useTranscriptionStore((state) => state.setTranscripts);
-
-  useEffect(() => {
-    if (transcriptionsQuery.data) {
-      setTranscriptions(transcriptionsQuery.data);
-    }
-  }, [transcriptionsQuery.data, setTranscriptions]);
-
-  if (transcriptionsQuery.isLoading) {
-    return (
-      <div className="workspace-canvas flex flex-1 items-center justify-center">
-        <div className="flex items-center gap-3 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-white" />
-          Loading workspace data…
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {transcriptionsQuery.error instanceof Error && (
-        <div className="flex items-start justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-3 text-amber-950 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
-          <div className="flex min-w-0 items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold">Workspace data is temporarily unavailable</p>
-              <p className="mt-0.5 text-xs opacity-80">{transcriptionsQuery.error.message}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => transcriptionsQuery.refetch()}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-300 px-2.5 py-1.5 text-xs font-semibold hover:bg-amber-100 dark:border-amber-300/30 dark:hover:bg-amber-300/10"
-          >
-            <RotateCw className="h-3.5 w-3.5" />
-            Retry
-          </button>
-        </div>
-      )}
-      {children}
-    </>
-  );
+  return <>{children}</>;
 };

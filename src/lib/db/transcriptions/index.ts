@@ -109,40 +109,120 @@ export async function recoverTranscript(
   }
 }
 
-export async function getTranscripts(tenantId: string): Promise<Transcript[]> {
+export interface GetTranscriptsFilters {
+  search?: string;
+  tenantId?: string;
+  status?: 'active' | 'pending' | 'processed' | 'ignored';
+}
+
+export interface GetTranscriptsOptions {
+  page?: number;
+  limit?: number;
+  filters?: GetTranscriptsFilters;
+}
+
+export interface PaginatedTranscripts {
+  items: Transcript[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+async function fetchAllTranscripts(tenantId: string): Promise<Transcript[]> {
+  const items: TranscriptRecord[] = [];
+  let lastEvaluatedKey: QueryPaginationKey;
+
+  do {
+    const result = await docClient.send(new QueryCommand({
+      TableName: CONTACT_TRANSCRIPTS_TABLE,
+      KeyConditionExpression: '#tenantId = :tenantId',
+      ExpressionAttributeNames: {
+        '#tenantId': 'tenantId',
+      },
+      ExpressionAttributeValues: {
+        ':tenantId': tenantId,
+      },
+      ...(lastEvaluatedKey ? { ExclusiveStartKey: lastEvaluatedKey } : {}),
+    }));
+
+    items.push(...((result.Items || []) as TranscriptRecord[]));
+    lastEvaluatedKey = result.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+
+  const processedIds = await getProcessedTranscripts(tenantId);
+  const transcripts = await Promise.all(
+    items.map((item) => formatTranscript(item, processedIds))
+  );
+
+  transcripts.sort((a, b) => {
+    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  return transcripts;
+}
+
+function applyFilters(transcripts: Transcript[], filters?: GetTranscriptsFilters): Transcript[] {
+  if (!filters) return transcripts;
+
+  const { search, tenantId: subTenantId, status } = filters;
+  const normalizedSearch = search?.trim().toLowerCase();
+
+  return transcripts.filter((transcript) => {
+    const matchesSearch = !normalizedSearch
+      || transcript.transcript?.toLowerCase().includes(normalizedSearch)
+      || transcript.transcriptSummary?.toLowerCase().includes(normalizedSearch)
+      || transcript.transcriptId?.toLowerCase().includes(normalizedSearch);
+
+    const matchesTenant = !subTenantId || subTenantId === 'all' || transcript.tenantId === subTenantId;
+
+    const matchesStatus = !status
+      ? true
+      : status === 'ignored'
+        ? Boolean(transcript.isIgnored)
+        : status === 'processed'
+          ? !transcript.isIgnored && Boolean(transcript.isProcessed)
+          : status === 'pending'
+            ? !transcript.isIgnored && !transcript.isProcessed
+            : !transcript.isIgnored; // 'active'
+
+    return matchesSearch && matchesTenant && matchesStatus;
+  });
+}
+
+/**
+ * Fetches transcripts for a tenant, applies filtering, and paginates the result.
+ *
+ * DynamoDB only supports pagination via ExclusiveStartKey (not arbitrary offsets), and
+ * filtering/sorting must happen across the full result set for correct counts, so this
+ * reads all items for the tenant partition and slices in memory. This is acceptable at
+ * current per-tenant data volumes; if a tenant's transcript volume grows significantly,
+ * this should move to a GSI with a sort key supporting real cursor-based pagination.
+ */
+export async function getTranscripts(
+  tenantId: string,
+  options: GetTranscriptsOptions = {}
+): Promise<PaginatedTranscripts> {
   try {
-    const items: TranscriptRecord[] = [];
-    let lastEvaluatedKey: QueryPaginationKey;
+    const { page = 1, limit = 20, filters } = options;
 
-    do {
-      const result = await docClient.send(new QueryCommand({
-        TableName: CONTACT_TRANSCRIPTS_TABLE,
-        KeyConditionExpression: '#tenantId = :tenantId',
-        ExpressionAttributeNames: {
-          '#tenantId': 'tenantId',
-        },
-        ExpressionAttributeValues: {
-          ':tenantId': tenantId,
-        },
-        ...(lastEvaluatedKey ? { ExclusiveStartKey: lastEvaluatedKey } : {}),
-      }));
+    const allTranscripts = await fetchAllTranscripts(tenantId);
+    const filtered = applyFilters(allTranscripts, filters);
 
-      items.push(...((result.Items || []) as TranscriptRecord[]));
-      lastEvaluatedKey = result.LastEvaluatedKey;
-    } while (lastEvaluatedKey);
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.max(1, limit);
+    const startIndex = (safePage - 1) * safeLimit;
+    const items = filtered.slice(startIndex, startIndex + safeLimit);
 
-    const processedIds = await getProcessedTranscripts(tenantId);
-    const transcripts = await Promise.all(
-      items.map((item) => formatTranscript(item, processedIds))
-    );
-
-    transcripts.sort((a, b) => {
-      const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-      const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-      return timeB - timeA;
-    });
-
-    return transcripts;
+    return {
+      items,
+      total: filtered.length,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(filtered.length / safeLimit) || 1,
+    };
   } catch (error) {
     console.error('Error querying tenant transcripts:', error);
     throw error;

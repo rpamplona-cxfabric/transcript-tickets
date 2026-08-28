@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, FileAudio } from 'lucide-react';
+import { Search, FileAudio, AlertTriangle, RotateCw } from 'lucide-react';
 import { Select } from '@/components/select';
 import { TranscriptionDetailDrawer } from './transcriptionDetailDrawer';
 import { TableView } from './tableView';
@@ -9,12 +9,22 @@ import { useTranscriptionsClient } from './hook';
 export const TranscriptionsClient = () => {
   const {
     isReady,
+    isFetching,
+    error,
+    refetch,
     activeTranscript,
+    setActiveTranscript,
     searchQuery,
     setSearchQuery,
     selectedStatus,
     setSelectedStatus,
-    hasTranscripts
+    transcripts,
+    total,
+    currentPage,
+    totalPages,
+    pageSize,
+    setCurrentPage,
+    hasTranscripts,
   } = useTranscriptionsClient();
 
   if (!isReady) {
@@ -59,6 +69,26 @@ export const TranscriptionsClient = () => {
           />
         </div>
 
+        {error instanceof Error && (
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
+            <div className="flex min-w-0 items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold">Unable to load transcriptions</p>
+                <p className="mt-0.5 text-xs opacity-80">{error.message}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-300 px-2.5 py-1.5 text-xs font-semibold hover:bg-amber-100 dark:border-amber-300/30 dark:hover:bg-amber-300/10"
+            >
+              <RotateCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
         {!hasTranscripts ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950/40 text-center">
             <FileAudio className="h-10 w-10 text-zinc-300 dark:text-zinc-700 mb-3" />
@@ -66,7 +96,17 @@ export const TranscriptionsClient = () => {
             <p className="text-xs text-zinc-450 dark:text-zinc-500 mt-1">Try adjusting your filters or search query.</p>
           </div>
         ) : (
-          <TableView />
+          <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+            <TableView
+              transcripts={transcripts}
+              total={total}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onSelectTranscript={setActiveTranscript}
+            />
+          </div>
         )}
       </div>
 

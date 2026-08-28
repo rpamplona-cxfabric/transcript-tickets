@@ -1,10 +1,14 @@
 import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
+import { fetchTranscriptions } from '@/lib/api/transcriptions';
+import { queryKeys } from '@/lib/queries/queryKeys';
+import { useDebounce } from '@/lib/hooks/useDebounce';
+
+const PAGE_SIZE = 20;
 
 export const useTranscriptionsClient = () => {
   const {
-    transcripts,
-    isReady,
     activeTranscript,
     setActiveTranscript,
     searchQuery,
@@ -13,49 +17,62 @@ export const useTranscriptionsClient = () => {
     setSelectedTenant,
     selectedStatus,
     setSelectedStatus,
+    currentPage,
+    setCurrentPage,
   } = useTranscriptionStore();
 
-  useEffect(() => {
-    if (transcripts.length > 0) {
-      const params = new URLSearchParams(window.location.search);
-      const openId = params.get('open');
-      if (openId) {
-        const matchedTranscript = transcripts.find((transcript) => transcript.transcriptId === openId);
-        if (matchedTranscript) {
-          setActiveTranscript(matchedTranscript);
-        }
-      }
-    }
-  }, [transcripts, setActiveTranscript]);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const tenants = ['all', ...new Set(transcripts.map((transcript) => transcript.tenantId).filter(Boolean))];
-  const filteredTranscripts = transcripts.filter((transcript) => {
-    const matchesSearch =
-      (transcript.transcript && transcript.transcript.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (transcript.transcriptSummary && transcript.transcriptSummary.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (transcript.transcriptId && transcript.transcriptId.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesTenant = selectedTenant === 'all' || transcript.tenantId === selectedTenant;
-    const matchesStatus = selectedStatus === 'ignored'
-      ? transcript.isIgnored
-      : selectedStatus === 'processed'
-        ? !transcript.isIgnored && transcript.isProcessed
-        : selectedStatus === 'pending'
-          ? !transcript.isIgnored && !transcript.isProcessed
-          : !transcript.isIgnored;
+  const queryParams = {
+    page: currentPage,
+    limit: PAGE_SIZE,
+    search: debouncedSearchQuery || undefined,
+    status: selectedStatus,
+    tenant: selectedTenant === 'all' ? undefined : selectedTenant,
+  };
 
-    return matchesSearch && matchesTenant && matchesStatus;
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: queryKeys.transcriptionsList(queryParams),
+    queryFn: () => fetchTranscriptions(queryParams),
+    placeholderData: (previousData) => previousData,
   });
 
+  const transcripts = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+
+  useEffect(() => {
+    const items = data?.items;
+    if (!items || items.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const openId = params.get('open');
+    if (!openId) return;
+
+    const matchedTranscript = items.find((transcript) => transcript.transcriptId === openId);
+    if (matchedTranscript) {
+      setActiveTranscript(matchedTranscript);
+    }
+  }, [data, setActiveTranscript]);
+
   return {
-    isReady,
+    isReady: !isLoading,
+    isFetching,
+    error,
+    refetch,
     activeTranscript,
+    setActiveTranscript,
     searchQuery,
     setSearchQuery,
     selectedTenant,
     setSelectedTenant,
     selectedStatus,
     setSelectedStatus,
-    tenants,
-    hasTranscripts: filteredTranscripts.length > 0,
+    transcripts,
+    total,
+    currentPage,
+    totalPages,
+    pageSize: PAGE_SIZE,
+    setCurrentPage,
+    hasTranscripts: transcripts.length > 0,
   };
 };
