@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, Plus, User, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { searchLeads } from '@/lib/api/leads';
+import { fetchLeads } from '@/lib/api/leads';
 import { queryKeys } from '@/lib/queries/queryKeys';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
 export interface ComboboxLead {
-  leadId: number;
+  leadId: string;
   firstName: string;
   lastName: string;
   emails?: string[] | null;
@@ -33,12 +33,25 @@ export const Combobox = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 300);
 
-  const { data: results = [], isFetching } = useQuery({
-    queryKey: queryKeys.leadSearch(debouncedQuery),
-    queryFn: () => searchLeads(debouncedQuery),
-    enabled: isOpen,
-    staleTime: 10_000,
+  const { data: leads = [], isFetching } = useQuery({
+    queryKey: queryKeys.leads,
+    queryFn: fetchLeads,
+    staleTime: 60_000,
   });
+
+  const results = useMemo(() => {
+    const normalizedQuery = debouncedQuery.trim().toLowerCase();
+    if (!normalizedQuery) return leads.slice(0, 50);
+
+    return leads.filter((lead) => {
+      const firstName = lead.firstName?.toLowerCase() || '';
+      const lastName = lead.lastName?.toLowerCase() || '';
+      const fullName = `${firstName} ${lastName}`.trim();
+      return fullName.includes(normalizedQuery)
+        || firstName.includes(normalizedQuery)
+        || lastName.includes(normalizedQuery);
+    }).slice(0, 50);
+  }, [debouncedQuery, leads]);
 
   const handleClickOutside = (event: MouseEvent) => {
     if (containerRef.current && !containerRef.current.contains(event.target as Node)) {

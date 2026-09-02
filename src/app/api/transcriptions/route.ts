@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('API Error in GET /api/transcriptions:', error);
     return NextResponse.json(
-      { error: 'Failed to retrieve transcripts from database' },
+      { error: 'Failed to retrieve transcripts from CXFabric' },
       { status: 500 }
     );
   }

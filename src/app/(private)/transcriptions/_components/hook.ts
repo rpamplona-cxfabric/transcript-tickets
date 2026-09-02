@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
 import { fetchTranscriptions } from '@/lib/api/transcriptions';
+import { fetchLeads } from '@/lib/api/leads';
 import { queryKeys } from '@/lib/queries/queryKeys';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
@@ -22,6 +23,12 @@ export const useTranscriptionsClient = () => {
   } = useTranscriptionStore();
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  useQuery({
+    queryKey: queryKeys.leads,
+    queryFn: fetchLeads,
+    staleTime: 60_000,
+  });
 
   const queryParams = {
     page: currentPage,

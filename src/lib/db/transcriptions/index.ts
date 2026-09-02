@@ -1,13 +1,27 @@
-import { GetCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import axios from 'axios';
 // @ts-ignore
 import snappy from 'snappy';
 import { LeadObject, Transcript } from '@/types';
-import { docClient } from '../client';
-import { getProcessedTranscripts } from '../processed-transcriptions';
+import { isTranscriptProcessed } from '../processed-transcriptions';
 
-const CONTACT_TRANSCRIPTS_TABLE = 'contact-transcripts';
+const TRANSCRIPTS_EXECUTOR_URL = 'https://cxf-executor-qa.cxfabric.io/restendpoint';
+const TRANSCRIPTS_FLOW_ID = '25bffe69-38a9-497c-b4cf-8d0432ca4373';
 type TranscriptRecord = Record<string, any>;
-type QueryPaginationKey = import('@aws-sdk/lib-dynamodb').QueryCommandInput['ExclusiveStartKey'];
+
+interface GetTranscriptsExecutorResponse {
+  success: boolean;
+  items: TranscriptRecord[];
+  count?: number;
+}
+
+interface GetTranscriptExecutorResponse {
+  success: boolean;
+  item: TranscriptRecord | null;
+}
+
+interface TranscriptActionExecutorResponse {
+  success: boolean;
+}
 
 async function decompressField(value: string | undefined): Promise<string> {
   if (!value) return '';
@@ -42,19 +56,33 @@ function parseSpeakerNames(value: unknown): Record<string, string> {
     : {};
 }
 
+function normalizeLeads(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return JSON.stringify(value.map(String).filter(Boolean));
+  }
+
+  return typeof value === 'string' ? value : undefined;
+}
+
 async function formatTranscript(
   item: TranscriptRecord,
-  processedIds: string[]
+  isProcessed: boolean,
+  decompress = true
 ): Promise<Transcript> {
-  const transcript = await decompressField(item.transcript);
-  const transcriptSummary = await decompressField(item.transcriptSummary);
+  const transcript = decompress
+    ? await decompressField(item.transcript)
+    : typeof item.transcript === 'string' ? item.transcript : '';
+  const transcriptSummary = decompress
+    ? await decompressField(item.transcriptSummary)
+    : typeof item.transcriptSummary === 'string' ? item.transcriptSummary : '';
 
   return {
     ...item,
     transcript,
     transcriptSummary,
     speakerNames: parseSpeakerNames(item.speakerNames),
-    isProcessed: processedIds.includes(item.transcriptId),
+    leads: normalizeLeads(item.leads),
+    isProcessed,
     isIgnored: item.isIgnored === true,
   } as Transcript;
 }
@@ -64,18 +92,23 @@ export async function ignoreTranscript(
   transcriptId: string
 ): Promise<{ transcriptId: string; isIgnored: true }> {
   try {
-    await docClient.send(new UpdateCommand({
-      TableName: CONTACT_TRANSCRIPTS_TABLE,
-      Key: { tenantId, transcriptId },
-      UpdateExpression: 'SET #isIgnored = :isIgnored',
-      ConditionExpression: 'attribute_exists(#tenantId) AND attribute_exists(#transcriptId)',
-      ExpressionAttributeNames: {
-        '#isIgnored': 'isIgnored',
-        '#tenantId': 'tenantId',
-        '#transcriptId': 'transcriptId',
+    const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
+      TRANSCRIPTS_EXECUTOR_URL,
+      { transcriptId },
+      {
+        params: {
+          tenant_id: tenantId,
+          flow_id: TRANSCRIPTS_FLOW_ID,
+          draft: true,
+          displayExecutionLogs: false,
+          action: 'ignoreTranscript',
+        },
       },
-      ExpressionAttributeValues: { ':isIgnored': true },
-    }));
+    );
+
+    if (!result.success) {
+      throw new Error('CXFabric failed to ignore the transcript');
+    }
 
     return { transcriptId, isIgnored: true };
   } catch (error) {
@@ -89,18 +122,23 @@ export async function recoverTranscript(
   transcriptId: string
 ): Promise<{ transcriptId: string; isIgnored: false }> {
   try {
-    await docClient.send(new UpdateCommand({
-      TableName: CONTACT_TRANSCRIPTS_TABLE,
-      Key: { tenantId, transcriptId },
-      UpdateExpression: 'SET #isIgnored = :isIgnored',
-      ConditionExpression: 'attribute_exists(#tenantId) AND attribute_exists(#transcriptId)',
-      ExpressionAttributeNames: {
-        '#isIgnored': 'isIgnored',
-        '#tenantId': 'tenantId',
-        '#transcriptId': 'transcriptId',
+    const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
+      TRANSCRIPTS_EXECUTOR_URL,
+      { transcriptId },
+      {
+        params: {
+          tenant_id: tenantId,
+          flow_id: TRANSCRIPTS_FLOW_ID,
+          draft: true,
+          displayExecutionLogs: false,
+          action: 'recoverTranscript',
+        },
       },
-      ExpressionAttributeValues: { ':isIgnored': false },
-    }));
+    );
+
+    if (!result.success) {
+      throw new Error('CXFabric failed to recover the transcript');
+    }
 
     return { transcriptId, isIgnored: false };
   } catch (error) {
@@ -130,29 +168,30 @@ export interface PaginatedTranscripts {
 }
 
 async function fetchAllTranscripts(tenantId: string): Promise<Transcript[]> {
-  const items: TranscriptRecord[] = [];
-  let lastEvaluatedKey: QueryPaginationKey;
+  const { data: result } = await axios.post<GetTranscriptsExecutorResponse>(
+    TRANSCRIPTS_EXECUTOR_URL,
+    undefined,
+    {
+      params: {
+        tenant_id: tenantId,
+        flow_id: TRANSCRIPTS_FLOW_ID,
+        draft: true,
+        displayExecutionLogs: false,
+        action: 'getTranscripts',
+      }
+    }
+  );
 
-  do {
-    const result = await docClient.send(new QueryCommand({
-      TableName: CONTACT_TRANSCRIPTS_TABLE,
-      KeyConditionExpression: '#tenantId = :tenantId',
-      ExpressionAttributeNames: {
-        '#tenantId': 'tenantId',
-      },
-      ExpressionAttributeValues: {
-        ':tenantId': tenantId,
-      },
-      ...(lastEvaluatedKey ? { ExclusiveStartKey: lastEvaluatedKey } : {}),
-    }));
+  if (!result.success || !Array.isArray(result.items)) {
+    throw new Error('CXFabric returned an invalid transcript response');
+  }
 
-    items.push(...((result.Items || []) as TranscriptRecord[]));
-    lastEvaluatedKey = result.LastEvaluatedKey;
-  } while (lastEvaluatedKey);
-
-  const processedIds = await getProcessedTranscripts(tenantId);
   const transcripts = await Promise.all(
-    items.map((item) => formatTranscript(item, processedIds))
+    result.items.map(async (item) => formatTranscript(
+      item,
+      await isTranscriptProcessed(tenantId, item.transcriptId),
+      false
+    ))
   );
 
   transcripts.sort((a, b) => {
@@ -195,11 +234,8 @@ function applyFilters(transcripts: Transcript[], filters?: GetTranscriptsFilters
 /**
  * Fetches transcripts for a tenant, applies filtering, and paginates the result.
  *
- * DynamoDB only supports pagination via ExclusiveStartKey (not arbitrary offsets), and
- * filtering/sorting must happen across the full result set for correct counts, so this
- * reads all items for the tenant partition and slices in memory. This is acceptable at
- * current per-tenant data volumes; if a tenant's transcript volume grows significantly,
- * this should move to a GSI with a sort key supporting real cursor-based pagination.
+ * The CXFabric executor returns the complete transcript collection, so filtering,
+ * sorting, and pagination are applied in memory to preserve the API's existing shape.
  */
 export async function getTranscripts(
   tenantId: string,
@@ -224,7 +260,7 @@ export async function getTranscripts(
       totalPages: Math.ceil(filtered.length / safeLimit) || 1,
     };
   } catch (error) {
-    console.error('Error querying tenant transcripts:', error);
+    console.error('Error fetching tenant transcripts:', error);
     throw error;
   }
 }
@@ -234,18 +270,28 @@ export async function getTranscript(
   transcriptId: string
 ): Promise<Transcript | null> {
   try {
-    const result = await docClient.send(new GetCommand({
-      TableName: CONTACT_TRANSCRIPTS_TABLE,
-      Key: {
-        tenantId,
-        transcriptId,
-      },
-    }));
+    const { data: result } = await axios.post<GetTranscriptExecutorResponse>(
+      TRANSCRIPTS_EXECUTOR_URL,
+      { transcriptId },
+      {
+        params: {
+          tenant_id: tenantId,
+          flow_id: TRANSCRIPTS_FLOW_ID,
+          draft: true,
+          displayExecutionLogs: false,
+          action: 'getTranscript',
+        },
+      }
+    );
 
-    if (!result.Item) return null;
+    if (!result.success) {
+      throw new Error('CXFabric returned an invalid transcript response');
+    }
 
-    const processedIds = await getProcessedTranscripts(tenantId);
-    return formatTranscript(result.Item as TranscriptRecord, processedIds);
+    if (!result.item) return null;
+
+    const isProcessed = await isTranscriptProcessed(tenantId, transcriptId);
+    return formatTranscript(result.item, isProcessed, false);
   } catch (error) {
     console.error('Error getting tenant transcript:', error);
     throw error;
@@ -256,33 +302,31 @@ export async function updateTranscriptSpeakerNames(
   tenantId: string,
   transcriptId: string,
   speakerNames: Record<string, string>
-): Promise<Transcript> {
+): Promise<{
+  success: true;
+  transcriptId: string;
+  speakerNames: Record<string, string>;
+}> {
   try {
-    const result = await docClient.send(new UpdateCommand({
-      TableName: CONTACT_TRANSCRIPTS_TABLE,
-      Key: {
-        tenantId,
-        transcriptId,
+    const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
+      TRANSCRIPTS_EXECUTOR_URL,
+      { speakerNames, transcriptId },
+      {
+        params: {
+          tenant_id: tenantId,
+          flow_id: TRANSCRIPTS_FLOW_ID,
+          draft: true,
+          displayExecutionLogs: false,
+          action: 'updateSpeakerNames',
+        },
       },
-      UpdateExpression: 'SET #speakerNames = :speakerNames',
-      ConditionExpression: 'attribute_exists(#tenantId) AND attribute_exists(#transcriptId)',
-      ExpressionAttributeNames: {
-        '#speakerNames': 'speakerNames',
-        '#tenantId': 'tenantId',
-        '#transcriptId': 'transcriptId',
-      },
-      ExpressionAttributeValues: {
-        ':speakerNames': JSON.stringify(speakerNames),
-      },
-      ReturnValues: 'ALL_NEW',
-    }));
+    );
 
-    if (!result.Attributes) {
-      throw new Error(`Transcript not found with id: ${transcriptId}`);
+    if (!result.success) {
+      throw new Error('CXFabric failed to update transcript speaker names');
     }
 
-    const processedIds = await getProcessedTranscripts(tenantId);
-    return formatTranscript(result.Attributes as TranscriptRecord, processedIds);
+    return { success: true, transcriptId, speakerNames };
   } catch (error) {
     console.error('Error updating transcript speakerNames:', error);
     throw error;
@@ -295,62 +339,31 @@ export async function addTranscriptLead(
   leadObj: LeadObject
 ): Promise<Transcript> {
   try {
-    const existingResult = await docClient.send(new GetCommand({
-      TableName: CONTACT_TRANSCRIPTS_TABLE,
-      Key: {
-        tenantId,
-        transcriptId,
+    const leads = [`${leadObj.leadId}`];
+    const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
+      TRANSCRIPTS_EXECUTOR_URL,
+      { leads, transcriptId },
+      {
+        params: {
+          tenant_id: tenantId,
+          flow_id: TRANSCRIPTS_FLOW_ID,
+          draft: true,
+          displayExecutionLogs: false,
+          action: 'addTranscriptLead',
+        },
       },
-    }));
-    const existing = existingResult.Item as TranscriptRecord | undefined;
+    );
 
-    if (!existing) {
+    if (!result.success) {
+      throw new Error('CXFabric failed to add the transcript lead');
+    }
+
+    const updatedTranscript = await getTranscript(tenantId, transcriptId);
+    if (!updatedTranscript) {
       throw new Error(`Transcript not found with id: ${transcriptId}`);
     }
 
-    let leadIdsArray: Array<string | number> = [];
-    if (existing.leads) {
-      try {
-        const parsed = JSON.parse(existing.leads);
-        if (Array.isArray(parsed)) {
-          leadIdsArray = parsed.filter(
-            (leadId) => leadId !== undefined && leadId !== null && `${leadId}`.trim() !== ''
-          );
-        }
-      } catch (error) {
-        console.error('Error parsing existing leads string:', error);
-      }
-    }
-
-    if (!leadIdsArray.some((existingLeadId) => `${existingLeadId}` === `${leadObj.leadId}`)) {
-      leadIdsArray.push(`${leadObj.leadId}`);
-    }
-
-    const result = await docClient.send(new UpdateCommand({
-      TableName: CONTACT_TRANSCRIPTS_TABLE,
-      Key: {
-        tenantId,
-        transcriptId,
-      },
-      UpdateExpression: 'SET #leads = :leads',
-      ConditionExpression: 'attribute_exists(#tenantId) AND attribute_exists(#transcriptId)',
-      ExpressionAttributeNames: {
-        '#leads': 'leads',
-        '#tenantId': 'tenantId',
-        '#transcriptId': 'transcriptId',
-      },
-      ExpressionAttributeValues: {
-        ':leads': JSON.stringify(leadIdsArray),
-      },
-      ReturnValues: 'ALL_NEW',
-    }));
-
-    if (!result.Attributes) {
-      throw new Error(`Transcript not found with id: ${transcriptId}`);
-    }
-
-    const processedIds = await getProcessedTranscripts(tenantId);
-    return formatTranscript(result.Attributes as TranscriptRecord, processedIds);
+    return updatedTranscript;
   } catch (error) {
     console.error('Error adding transcript lead:', error);
     throw error;

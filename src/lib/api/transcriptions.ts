@@ -31,8 +31,16 @@ export const patchSpeakerNames = async ({
 }: {
   transcriptId: string;
   speakerNames: Record<string, string>;
-}): Promise<Transcript> => {
-  const { data } = await api.patch<Transcript>('/transcriptions', { transcriptId, speakerNames });
+}): Promise<{
+  success: true;
+  transcriptId: string;
+  speakerNames: Record<string, string>;
+}> => {
+  const { data } = await api.patch<{
+    success: true;
+    transcriptId: string;
+    speakerNames: Record<string, string>;
+  }>('/transcriptions', { transcriptId, speakerNames });
   return data;
 };
 
@@ -53,7 +61,7 @@ export const generateTasks = async ({
 }: {
   transcriptId: string;
   leadName?: string;
-  leadId?: number;
+  leadId?: string;
 }): Promise<void> => {
   await api.post('/transcriptions/generate-tasks', { transcriptId, leadName, leadId });
 };

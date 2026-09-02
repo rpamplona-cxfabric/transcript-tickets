@@ -1,37 +1,14 @@
-import { GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '../client';
+import axios from 'axios';
 
-const PROCESSED_TRANSCRIPTS_TABLE = 'processed-transcripts';
-type TranscriptRecord = Record<string, any>;
-type QueryPaginationKey = import('@aws-sdk/lib-dynamodb').QueryCommandInput['ExclusiveStartKey'];
+const TRANSCRIPTS_EXECUTOR_URL = 'https://cxf-executor-qa.cxfabric.io/restendpoint';
+const TRANSCRIPTS_FLOW_ID = '25bffe69-38a9-497c-b4cf-8d0432ca4373';
 
-export async function getProcessedTranscripts(tenantId: string): Promise<string[]> {
-  try {
-    const items: TranscriptRecord[] = [];
-    let lastEvaluatedKey: QueryPaginationKey;
-
-    do {
-      const result = await docClient.send(new QueryCommand({
-        TableName: PROCESSED_TRANSCRIPTS_TABLE,
-        KeyConditionExpression: '#tenantId = :tenantId',
-        ExpressionAttributeNames: {
-          '#tenantId': 'tenantId',
-        },
-        ExpressionAttributeValues: {
-          ':tenantId': tenantId,
-        },
-        ...(lastEvaluatedKey ? { ExclusiveStartKey: lastEvaluatedKey } : {}),
-      }));
-
-      items.push(...((result.Items || []) as TranscriptRecord[]));
-      lastEvaluatedKey = result.LastEvaluatedKey;
-    } while (lastEvaluatedKey);
-
-    return items.map((item) => item.transcriptId);
-  } catch (error) {
-    console.error('Error querying processed tenant transcripts:', error);
-    return [];
-  }
+interface IsProcessedExecutorResponse {
+  success: boolean;
+  item: {
+    tenantId: string;
+    transcriptId: string;
+  } | null;
 }
 
 export async function isTranscriptProcessed(
@@ -39,17 +16,27 @@ export async function isTranscriptProcessed(
   transcriptId: string
 ): Promise<boolean> {
   try {
-    const result = await docClient.send(new GetCommand({
-      TableName: PROCESSED_TRANSCRIPTS_TABLE,
-      Key: {
-        tenantId,
-        transcriptId,
-      },
-    }));
+    const { data: result } = await axios.post<IsProcessedExecutorResponse>(
+      TRANSCRIPTS_EXECUTOR_URL,
+      { transcriptId },
+      {
+        params: {
+          tenant_id: tenantId,
+          flow_id: TRANSCRIPTS_FLOW_ID,
+          draft: true,
+          displayExecutionLogs: false,
+          action: 'isProcessed',
+        }
+      }
+    );
 
-    return Boolean(result.Item);
+    if (!result.success) {
+      throw new Error('CXFabric returned an invalid processed-status response');
+    }
+
+    return result.item?.transcriptId === transcriptId;
   } catch (error) {
-    console.error('Error getting processed tenant transcript:', error);
+    console.error('Error checking processed tenant transcript:', error);
     return false;
   }
 }

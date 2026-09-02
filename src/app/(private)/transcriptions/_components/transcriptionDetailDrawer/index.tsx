@@ -16,7 +16,7 @@ export const TranscriptionDetailDrawer = () => {
     setModalOpen,
     modalPrefill,
     setModalPrefill,
-    associatedLeads,
+    associatedLead,
     speakers,
     isPolling,
     isSubmitting,
@@ -38,7 +38,7 @@ export const TranscriptionDetailDrawer = () => {
 
   if (!activeTranscript) return null;
 
-  const selectedLead = selectedLeadFromHook ?? associatedLeads[0] ?? null;
+  const selectedLead = selectedLeadFromHook ?? associatedLead;
 
   const renderFormattedTranscript = (text: string | undefined) => {
     if (!text) return <p className="text-zinc-500 italic">No transcript text available.</p>;
@@ -215,16 +215,14 @@ export const TranscriptionDetailDrawer = () => {
             )}
           </div>
 
-          {associatedLeads.length > 0 && (
+          {associatedLead && (
             <div className="space-y-2">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Associated Leads</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-950 dark:text-zinc-400">Associated Lead</h3>
               <div className="flex flex-wrap gap-2">
-                {associatedLeads.map((lead) => (
-                  <div key={lead.leadId} className="flex items-center gap-1.5 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-1.5 border border-indigo-100 dark:border-indigo-900 text-xs font-semibold text-indigo-700 dark:text-indigo-400">
-                    <User className="h-3.5 w-3.5" />
-                    {`${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'Unknown Lead'}
-                  </div>
-                ))}
+                <div className="flex items-center gap-1.5 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-1.5 border border-indigo-100 dark:border-indigo-900 text-xs font-semibold text-indigo-700 dark:text-indigo-400">
+                  <User className="h-3.5 w-3.5" />
+                  {`${associatedLead.firstName || ''} ${associatedLead.lastName || ''}`.trim() || 'Unknown Lead'}
+                </div>
               </div>
             </div>
           )}

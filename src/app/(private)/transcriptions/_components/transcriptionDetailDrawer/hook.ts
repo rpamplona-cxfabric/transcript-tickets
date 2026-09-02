@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
-import { associateLead, fetchLeadsByIds } from '@/lib/api/leads';
+import { associateLead, fetchLeadById } from '@/lib/api/leads';
 import { ignoreTranscript, recoverTranscript, patchSpeakerNames, generateTasks, pollUntilProcessed } from '@/lib/api/transcriptions';
 import { queryKeys } from '@/lib/queries/queryKeys';
 import { ComboboxLead } from '@/components/combobox';
@@ -32,24 +32,26 @@ export const useTranscriptionDetailDrawer = () => {
       ? selectedLeadState.lead
       : null;
 
-  const leadIds: string[] = (() => {
-    if (!activeTranscript?.leads) return [];
+  const associatedLeadId: string | null = (() => {
+    if (!activeTranscript?.leads) return null;
     try {
       const parsed = JSON.parse(activeTranscript.leads);
-      return Array.isArray(parsed) ? parsed.map(String).filter(Boolean) : [];
+      if (!Array.isArray(parsed) || parsed.length === 0) return null;
+      const leadId = `${parsed[0]}`.trim();
+      return leadId || null;
     } catch {
-      return [];
+      return null;
     }
   })();
 
-  const { data: associatedLeads = [] } = useQuery({
-    queryKey: queryKeys.leadsByIds(leadIds),
-    queryFn: () => fetchLeadsByIds(leadIds),
-    enabled: leadIds.length > 0,
+  const { data: associatedLead = null } = useQuery({
+    queryKey: queryKeys.leadById(associatedLeadId || ''),
+    queryFn: () => fetchLeadById(associatedLeadId!),
+    enabled: Boolean(associatedLeadId),
     staleTime: 30_000,
   });
 
-  const displayedLead = selectedLead ?? associatedLeads[0] ?? null;
+  const displayedLead = selectedLead ?? associatedLead;
 
   const startPolling = async (transcriptId: string, leadName: string) => {
     pollingTranscriptIdRef.current = transcriptId;
@@ -100,7 +102,10 @@ export const useTranscriptionDetailDrawer = () => {
   const speakerMutation = useMutation({
     mutationFn: patchSpeakerNames,
     onSuccess: (updated, { speakerNames }) => {
-      updateTranscript(updated);
+      const current = activeTranscriptRef.current;
+      if (current?.transcriptId === updated.transcriptId) {
+        updateTranscript({ ...current, speakerNames: updated.speakerNames });
+      }
       qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
       const entries = Object.entries(speakerNames);
       const last = entries[entries.length - 1];
@@ -145,7 +150,7 @@ export const useTranscriptionDetailDrawer = () => {
     updateTranscript(updatedTranscript);
     const parts = leadName.trim().split(/\s+/);
     const lead: ComboboxLead = {
-      leadId: Number(leadId),
+      leadId,
       firstName: parts[0] || '',
       lastName: parts.slice(1).join(' ') || '',
     };
@@ -198,9 +203,10 @@ export const useTranscriptionDetailDrawer = () => {
   };
 
   const getSpeakerOptions = (speaker: string): string[] => {
-    const leadNames = associatedLeads
-      .map((lead) => `${lead.firstName || ''} ${lead.lastName || ''}`.trim())
-      .filter(Boolean);
+    const associatedLeadName = associatedLead
+      ? `${associatedLead.firstName || ''} ${associatedLead.lastName || ''}`.trim()
+      : '';
+    const leadNames = associatedLeadName ? [associatedLeadName] : [];
 
     const otherMapped = Object.entries(activeTranscript?.speakerNames || {})
       .filter(([k, v]) => k !== speaker && v !== '')
@@ -241,7 +247,7 @@ export const useTranscriptionDetailDrawer = () => {
     setModalOpen,
     modalPrefill,
     setModalPrefill,
-    associatedLeads,
+    associatedLead,
     speakers,
     isPolling,
     isSubmitting,

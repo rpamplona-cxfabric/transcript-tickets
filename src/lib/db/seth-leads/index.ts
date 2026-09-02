@@ -1,58 +1,93 @@
-import { BatchGetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '../client';
+import axios from 'axios';
 
-const SETH_LEADS_TABLE = 'seth-leads';
+const LEADS_EXECUTOR_URL = 'https://cxf-executor-qa.cxfabric.io/restendpoint';
+const LEADS_FLOW_ID = '25bffe69-38a9-497c-b4cf-8d0432ca4373';
 
-export async function getSethLeadsByIds(leadIds: Array<string | number>): Promise<any[]> {
-  try {
-    const uniqueIds = Array.from(new Set(leadIds.map((id) => `${id}`.trim()).filter(Boolean)));
-    if (uniqueIds.length === 0) return [];
+type SethLeadRecord = Record<string, any>;
 
-    const result = await docClient.send(new BatchGetCommand({
-      RequestItems: { [SETH_LEADS_TABLE]: { Keys: uniqueIds.map((id) => ({ leadId: id })) } },
-    }));
-
-    const items = result.Responses?.[SETH_LEADS_TABLE] || [];
-    const byId = new Map(items.map((item: any) => [`${item.leadId}`, item]));
-    return uniqueIds.map((id) => byId.get(id)).filter(Boolean);
-  } catch (error) {
-    console.error('Error fetching leads by ids from seth-leads:', error);
-    return [];
-  }
+interface GetSethLeadExecutorResponse {
+  success: boolean;
+  item: SethLeadRecord | null;
 }
 
-export async function searchSethLeads(query: string): Promise<any[]> {
-  try {
-    const result = await docClient.send(new ScanCommand({
-      TableName: SETH_LEADS_TABLE,
-    }));
-    const items = result.Items || [];
+interface GetSethLeadsExecutorResponse {
+  success: boolean;
+  items: SethLeadRecord[];
+}
 
-    if (!query || query.trim() === '') {
-      return items.slice(0, 50);
+export async function getSethLeadById(
+  tenantId: string,
+  leadId: string
+): Promise<SethLeadRecord | null> {
+  try {
+    const normalizedLeadId = leadId.trim();
+    if (!normalizedLeadId) return null;
+
+    const { data: result } = await axios.post<GetSethLeadExecutorResponse>(
+      LEADS_EXECUTOR_URL,
+      { leadId: normalizedLeadId },
+      {
+        params: {
+          tenant_id: tenantId,
+          flow_id: LEADS_FLOW_ID,
+          draft: true,
+          displayExecutionLogs: false,
+          action: 'getSethLead',
+        },
+      }
+    );
+
+    if (!result.success) {
+      throw new Error('CXFabric returned an invalid lead response');
     }
 
-    const lowerQuery = query.toLowerCase().trim();
-    const filtered = items.filter((item: any) => {
-      const fullName = `${item.firstName || ''} ${item.lastName || ''}`.trim().toLowerCase();
-      return fullName.includes(lowerQuery) ||
-             (item.firstName && item.firstName.toLowerCase().includes(lowerQuery)) ||
-             (item.lastName && item.lastName.toLowerCase().includes(lowerQuery));
-    });
-
-    return filtered.slice(0, 50);
+    return result.item ?? null;
   } catch (error) {
-    console.error('Error scanning seth-leads table:', error);
+    console.error('Error fetching lead by id from CXFabric:', error);
+    return null;
+  }
+}
+
+export async function getSethLeads(tenantId: string): Promise<SethLeadRecord[]> {
+  try {
+    const { data: result } = await axios.post<GetSethLeadsExecutorResponse>(
+      LEADS_EXECUTOR_URL,
+      undefined,
+      {
+        params: {
+          tenant_id: tenantId,
+          flow_id: LEADS_FLOW_ID,
+          draft: true,
+          displayExecutionLogs: false,
+          action: 'getSethLeads',
+        },
+      }
+    );
+
+    if (!result.success || !Array.isArray(result.items)) {
+      throw new Error('CXFabric returned an invalid leads response');
+    }
+
+    return result.items.map(({ leadId, firstName, lastName, emails, phones }) => ({
+      leadId,
+      firstName,
+      lastName,
+      emails,
+      phones,
+    }));
+  } catch (error) {
+    console.error('Error fetching leads from CXFabric:', error);
     return [];
   }
 }
 
-export async function checkLeadExists(firstName: string, lastName: string): Promise<boolean> {
+export async function checkLeadExists(
+  tenantId: string,
+  firstName: string,
+  lastName: string
+): Promise<boolean> {
   try {
-    const result = await docClient.send(new ScanCommand({
-      TableName: SETH_LEADS_TABLE,
-    }));
-    const items = result.Items || [];
+    const items = await getSethLeads(tenantId);
 
     const lowerFirst = firstName.trim().toLowerCase();
     const lowerLast = lastName.trim().toLowerCase();
