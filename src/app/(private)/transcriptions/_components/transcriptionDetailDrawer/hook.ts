@@ -178,7 +178,7 @@ export const useTranscriptionDetailDrawer = () => {
   };
 
   const handleIgnore = () => {
-    if (activeTranscript && !activeTranscript.isProcessed && !activeTranscript.isIgnored) {
+    if (activeTranscript && !activeTranscript.isIgnored) {
       ignoreMutation.mutate(activeTranscript.transcriptId);
     }
   };

@@ -245,7 +245,7 @@ export const TranscriptionDetailDrawer = () => {
             </div>
           )}
 
-          {!activeTranscript.isProcessed && !activeTranscript.isIgnored && (
+          {!activeTranscript.isIgnored && (
             <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
               <button
                 type="button"
