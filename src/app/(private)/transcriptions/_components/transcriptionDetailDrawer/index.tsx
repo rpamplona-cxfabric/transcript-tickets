@@ -6,6 +6,7 @@ import { Combobox } from '@/components/combobox';
 import { LeadModal } from '../leadModal';
 import { SpeakerCombobox } from './speakerCombobox';
 import { useTranscriptionDetailDrawer } from './hook';
+import { parseTranscriptLine } from './transcriptParser';
 
 export const TranscriptionDetailDrawer = () => {
   const {
@@ -46,11 +47,9 @@ export const TranscriptionDetailDrawer = () => {
       <div className="space-y-4">
         {text.split('\n').map((line, idx) => {
           if (!line.trim()) return null;
-          const m = line.match(/^(\[.*?\])?\s*(Speaker\s*\d+|[^:]+):(.*)$/);
-          if (m) {
-            const timeTag = m[1] || '';
-            const speakerName = m[2] || '';
-            const speakerText = m[3] || '';
+          const parsedLine = parseTranscriptLine(line);
+          if (parsedLine) {
+            const { timeTag, speakerName, speakerText } = parsedLine;
             const displayName = activeTranscript.speakerNames?.[speakerName] || speakerName;
             return (
               <div key={idx} className="flex flex-col gap-1 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">

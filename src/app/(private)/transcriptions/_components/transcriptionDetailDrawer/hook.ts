@@ -7,6 +7,7 @@ import { ignoreTranscript, recoverTranscript, patchSpeakerNames, generateTasks, 
 import { queryKeys } from '@/lib/queries/queryKeys';
 import { ComboboxLead } from '@/components/combobox';
 import { Transcript } from '@/types';
+import { parseTranscriptLine } from './transcriptParser';
 
 export const useTranscriptionDetailDrawer = () => {
   const qc = useQueryClient();
@@ -193,10 +194,9 @@ export const useTranscriptionDetailDrawer = () => {
     if (!text) return [];
     const speakers = new Set<string>();
     text.split('\n').forEach((line) => {
-      const m = line.match(/^(\[.*?\])?\s*(Speaker\s*\d+|[^:]+):(.*)$/);
-      if (m) {
-        const name = m[2].trim();
-        if (name.toLowerCase() !== 'transcript') speakers.add(name);
+      const parsedLine = parseTranscriptLine(line);
+      if (parsedLine && parsedLine.speakerName.toLowerCase() !== 'transcript') {
+        speakers.add(parsedLine.speakerName);
       }
     });
     return Array.from(speakers).sort();
