@@ -6,13 +6,25 @@ import { Transcript } from '@/types';
 
 interface RecentTranscriptionsProps {
   transcripts: Transcript[];
+  isLoading: boolean;
 }
 
-export const RecentTranscriptions = ({ transcripts }: RecentTranscriptionsProps) => {
+const SkeletonTranscript = () => (
+  <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/30">
+    <div className="flex items-center justify-between gap-4">
+      <div className="h-3 w-36 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+      <div className="h-5 w-20 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800" />
+    </div>
+    <div className="mt-3 h-3 w-full animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+    <div className="mt-2 h-3 w-4/5 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+  </div>
+);
+
+export const RecentTranscriptions = ({ transcripts, isLoading }: RecentTranscriptionsProps) => {
   const recentTranscripts = transcripts.slice(0, 3);
 
   return (
-    <div className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
+    <div className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60 sm:p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <FileAudio className="h-5 w-5 text-zinc-500" />
@@ -27,7 +39,9 @@ export const RecentTranscriptions = ({ transcripts }: RecentTranscriptionsProps)
       </div>
 
       <div className="flex-1 space-y-4">
-        {recentTranscripts.length === 0 ? (
+        {isLoading ? (
+          Array.from({ length: 3 }, (_, index) => <SkeletonTranscript key={index} />)
+        ) : recentTranscripts.length === 0 ? (
           <div className="flex h-36 flex-col items-center justify-center text-center">
             <span className="text-sm text-zinc-500">No transcriptions found in database.</span>
           </div>
@@ -36,7 +50,7 @@ export const RecentTranscriptions = ({ transcripts }: RecentTranscriptionsProps)
             <Link 
               key={t.transcriptId} 
               href={`/transcriptions?open=${t.transcriptId}`}
-              className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 transition-colors hover:bg-zinc-50 dark:border-zinc-900 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50"
+              className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 hover:bg-zinc-50 dark:border-zinc-900 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50"
             >
               <div className="flex items-start justify-between gap-4">
                 <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 truncate">

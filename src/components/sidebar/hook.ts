@@ -16,6 +16,7 @@ export function useSidebar() {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
     localStorage.setItem('theme', nextTheme);
+    document.cookie = `theme=${nextTheme}; path=/; max-age=31536000; samesite=lax`;
     if (nextTheme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {

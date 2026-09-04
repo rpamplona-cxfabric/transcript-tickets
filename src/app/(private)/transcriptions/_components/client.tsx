@@ -4,6 +4,7 @@ import { Search, FileAudio, AlertTriangle, RotateCw } from 'lucide-react';
 import { Select } from '@/components/select';
 import { TranscriptionDetailDrawer } from './transcriptionDetailDrawer';
 import { TableView } from './tableView';
+import { TranscriptionsLoadingSkeleton } from './loadingSkeleton';
 import { useTranscriptionsClient } from './hook';
 
 export const TranscriptionsClient = () => {
@@ -27,10 +28,6 @@ export const TranscriptionsClient = () => {
     hasTranscripts,
   } = useTranscriptionsClient();
 
-  if (!isReady) {
-    return null;
-  }
-
   return (
     <div className="workspace-canvas relative flex flex-1">
       <div className="flex min-w-0 flex-1 flex-col px-4 pb-24 pt-4 sm:px-6 sm:pb-28 sm:pt-6 md:px-8 md:pb-32 md:pt-8">
@@ -53,7 +50,7 @@ export const TranscriptionsClient = () => {
               placeholder="Search transcript keyword or ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:focus:border-white"
+              className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:focus:border-white"
             />
           </div>
           <Select
@@ -89,8 +86,10 @@ export const TranscriptionsClient = () => {
           </div>
         )}
 
-        {!hasTranscripts ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950/40 text-center">
+        {!isReady ? (
+          <TranscriptionsLoadingSkeleton />
+        ) : !hasTranscripts ? (
++          <div className="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950/40 text-center">
             <FileAudio className="h-10 w-10 text-zinc-300 dark:text-zinc-700 mb-3" />
             <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No transcriptions found</p>
             <p className="text-xs text-zinc-450 dark:text-zinc-500 mt-1">Try adjusting your filters or search query.</p>

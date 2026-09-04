@@ -36,7 +36,7 @@ export const RecentTasks = ({ tasks }: RecentTasksProps) => {
             <Link 
               key={t.ticketId} 
               href={`/tasks?open=${t.ticketId}`}
-              className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 transition-colors hover:bg-zinc-50 dark:border-zinc-900 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50"
+              className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 hover:bg-zinc-50 dark:border-zinc-900 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50"
             >
               <div className="flex items-center justify-between gap-4">
                 <h3 className="text-xs font-semibold text-zinc-900 dark:text-white truncate">

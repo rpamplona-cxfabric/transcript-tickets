@@ -1,5 +1,5 @@
 import { Geist, Geist_Mono } from 'next/font/google';
-import Script from 'next/script';
+import { cookies } from 'next/headers';
 import { Toaster } from 'react-hot-toast';
 import { QueryProvider } from '@/components/queryProvider';
 import './globals.css';
@@ -19,30 +19,35 @@ export const metadata = {
   description: 'CXF Portal for managing call transcriptions and support tickets',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const theme = (await cookies()).get('theme')?.value;
+  const isDarkTheme = theme === 'dark';
+
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased${isDarkTheme ? ' dark' : ''}`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var theme = localStorage.getItem('theme') || document.cookie.match(/(?:^|; )theme=([^;]*)/)?.[1];
+                var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                document.documentElement.classList.toggle('dark', isDark);
+                document.cookie = 'theme=' + (isDark ? 'dark' : 'light') + '; path=/; max-age=31536000; samesite=lax';
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
         <QueryProvider>
           {children}
           <Toaster position="top-right" toastOptions={{ className: 'dark:bg-zinc-900 dark:text-white dark:border dark:border-zinc-800' }} />
         </QueryProvider>
-        <Script id="theme-initializer" strategy="beforeInteractive">
-          {`
-            try {
-              var theme = localStorage.getItem('theme');
-              if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.remove('dark');
-              }
-            } catch (e) {}
-          `}
-        </Script>
       </body>
     </html>
   );
