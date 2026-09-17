@@ -74,7 +74,7 @@ export const Combobox = ({
           onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-11 pr-10 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder-zinc-600 dark:focus:border-white"
+          className="app-surface w-full rounded-xl border border-zinc-200 py-2.5 pl-11 pr-10 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-hidden dark:border-zinc-800 dark:text-white dark:placeholder-zinc-600 dark:focus:border-white"
         />
         {isFetching && (
           <Loader2 className="absolute right-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 animate-spin text-zinc-400" />
@@ -82,7 +82,7 @@ export const Combobox = ({
       </div>
 
       {isOpen && (
-        <div className="absolute left-0 z-50 mt-1.5 max-h-64 w-full overflow-y-auto rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950 animate-fade-in">
+        <div className="app-surface app-shadow-menu absolute left-0 z-50 mt-1.5 max-h-64 w-full overflow-y-auto rounded-xl border border-zinc-200 py-1 dark:border-zinc-800 animate-fade-in">
           {results.length > 0 ? (
             results.map((lead) => {
               const fullName = `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'Unknown Lead';
@@ -92,7 +92,7 @@ export const Combobox = ({
                   key={lead.leadId}
                   type="button"
                   onClick={() => { onSelect(lead); setQuery(''); setIsOpen(false); }}
-                  className="flex w-full cursor-pointer items-center justify-between px-3.5 py-2.5 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
+                  className="flex w-full cursor-pointer items-center justify-between px-3.5 py-2.5 text-left text-sm hover:bg-zinc-50 dark:hover:bg-black transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-zinc-400" />
@@ -106,7 +106,7 @@ export const Combobox = ({
             })
           ) : (
             !isFetching && (
-              <div className="px-3.5 py-2 text-xs italic text-zinc-400">No matching leads found</div>
+              <div className="px-3.5 py-2 text-xs lg:text-sm italic text-zinc-400">No matching leads found</div>
             )
           )}
 
@@ -114,7 +114,7 @@ export const Combobox = ({
             <button
               type="button"
               onClick={() => { onCreateNew(query.trim()); setQuery(''); setIsOpen(false); }}
-              className="flex w-full cursor-pointer items-center gap-2 border-t border-zinc-150 px-3.5 py-2.5 text-left text-xs font-bold text-indigo-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-indigo-400 dark:hover:bg-zinc-900 transition-colors"
+              className="flex w-full cursor-pointer items-center gap-2 border-t border-zinc-150 px-3.5 py-2.5 text-left text-xs lg:text-sm font-bold text-indigo-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-indigo-400 dark:hover:bg-black transition-colors"
             >
               <Plus className="h-4 w-4" />
               Create as new lead: &quot;{query.trim()}&quot;

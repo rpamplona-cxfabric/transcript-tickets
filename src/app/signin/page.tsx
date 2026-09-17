@@ -58,7 +58,7 @@ export default async function SignInPage({
         </section>
 
         <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-7 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-9">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+          <p className="text-xs lg:text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">
             Welcome back
           </p>
           <h2 className="mt-3 text-2xl font-semibold">Sign in to continue</h2>
@@ -74,7 +74,7 @@ export default async function SignInPage({
             <ArrowRight className="h-4 w-4" />
           </a>
 
-          <p className="mt-5 text-center text-xs leading-5 text-zinc-500">
+          <p className="mt-5 text-center text-xs lg:text-sm leading-5 text-zinc-500">
             Access is limited to authorized CXF workspace users.
           </p>
         </section>

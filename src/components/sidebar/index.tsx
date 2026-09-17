@@ -2,18 +2,18 @@
 
 import Link from 'next/link';
 import {
-  Terminal,
+  CircleHelp,
   ChevronRight,
-  Menu,
-  X,
-  Sun,
-  Moon,
+  LogOut,
   LayoutDashboard,
   FileAudio,
-  LogOut,
+  Moon,
+  UserRound,
+  X,
 } from 'lucide-react';
-import { useSidebar } from './hook';
-import { ElementType, useState } from 'react';
+import { Dispatch, ElementType, SetStateAction, useEffect, useState } from 'react';
+import { Select } from '@/components/select';
+import type { ThemePreference } from '@/components/sidebar/hook';
 import { useUserStore } from '@/lib/store/user';
 
 interface MenuItem {
@@ -32,100 +32,66 @@ export interface AuthenticatedUser {
 
 interface SidebarProps {
   authUser: AuthenticatedUser;
+  pathname: string;
+  isOpen: boolean;
+  setIsOpen: Dispatch<SetStateAction<boolean>>;
+  theme: ThemePreference;
+  setTheme: (theme: ThemePreference) => void;
 }
-
-interface SidebarAvatarProps {
-  displayName: string;
-  imageUrl: string;
-  initials: string;
-}
-
-const SidebarAvatar = ({ displayName, imageUrl, initials }: SidebarAvatarProps) => {
-  const [imageFailed, setImageFailed] = useState(false);
-
-  return (
-    <div
-      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-xs font-bold text-zinc-950"
-      aria-label={`${displayName} profile photo`}
-    >
-      {imageUrl && !imageFailed ? (
-        // UDAS profile images can be hosted on tenant-specific domains.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageUrl}
-          alt=""
-          className="h-full w-full object-cover"
-          referrerPolicy="no-referrer"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        initials || 'CX'
-      )}
-    </div>
-  );
-};
 
 const cleanProfileValue = (value: string | null | undefined) => {
   const normalized = value?.trim();
   return normalized && normalized !== 'null' && normalized !== 'undefined' ? normalized : '';
 };
 
-export const Sidebar = ({ authUser }: SidebarProps) => {
+export const Sidebar = ({ authUser, pathname, isOpen, setIsOpen, theme, setTheme }: SidebarProps) => {
   const profile = useUserStore((state) => state.profile);
-  const {
-    pathname,
-    isOpen,
-    setIsOpen,
-    theme,
-    toggleTheme,
-  } = useSidebar();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const profileName = [cleanProfileValue(profile?.first_name), cleanProfileValue(profile?.last_name)]
+    .filter(Boolean)
+    .join(' ');
+  const displayName = profileName || authUser.name || authUser.nickname || authUser.email || 'Workspace user';
+  const displayEmail = cleanProfileValue(profile?.email_address) || authUser.email || '';
+  const profileImage = cleanProfileValue(profile?.image) || authUser.picture || '';
+  const initials = displayName.split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase();
+
+  useEffect(() => {
+    if (!isOpen && !isProfileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen, isProfileOpen]);
+
+  const avatar = profileImage && !imageFailed ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={profileImage} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} />
+  ) : initials || 'TP';
 
   const menuItems: MenuItem[] = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Transcriptions', path: '/transcriptions', icon: FileAudio },
   ];
 
-  const udasDisplayName = [
-    cleanProfileValue(profile?.first_name),
-    cleanProfileValue(profile?.last_name),
-  ]
-    .filter(Boolean)
-    .join(' ');
-  const displayName =
-    udasDisplayName || authUser.name || authUser.nickname || authUser.email || 'Workspace user';
-  const displayEmail =
-    cleanProfileValue(profile?.email_address) || authUser.email || '';
-  const profileImage = cleanProfileValue(profile?.image) || authUser.picture || '';
-  const initials = displayName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0))
-    .join('')
-    .toUpperCase();
-
   return (
     <>
-      <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200 bg-white/95 px-4 backdrop-blur md:hidden dark:border-zinc-800 dark:bg-zinc-950/95">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-black">
-            <Terminal className="h-5 w-5" />
-          </div>
-          <span className="font-semibold tracking-tight text-zinc-900 dark:text-white">CXF Console</span>
-        </div>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-100 focus:outline-none dark:text-zinc-400 dark:hover:bg-zinc-900"
-        >
-          {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
-      </div>
-
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-[100svh] w-[min(18rem,85vw)] flex-col border-r border-zinc-800/80 bg-zinc-950 text-zinc-400 transition-transform duration-300 ease-in-out md:static md:h-auto md:w-64 md:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`app-surface app-shadow-surface fixed inset-0 z-[60] flex w-full flex-col text-zinc-600 transition-transform duration-300 ease-in-out dark:text-zinc-400 md:static md:z-auto md:h-auto md:w-64 md:translate-x-0 md:rounded-2xl md:border md:border-zinc-200 md:dark:border-zinc-800 ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-6">
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-zinc-200 px-6 dark:border-zinc-800 md:hidden">
+          <Link href="/" onClick={() => setIsOpen(false)} className="text-xl font-semibold tracking-tight text-zinc-950 dark:text-white">
+            Transcript Portal
+          </Link>
+          <button type="button" onClick={() => setIsOpen(false)} className="rounded-lg p-2 text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-black" aria-label="Close navigation">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <nav className="flex-1 space-y-2 overflow-y-auto px-6 py-7 md:px-4 md:py-6">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.path;
@@ -136,12 +102,12 @@ export const Sidebar = ({ authUser }: SidebarProps) => {
                 onClick={() => setIsOpen(false)}
                 className={`group flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? 'bg-white text-zinc-950 shadow-sm'
-                    : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
+                    ? 'app-shadow-control bg-zinc-100 text-zinc-950 dark:bg-white dark:text-zinc-950'
+                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-black dark:hover:text-white'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-zinc-950' : 'text-zinc-400 group-hover:text-white'}`} />
+                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-zinc-950' : 'text-zinc-500 group-hover:text-zinc-950 dark:text-zinc-400 dark:group-hover:text-white'}`} />
                   <span>{item.name}</span>
                 </div>
                 {isActive && <ChevronRight className="h-4 w-4 text-zinc-950" />}
@@ -150,45 +116,80 @@ export const Sidebar = ({ authUser }: SidebarProps) => {
           })}
         </nav>
 
-        <div className="flex flex-col gap-2.5 border-t border-zinc-800 p-4">
-          <div className="flex items-center gap-3 rounded-xl bg-zinc-900 px-3 py-3">
-            <SidebarAvatar
-              key={profileImage || 'profile-fallback'}
-              displayName={displayName}
-              imageUrl={profileImage}
-              initials={initials}
-            />
-            <div className="min-w-0">
-              <p className="truncate text-xs font-semibold text-white">{displayName}</p>
-              {displayEmail && displayEmail !== displayName && (
-                <p className="mt-0.5 truncate text-[11px] text-zinc-500">{displayEmail}</p>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={toggleTheme}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-zinc-400 transition-all duration-150 hover:bg-zinc-900 hover:text-white"
-          >
-            <span className="flex items-center gap-2.5">
-              {theme === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
-              <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-            </span>
-          </button>
-          <a
-            href="/auth/logout"
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-zinc-400 transition-all duration-150 hover:bg-zinc-900 hover:text-white"
-          >
-            <LogOut className="h-4.5 w-4.5" />
-            <span>Sign out</span>
-          </a>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(false);
+            setIsProfileOpen(true);
+          }}
+          className="mx-6 mb-7 flex items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-left dark:border-zinc-800 dark:bg-black md:hidden"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-zinc-200 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">{avatar}</span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold text-zinc-950 dark:text-white">{displayName}</span>
+            {displayEmail && <span className="mt-0.5 block truncate text-xs lg:text-sm text-zinc-500 dark:text-zinc-400">{displayEmail}</span>}
+          </span>
+        </button>
       </aside>
 
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-30 bg-zinc-950/40 backdrop-blur-sm md:hidden"
         />
+      )}
+
+      {isProfileOpen && (
+        <div className="fixed inset-0 z-[70] flex items-end bg-zinc-950/45 backdrop-blur-[1px] md:hidden" onClick={() => setIsProfileOpen(false)}>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label="Profile menu"
+            onClick={(event) => event.stopPropagation()}
+            className="app-surface app-shadow-surface max-h-[76svh] w-full overflow-x-hidden overflow-y-auto rounded-t-3xl border border-b-0 border-zinc-200 px-5 pb-5 pt-3 dark:border-zinc-700"
+          >
+            <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-indigo-500" />
+            <div className="flex items-center gap-3 border-b border-zinc-200 pb-4 dark:border-zinc-800">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-zinc-200 text-sm font-medium text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">{avatar}</div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-zinc-950 dark:text-white">{displayName}</p>
+                {displayEmail && <p className="mt-0.5 truncate text-xs lg:text-sm text-zinc-600 dark:text-zinc-400">{displayEmail}</p>}
+              </div>
+            </div>
+            <div className="space-y-1 py-3">
+              <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-900 transition-colors hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-black">
+                <UserRound className="h-4.5 w-4.5" />
+                <span className="font-medium">Profile</span>
+              </div>
+              <div className="flex items-center justify-between gap-4 px-3 py-2">
+                <span className="flex items-center gap-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  <Moon className="h-4.5 w-4.5" />
+                  Theme
+                </span>
+                <div className="w-40 min-w-0 shrink-0">
+                  <Select
+                    value={theme}
+                    onChange={(value) => setTheme(value as ThemePreference)}
+                    options={[
+                      { value: 'light', label: 'Light' },
+                      { value: 'dark', label: 'Dark' },
+                      { value: 'system', label: 'System' },
+                    ]}
+                    buttonClassName="py-2"
+                  />
+                </div>
+              </div>
+              <a href="https://cxfabric-website.pages.dev/contact" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-black">
+                <CircleHelp className="h-4.5 w-4.5" /> Help
+              </a>
+            </div>
+            <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800">
+              <a href="/auth/logout" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-black">
+                <LogOut className="h-4.5 w-4.5" /> Log out
+              </a>
+            </div>
+          </section>
+        </div>
       )}
     </>
   );

@@ -12,7 +12,7 @@ export const RecentTasks = ({ tasks }: RecentTasksProps) => {
   const recentTasks = tasks.slice(0, 3);
 
   return (
-    <div className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
+    <div className="app-surface app-shadow-surface flex flex-col rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <CheckSquare className="h-5 w-5 text-zinc-500" />
@@ -20,7 +20,7 @@ export const RecentTasks = ({ tasks }: RecentTasksProps) => {
         </div>
         <Link 
           href="/tasks" 
-          className="text-xs font-semibold text-zinc-650 hover:text-zinc-900 flex items-center gap-0.5 hover:underline dark:text-zinc-400 dark:hover:text-white"
+          className="text-xs lg:text-sm font-semibold text-zinc-650 hover:text-zinc-900 flex items-center gap-0.5 hover:underline dark:text-zinc-400 dark:hover:text-white"
         >
           View all <ChevronRight className="h-3 w-3" />
         </Link>
@@ -36,17 +36,17 @@ export const RecentTasks = ({ tasks }: RecentTasksProps) => {
             <Link 
               key={t.ticketId} 
               href={`/tasks?open=${t.ticketId}`}
-              className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 hover:bg-zinc-50 dark:border-zinc-900 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50"
+              className="flex flex-col gap-2 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:hover:bg-black"
             >
               <div className="flex items-center justify-between gap-4">
-                <h3 className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
+                <h3 className="text-xs lg:text-sm font-semibold text-zinc-900 dark:text-white truncate">
                   {t.title}
                 </h3>
                 <div className="flex items-center gap-1.5">
                   <span className={`text-[9px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded ${
                     t.priority === 'high' 
                       ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400' 
-                      : 'bg-zinc-100 text-zinc-650 dark:bg-zinc-900 dark:text-zinc-400'
+                      : 'bg-zinc-100 text-zinc-650 dark:bg-black dark:text-zinc-400'
                   }`}>
                     {t.priority}
                   </span>
@@ -61,7 +61,7 @@ export const RecentTasks = ({ tasks }: RecentTasksProps) => {
                   </span>
                 </div>
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-450 line-clamp-2">
+              <p className="text-xs lg:text-sm text-zinc-500 dark:text-zinc-450 line-clamp-2">
                 {t.description}
               </p>
             </Link>

@@ -41,13 +41,13 @@ export const BoardView = ({
       {columns.map(col => {
         const columnTasks = filteredTasks.filter(t => t.status === col.id);
         return (
-          <div key={col.id} className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/20 flex flex-col min-h-[400px]">
+          <div key={col.id} className="app-surface rounded-2xl border border-zinc-200/80 p-4 dark:border-zinc-800 flex flex-col min-h-[400px]">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-zinc-200/60 dark:border-zinc-800/60">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${col.color}`} />
                 <h2 className="text-sm font-bold text-zinc-900 dark:text-white">{col.title}</h2>
               </div>
-              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200/60 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300">
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200/60 dark:bg-black text-zinc-700 dark:text-zinc-300">
                 {columnTasks.length}
               </span>
             </div>
@@ -57,13 +57,13 @@ export const BoardView = ({
                 <div
                   key={t.ticketId}
                   onClick={() => openEditModal(t)}
-                  className="group flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs hover:shadow-md hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                  className="app-surface app-shadow-control group flex flex-col gap-3 rounded-2xl border border-zinc-200 p-4 hover:border-zinc-300 dark:border-zinc-800 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
                 >
                   <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
                     <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                       t.priority === 'high' 
                         ? 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/50' 
-                        : 'bg-zinc-100 text-zinc-650 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
+                        : 'bg-zinc-100 text-zinc-650 border border-zinc-200 dark:bg-black dark:text-zinc-400 dark:border-zinc-800'
                     }`}>
                       <span className={`h-1 w-1 rounded-full ${t.priority === 'high' ? 'bg-red-500' : 'bg-zinc-400'}`} />
                       {t.priority}
@@ -77,7 +77,7 @@ export const BoardView = ({
                         { value: 'in-progress', label: 'In Progress' },
                         { value: 'resolved', label: 'Resolved' }
                       ]}
-                      buttonClassName="text-[10px] py-1 px-2.5 rounded-lg border border-zinc-200/60 dark:border-zinc-800 dark:bg-zinc-900 font-bold dark:text-zinc-300"
+                      buttonClassName="text-[10px] py-1 px-2.5 rounded-lg border border-zinc-200/60 dark:border-zinc-800 dark:bg-black font-bold dark:text-zinc-300"
                     />
                   </div>
 
@@ -85,7 +85,7 @@ export const BoardView = ({
                     <h3 className="text-sm font-bold text-zinc-900 dark:text-white leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                       {t.title}
                     </h3>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-450 line-clamp-3 leading-relaxed">
+                    <p className="text-xs lg:text-sm text-zinc-500 dark:text-zinc-450 line-clamp-3 leading-relaxed">
                       {t.description}
                     </p>
                   </div>

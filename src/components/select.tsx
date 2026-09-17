@@ -41,7 +41,7 @@ export const Select = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-900 shadow-sm hover:bg-zinc-50 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-900/50 ${buttonClassName}`}
+        className={`app-shadow-control flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-black dark:text-white dark:hover:bg-black ${buttonClassName}`}
       >
         <span className={selectedOption ? '' : 'text-zinc-400 dark:text-zinc-500'}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -50,9 +50,9 @@ export const Select = ({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 z-50 mt-1.5 max-h-60 w-full min-w-0 overflow-auto rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="app-surface app-shadow-menu absolute left-0 z-50 mt-1.5 max-h-60 w-full min-w-0 overflow-auto rounded-xl border border-zinc-200 py-1 dark:border-zinc-800">
           {options.length === 0 ? (
-            <div className="px-3.5 py-2 text-xs italic text-zinc-400">No options available</div>
+            <div className="px-3.5 py-2 text-xs lg:text-sm italic text-zinc-400">No options available</div>
           ) : (
             options.map((opt) => (
               <button
@@ -62,9 +62,9 @@ export const Select = ({
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
-                className={`flex w-full cursor-pointer items-center px-3.5 py-2 text-left text-sm transition hover:bg-zinc-50 dark:hover:bg-zinc-900 ${
+                className={`flex w-full cursor-pointer items-center px-3.5 py-2 text-left text-sm transition hover:bg-zinc-50 dark:hover:bg-black ${
                   opt.value === value
-                    ? 'bg-zinc-50 font-semibold text-zinc-900 dark:bg-zinc-900 dark:text-white'
+                    ? 'bg-zinc-50 font-semibold text-zinc-900 dark:bg-black dark:text-white'
                     : 'text-zinc-700 dark:text-zinc-300'
                 }`}
               >

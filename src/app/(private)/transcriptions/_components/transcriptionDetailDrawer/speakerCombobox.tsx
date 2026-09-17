@@ -53,7 +53,7 @@ export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerCo
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm transition hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-600"
+        className="app-surface flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200 px-3 py-2 text-sm transition hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
       >
         <span className={value ? 'font-semibold text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}>
           {value || 'None'}
@@ -73,7 +73,7 @@ export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerCo
       </button>
 
       {open && (
-        <div className="absolute left-0 z-50 mt-1.5 w-full rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950 animate-fade-in">
+        <div className="app-surface app-shadow-menu absolute left-0 z-50 mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-800 animate-fade-in">
           <div className="p-2 border-b border-zinc-100 dark:border-zinc-800">
             <input
               ref={inputRef}
@@ -81,7 +81,7 @@ export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerCo
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search or type a name..."
-              className="w-full rounded-lg bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none dark:bg-zinc-900 dark:text-white dark:placeholder-zinc-600"
+              className="w-full rounded-lg bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none dark:bg-black dark:text-white dark:placeholder-zinc-600"
             />
           </div>
 
@@ -92,7 +92,7 @@ export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerCo
                   key={option}
                   type="button"
                   onClick={() => select(option)}
-                  className="flex w-full items-center justify-between px-3.5 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+                  className="flex w-full items-center justify-between px-3.5 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-black transition-colors cursor-pointer"
                 >
                   <span className="font-medium text-zinc-900 dark:text-zinc-100">{option}</span>
                   {value === option && <Check className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />}
@@ -100,7 +100,7 @@ export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerCo
               ))
             ) : (
               !showAdd && (
-                <p className="px-3.5 py-2 text-xs italic text-zinc-400">No options found</p>
+                <p className="px-3.5 py-2 text-xs lg:text-sm italic text-zinc-400">No options found</p>
               )
             )}
 
@@ -108,7 +108,7 @@ export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerCo
               <button
                 type="button"
                 onClick={() => select(queryTrimmed)}
-                className="flex w-full items-center gap-2 border-t border-zinc-100 px-3.5 py-2 text-left text-xs font-bold text-indigo-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-indigo-400 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+                className="flex w-full items-center gap-2 border-t border-zinc-100 px-3.5 py-2 text-left text-xs lg:text-sm font-bold text-indigo-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-indigo-400 dark:hover:bg-black transition-colors cursor-pointer"
               >
                 <Plus className="h-3.5 w-3.5 shrink-0" />
                 Use &quot;{queryTrimmed}&quot;

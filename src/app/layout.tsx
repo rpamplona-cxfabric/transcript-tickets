@@ -35,18 +35,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: `
               try {
                 var theme = localStorage.getItem('theme') || document.cookie.match(/(?:^|; )theme=([^;]*)/)?.[1];
-                var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                var isDark = theme === 'dark' || ((theme === 'system' || !theme) && window.matchMedia('(prefers-color-scheme: dark)').matches);
                 document.documentElement.classList.toggle('dark', isDark);
-                document.cookie = 'theme=' + (isDark ? 'dark' : 'light') + '; path=/; max-age=31536000; samesite=lax';
+                document.cookie = 'theme=' + (theme || 'system') + '; path=/; max-age=31536000; samesite=lax';
               } catch (e) {}
             `,
           }}
         />
       </head>
-      <body className="min-h-full bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
+      <body className="min-h-full font-sans text-zinc-900 dark:text-zinc-50">
         <QueryProvider>
           {children}
-          <Toaster position="top-right" toastOptions={{ className: 'dark:bg-zinc-900 dark:text-white dark:border dark:border-zinc-800' }} />
+          <Toaster position="top-right" toastOptions={{ className: 'dark:bg-[#0e141b] dark:text-white dark:border dark:border-zinc-800' }} />
         </QueryProvider>
       </body>
     </html>

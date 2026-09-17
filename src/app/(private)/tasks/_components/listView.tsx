@@ -31,18 +31,18 @@ export const ListView = ({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950/40">
+    <div className="app-surface app-shadow-surface overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
       <div className="divide-y divide-zinc-200 dark:divide-zinc-800 lg:hidden">
         {filteredTasks.map((t) => (
           <div
             key={t.ticketId}
             onClick={() => openEditModal(t)}
-            className="flex cursor-pointer flex-col gap-3 p-4 transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30"
+            className="flex cursor-pointer flex-col gap-3 p-4 transition-colors hover:bg-zinc-50/50 dark:hover:bg-black"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t.title}</h3>
-                <p className="mt-1 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400">{t.description}</p>
+                <p className="mt-1 line-clamp-2 text-xs lg:text-sm text-zinc-500 dark:text-zinc-400">{t.description}</p>
               </div>
               <button
                 type="button"
@@ -50,7 +50,7 @@ export const ListView = ({
                   e.stopPropagation();
                   setDeletingTaskId(t.ticketId);
                 }}
-                className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer"
+                className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-500 dark:hover:bg-black dark:hover:text-white cursor-pointer"
               >
                 <Trash2 className="h-4.5 w-4.5" />
               </button>
@@ -72,7 +72,7 @@ export const ListView = ({
                       { value: 'resolved', label: 'Resolved' }
                     ]}
                     className="w-full"
-                    buttonClassName="text-xs py-1 px-2.5 rounded-lg border border-zinc-200/60 dark:border-zinc-800 dark:bg-zinc-900 font-bold dark:text-zinc-300"
+                    buttonClassName="text-xs lg:text-sm py-1 px-2.5 rounded-lg border border-zinc-200/60 dark:border-zinc-800 dark:bg-black font-bold dark:text-zinc-300"
                   />
                 </div>
               </div>
@@ -87,16 +87,16 @@ export const ListView = ({
                     { value: 'high', label: 'High' }
                   ]}
                   className="w-full"
-                  buttonClassName={`text-xs py-1 px-2.5 rounded-lg font-bold border ${
+                  buttonClassName={`text-xs lg:text-sm py-1 px-2.5 rounded-lg font-bold border ${
                     t.priority === 'high' 
                       ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/50' 
-                      : 'bg-zinc-100 text-zinc-650 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
+                      : 'bg-zinc-100 text-zinc-650 border-zinc-200 dark:bg-black dark:text-zinc-400 dark:border-zinc-800'
                   }`}
                 />
               </div>
             </div>
 
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs lg:text-sm font-medium text-zinc-500 dark:text-zinc-400">
               Created {formatTime(t.createdAt)}
             </p>
           </div>
@@ -105,7 +105,7 @@ export const ListView = ({
 
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full border-collapse text-left text-sm text-zinc-500 dark:text-zinc-400">
-          <thead className="bg-zinc-50 text-xs font-bold uppercase text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-850">
+          <thead className="app-surface text-xs lg:text-sm font-bold uppercase text-zinc-700 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-800">
             <tr>
               <th scope="col" className="px-6 py-4">Status</th>
               <th scope="col" className="px-6 py-4">Title & Description</th>
@@ -119,7 +119,7 @@ export const ListView = ({
               <tr 
                 key={t.ticketId}
                 onClick={() => openEditModal(t)}
-                className="hover:bg-zinc-50/50 cursor-pointer transition-colors dark:hover:bg-zinc-900/30 group"
+                className="hover:bg-zinc-50/50 cursor-pointer transition-colors dark:hover:bg-black group"
               >
                 <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-2">
@@ -134,14 +134,14 @@ export const ListView = ({
                         { value: 'in-progress', label: 'In Progress' },
                         { value: 'resolved', label: 'Resolved' }
                       ]}
-                      buttonClassName="text-xs py-1 px-2.5 rounded-lg border border-zinc-200/60 dark:border-zinc-800 dark:bg-zinc-900 font-bold dark:text-zinc-300"
+                      buttonClassName="text-xs lg:text-sm py-1 px-2.5 rounded-lg border border-zinc-200/60 dark:border-zinc-800 dark:bg-black font-bold dark:text-zinc-300"
                     />
                   </div>
                 </td>
                 <td className="px-6 py-4 max-w-sm">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t.title}</span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">{t.description}</span>
+                    <span className="text-xs lg:text-sm text-zinc-500 dark:text-zinc-400 line-clamp-1">{t.description}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -152,10 +152,10 @@ export const ListView = ({
                       { value: 'low', label: 'Low' },
                       { value: 'high', label: 'High' }
                     ]}
-                    buttonClassName={`text-xs py-1 px-2.5 rounded-lg font-bold border ${
+                    buttonClassName={`text-xs lg:text-sm py-1 px-2.5 rounded-lg font-bold border ${
                       t.priority === 'high' 
                         ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/50' 
-                        : 'bg-zinc-100 text-zinc-650 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
+                        : 'bg-zinc-100 text-zinc-650 border-zinc-200 dark:bg-black dark:text-zinc-400 dark:border-zinc-800'
                     }`}
                   />
                 </td>
@@ -165,7 +165,7 @@ export const ListView = ({
                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => setDeletingTaskId(t.ticketId)}
-                    className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-white cursor-pointer"
+                    className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-500 dark:hover:bg-black dark:hover:text-white cursor-pointer"
                   >
                     <Trash2 className="h-4.5 w-4.5" />
                   </button>

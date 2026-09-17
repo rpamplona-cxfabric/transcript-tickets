@@ -1,27 +1,46 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+
+export type ThemePreference = 'light' | 'dark' | 'system';
+
+const resolveTheme = (theme: ThemePreference) => {
+  if (theme !== 'system') return theme;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
+const applyTheme = (theme: ThemePreference) => {
+  document.documentElement.classList.toggle('dark', resolveTheme(theme) === 'dark');
+};
 
 export function useSidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setThemeState] = useState<ThemePreference>('system');
 
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
+    const savedTheme = localStorage.getItem('theme');
+    const preference: ThemePreference = savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system' ? savedTheme : 'system';
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTheme(isDark ? 'dark' : 'light');
+    setThemeState(preference);
+    applyTheme(preference);
   }, []);
 
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    localStorage.setItem('theme', nextTheme);
-    document.cookie = `theme=${nextTheme}; path=/; max-age=31536000; samesite=lax`;
-    if (nextTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+  useEffect(() => {
+    if (theme !== 'system') return;
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => applyTheme('system');
+    media.addEventListener('change', handleChange);
+
+    return () => media.removeEventListener('change', handleChange);
+  }, [theme]);
+
+  const setTheme = (preference: ThemePreference) => {
+    setThemeState(preference);
+    localStorage.setItem('theme', preference);
+    document.cookie = `theme=${preference}; path=/; max-age=31536000; samesite=lax`;
+    applyTheme(preference);
   };
 
   return {
@@ -29,6 +48,6 @@ export function useSidebar() {
     isOpen,
     setIsOpen,
     theme,
-    toggleTheme,
+    setTheme,
   };
 }
