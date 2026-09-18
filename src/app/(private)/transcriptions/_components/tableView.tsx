@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, ChevronLeft, Clock3 } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Transcript } from '@/types';
 
 interface TableViewProps {
@@ -51,8 +51,7 @@ export const TableView = ({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <div className="app-surface-raised inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
-                  <Clock3 className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+                <div className="text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
                   {formatTime(t.timestamp)}
                 </div>
               </div>
@@ -72,16 +71,13 @@ export const TableView = ({
                 </span>
               )}
             </div>
-            <div className="app-surface-raised rounded-xl border border-zinc-100 p-3 dark:border-[#293442]">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                Summary
-              </p>
-              <p className="mt-2 line-clamp-3 text-sm font-medium leading-6 text-zinc-700 dark:text-zinc-300">
+            <div>
+              <p className="line-clamp-3 text-sm font-medium leading-6 text-zinc-700 dark:text-zinc-300">
                 {t.transcriptSummary || 'No summary available.'}
               </p>
             </div>
             <div className="flex items-center justify-between text-xs lg:text-sm font-semibold text-zinc-500 dark:text-zinc-400">
-              <span>Tap to view transcript</span>
+              <span>View transcript</span>
               <ChevronRight className="h-4.5 w-4.5" />
             </div>
           </button>
@@ -174,35 +170,40 @@ export const TableView = ({
               </p>
             </div>
             <div>
-              <nav className="isolate inline-flex -space-x-px rounded-xl gap-1" aria-label="Pagination">
-                <button
-                  onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-black dark:text-zinc-400 cursor-pointer"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
+              <nav className="inline-flex items-center gap-1" aria-label="Pagination">
+                {currentPage > 1 && (
+                  <button
+                    onClick={() => onPageChange(currentPage - 1)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-black dark:hover:text-white"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                )}
 
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
                     onClick={() => onPageChange(page)}
-                    className={`relative inline-flex items-center rounded-lg px-3 py-1.5 text-xs lg:text-sm font-semibold cursor-pointer ${currentPage === page
-                      ? 'z-10 bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
-                      : 'text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-black border border-zinc-200 dark:border-zinc-800'
+                    aria-current={currentPage === page ? 'page' : undefined}
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border text-sm font-normal transition-colors ${currentPage === page
+                      ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-950'
+                      : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-black dark:hover:text-white'
                       }`}
                   >
                     {page}
                   </button>
                 ))}
 
-                <button
-                  onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="relative inline-flex items-center rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-black dark:text-zinc-400 cursor-pointer"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                {currentPage < totalPages && (
+                  <button
+                    onClick={() => onPageChange(currentPage + 1)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-black dark:hover:text-white"
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                )}
               </nav>
             </div>
           </div>

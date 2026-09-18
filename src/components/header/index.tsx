@@ -1,10 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   CircleHelp,
   Check,
   ChevronLeft,
+  FileAudio,
+  ListTodo,
   LogOut,
   Menu,
   Monitor,
@@ -16,6 +19,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import type { AuthenticatedUser } from '@/components/sidebar';
 import type { ThemePreference } from '@/components/sidebar/hook';
+import { HomeIcon } from '@/components/homeIcon';
 import { useUserStore } from '@/lib/store/user';
 
 interface HeaderProps {
@@ -31,6 +35,12 @@ const cleanProfileValue = (value: string | null | undefined) => {
   return normalized && normalized !== 'null' && normalized !== 'undefined' ? normalized : '';
 };
 
+const breadcrumbPages = {
+  '/': { title: 'Home', icon: HomeIcon },
+  '/transcriptions': { title: 'Transcriptions', icon: FileAudio },
+  '/tasks': { title: 'Tasks', icon: ListTodo },
+};
+
 export const Header = ({
   authUser,
   isSidebarOpen,
@@ -38,6 +48,7 @@ export const Header = ({
   theme,
   setTheme,
 }: HeaderProps) => {
+  const pathname = usePathname();
   const profile = useUserStore((state) => state.profile);
   const menuRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -59,6 +70,13 @@ export const Header = ({
     .map((part) => part.charAt(0))
     .join('')
     .toUpperCase();
+  const pageTitle = pathname.split('/').filter(Boolean).at(-1)?.replace(/-/g, ' ') || 'Home';
+  const breadcrumb = breadcrumbPages[pathname as keyof typeof breadcrumbPages] ?? {
+    title: pageTitle,
+    icon: HomeIcon,
+  };
+  const BreadcrumbIcon = breadcrumb.icon;
+  const breadcrumbIconSize = BreadcrumbIcon === HomeIcon ? 'h-5 w-5' : 'h-4 w-4';
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -103,13 +121,27 @@ export const Header = ({
   return (
     <div className="relative z-50 shrink-0">
       <header className="app-surface app-shadow-surface flex h-16 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-800 sm:px-5 md:rounded-2xl md:border">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-8">
           <Link
             href="/"
             className="text-lg font-semibold tracking-tight text-zinc-950 dark:text-white sm:text-xl"
           >
             Transcript Portal
           </Link>
+          <nav
+            aria-label="Breadcrumb"
+            className="hidden items-center gap-2 text-sm font-normal leading-5 text-[#1e283e] dark:text-zinc-200 md:flex"
+          >
+            <Link
+              href={pathname}
+              aria-label={`Go to ${breadcrumb.title}`}
+              className="rounded-sm text-[#1e283e] transition-colors hover:text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:text-white"
+            >
+              <BreadcrumbIcon className={`${breadcrumbIconSize} shrink-0`} />
+            </Link>
+            <span className="text-zinc-400 dark:text-zinc-500">/</span>
+            <span className="capitalize">{breadcrumb.title}</span>
+          </nav>
         </div>
 
         <button

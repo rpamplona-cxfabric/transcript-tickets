@@ -5,7 +5,6 @@ import {
   CircleHelp,
   ChevronRight,
   LogOut,
-  LayoutDashboard,
   FileAudio,
   Moon,
   UserRound,
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Dispatch, ElementType, SetStateAction, useEffect, useState } from 'react';
 import { Select } from '@/components/select';
+import { HomeIcon } from '@/components/homeIcon';
 import type { ThemePreference } from '@/components/sidebar/hook';
 import { useUserStore } from '@/lib/store/user';
 
@@ -71,14 +71,14 @@ export const Sidebar = ({ authUser, pathname, isOpen, setIsOpen, theme, setTheme
   ) : initials || 'TP';
 
   const menuItems: MenuItem[] = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Home', path: '/', icon: HomeIcon },
     { name: 'Transcriptions', path: '/transcriptions', icon: FileAudio },
   ];
 
   return (
     <>
       <aside
-        className={`app-surface app-shadow-surface fixed inset-0 z-[60] flex w-full flex-col text-zinc-600 transition-transform duration-300 ease-in-out dark:text-zinc-400 md:static md:z-auto md:h-auto md:w-64 md:translate-x-0 md:rounded-2xl md:border md:border-zinc-200 md:dark:border-zinc-800 ${
+        className={`app-surface app-shadow-surface fixed inset-0 z-[60] flex w-full flex-col text-[#1e283e] transition-transform duration-300 ease-in-out dark:text-zinc-400 md:static md:z-auto md:h-auto md:w-64 md:translate-x-0 md:rounded-2xl md:border md:border-zinc-200 md:dark:border-zinc-800 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -95,22 +95,23 @@ export const Sidebar = ({ authUser, pathname, isOpen, setIsOpen, theme, setTheme
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.path;
+            const iconSize = Icon === HomeIcon ? 'h-5 w-5' : 'h-4 w-4';
             return (
               <Link
                 key={item.path}
                 href={item.path}
                 onClick={() => setIsOpen(false)}
-                className={`group flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                className={`group flex items-center justify-between rounded-lg px-4 py-3 text-sm font-normal transition-all duration-200 ${
                   isActive
-                    ? 'app-shadow-control bg-zinc-100 text-zinc-950 dark:bg-white dark:text-zinc-950'
-                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-black dark:hover:text-white'
+                    ? 'bg-[#e2e8f0] text-[#1e283e] dark:bg-white dark:text-zinc-950'
+                    : 'text-[#1e283e] hover:bg-[#e2e8f0] dark:text-zinc-400 dark:hover:bg-black dark:hover:text-white'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`h-5 w-5 transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-zinc-950' : 'text-zinc-500 group-hover:text-zinc-950 dark:text-zinc-400 dark:group-hover:text-white'}`} />
+                  <Icon className={`${iconSize} transition-transform duration-200 group-hover:scale-105 ${isActive ? 'text-[#1e283e]' : 'text-[#1e283e] dark:text-zinc-400 dark:group-hover:text-white'}`} />
                   <span>{item.name}</span>
                 </div>
-                {isActive && <ChevronRight className="h-4 w-4 text-zinc-950" />}
+                {isActive && <ChevronRight className="h-4 w-4 text-[#1e283e]" />}
               </Link>
             );
           })}
