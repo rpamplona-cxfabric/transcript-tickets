@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FileAudio, X, Clock, Download, User, Loader2, AlertTriangle } from 'lucide-react';
 import { Combobox } from '@/components/combobox';
+import { StatusBadge } from '@/components/statusBadge';
 import { LeadModal } from '../leadModal';
 import { SpeakerCombobox } from './speakerCombobox';
 import { useTranscriptionDetailDrawer } from './hook';
@@ -99,21 +100,7 @@ export const TranscriptionDetailDrawer = () => {
               <span className="text-xs lg:text-sm text-zinc-500 font-medium">Recording Date & Time:</span>
               <span className="text-xs lg:text-sm font-semibold text-zinc-800 dark:text-zinc-200">{formatTime(activeTranscript.timestamp)}</span>
             </div>
-            <div>
-              {activeTranscript.isIgnored ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 dark:bg-black dark:text-zinc-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" /> Ignored
-                </span>
-              ) : activeTranscript.isProcessed ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Processed
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /> Pending
-                </span>
-              )}
-            </div>
+            <StatusBadge status={activeTranscript.isIgnored ? 'ignored' : activeTranscript.isProcessed ? 'processed' : 'pending'} />
           </div>
 
           <div className="space-y-2">

@@ -28,7 +28,7 @@ export const RecentTranscriptions = ({ transcripts, isLoading }: RecentTranscrip
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <FileAudio className="h-5 w-5 text-zinc-500" />
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Recent Transcriptions</h2>
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Recent Conversations</h2>
         </div>
         <Link 
           href="/transcriptions" 
@@ -43,7 +43,7 @@ export const RecentTranscriptions = ({ transcripts, isLoading }: RecentTranscrip
           Array.from({ length: 3 }, (_, index) => <SkeletonTranscript key={index} />)
         ) : recentTranscripts.length === 0 ? (
           <div className="flex h-36 flex-col items-center justify-center text-center">
-            <span className="text-sm text-zinc-500">No transcriptions found in database.</span>
+            <span className="text-sm text-zinc-500">No conversations found in database.</span>
           </div>
         ) : (
           recentTranscripts.map((t) => (

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranscriptionStore } from '@/lib/store/transcriptions';
 import { fetchTranscriptions } from '@/lib/api/transcriptions';
@@ -7,6 +7,8 @@ import { queryKeys } from '@/lib/queries/queryKeys';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
 const PAGE_SIZE = 20;
+type TranscriptSortField = 'timestamp' | 'status' | 'summary';
+type SortDirection = 'asc' | 'desc';
 
 export const useTranscriptionsClient = () => {
   const {
@@ -23,6 +25,15 @@ export const useTranscriptionsClient = () => {
   } = useTranscriptionStore();
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const [sort, setSortState] = useState<{ field: TranscriptSortField; direction: SortDirection }>({ field: 'timestamp', direction: 'desc' });
+
+  const setSort = (field: TranscriptSortField) => {
+    setSortState((current) => ({
+      field,
+      direction: current.field === field && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+    setCurrentPage(1);
+  };
 
   useQuery({
     queryKey: queryKeys.leads,
@@ -36,6 +47,8 @@ export const useTranscriptionsClient = () => {
     search: debouncedSearchQuery || undefined,
     status: selectedStatus,
     tenant: selectedTenant === 'all' ? undefined : selectedTenant,
+    sortField: sort.field,
+    sortDirection: sort.direction,
   };
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
@@ -80,6 +93,9 @@ export const useTranscriptionsClient = () => {
     totalPages,
     pageSize: PAGE_SIZE,
     setCurrentPage,
+    sortField: sort.field,
+    sortDirection: sort.direction,
+    setSort,
     hasTranscripts: transcripts.length > 0,
   };
 };

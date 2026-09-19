@@ -13,7 +13,7 @@ export const DashboardMetrics = ({ totalTranscripts, isLoading }: DashboardMetri
       <div className="absolute inset-y-0 left-0 w-1 bg-emerald-500" />
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Transcriptions</span>
+          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Conversations</span>
           <p className="mt-1 text-xs lg:text-sm text-zinc-400 dark:text-zinc-500">All call records available in your workspace</p>
         </div>
         <div className="rounded-xl bg-zinc-100 p-2.5 text-zinc-900 transition-colors group-hover:bg-zinc-900 group-hover:text-white dark:bg-black dark:text-zinc-400 dark:group-hover:bg-black dark:group-hover:text-white">
@@ -22,7 +22,7 @@ export const DashboardMetrics = ({ totalTranscripts, isLoading }: DashboardMetri
       </div>
       <div className="mt-4 flex items-baseline gap-2">
         {isLoading ? (
-          <div className="h-9 w-16 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" aria-label="Loading total transcriptions" />
+          <div className="h-9 w-16 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" aria-label="Loading total conversations" />
         ) : (
           <span className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">{totalTranscripts}</span>
         )}

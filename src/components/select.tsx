@@ -41,7 +41,7 @@ export const Select = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`app-shadow-control flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-black dark:text-white dark:hover:bg-black ${buttonClassName}`}
+        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-black dark:text-white dark:hover:bg-black ${buttonClassName}`}
       >
         <span className={selectedOption ? '' : 'text-zinc-400 dark:text-zinc-500'}>
           {selectedOption ? selectedOption.label : placeholder}

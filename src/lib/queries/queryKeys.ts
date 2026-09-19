@@ -6,6 +6,8 @@ export const queryKeys = {
     search?: string;
     status?: string;
     tenant?: string;
+    sortField?: string;
+    sortDirection?: string;
   }) => ['transcriptions', params] as const,
   leads: ['leads', 'all'] as const,
   leadById: (leadId: string) => ['leads', 'byId', leadId] as const,

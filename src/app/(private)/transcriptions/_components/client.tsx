@@ -26,6 +26,9 @@ export const TranscriptionsClient = () => {
     pageSize,
     setCurrentPage,
     hasTranscripts,
+    sortField,
+    sortDirection,
+    setSort,
   } = useTranscriptionsClient();
 
   return (
@@ -33,11 +36,11 @@ export const TranscriptionsClient = () => {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <section className="app-surface app-shadow-surface mb-4 shrink-0 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800 sm:p-5">
           <div className="mb-5 flex flex-col gap-1">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white md:text-3xl">
-              Call Transcriptions
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white md:text-2xl">
+              Conversations
             </h1>
             <p className="text-sm font-medium text-zinc-500 dark:text-zinc-450">
-              View and search through your recent call transcriptions.
+              View and search through your recent call conversations.
             </p>
           </div>
 
@@ -46,7 +49,7 @@ export const TranscriptionsClient = () => {
               <Search className="absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-zinc-400" />
               <input
                 type="text"
-                placeholder="Search transcript keyword or ID..."
+                placeholder="Search conversation keyword or ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-zinc-900 dark:border-zinc-700 dark:bg-black dark:focus:border-white"
@@ -71,7 +74,7 @@ export const TranscriptionsClient = () => {
             <div className="flex min-w-0 items-start gap-3">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <p className="text-sm font-semibold">Unable to load transcriptions</p>
+                <p className="text-sm font-semibold">Unable to load conversations</p>
                 <p className="mt-0.5 text-xs lg:text-sm opacity-80">{error.message}</p>
               </div>
             </div>
@@ -91,7 +94,7 @@ export const TranscriptionsClient = () => {
         ) : !hasTranscripts ? (
           <div className="app-surface flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-center">
             <FileAudio className="h-10 w-10 text-zinc-300 dark:text-zinc-700 mb-3" />
-            <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No transcriptions found</p>
+            <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No conversations found</p>
             <p className="text-xs lg:text-sm text-zinc-450 dark:text-zinc-500 mt-1">Try adjusting your filters or search query.</p>
           </div>
         ) : (
@@ -104,6 +107,9 @@ export const TranscriptionsClient = () => {
               pageSize={pageSize}
               onPageChange={setCurrentPage}
               onSelectTranscript={setActiveTranscript}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSort={setSort}
             />
           </div>
         )}

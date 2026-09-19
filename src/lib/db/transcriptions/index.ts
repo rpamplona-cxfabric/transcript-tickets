@@ -157,6 +157,10 @@ export interface GetTranscriptsOptions {
   page?: number;
   limit?: number;
   filters?: GetTranscriptsFilters;
+  sort?: {
+    field: 'timestamp' | 'status' | 'summary';
+    direction: 'asc' | 'desc';
+  };
 }
 
 export interface PaginatedTranscripts {
@@ -231,6 +235,24 @@ function applyFilters(transcripts: Transcript[], filters?: GetTranscriptsFilters
   });
 }
 
+function sortTranscripts(
+  transcripts: Transcript[],
+  sort: NonNullable<GetTranscriptsOptions['sort']> = { field: 'timestamp', direction: 'desc' }
+): Transcript[] {
+  const status = (transcript: Transcript) => transcript.isIgnored ? 'ignored' : transcript.isProcessed ? 'processed' : 'pending';
+  const multiplier = sort.direction === 'asc' ? 1 : -1;
+
+  return [...transcripts].sort((left, right) => {
+    if (sort.field === 'timestamp') {
+      return ((new Date(left.timestamp).getTime() || 0) - (new Date(right.timestamp).getTime() || 0)) * multiplier;
+    }
+
+    const leftValue = sort.field === 'status' ? status(left) : left.transcriptSummary || '';
+    const rightValue = sort.field === 'status' ? status(right) : right.transcriptSummary || '';
+    return leftValue.localeCompare(rightValue) * multiplier;
+  });
+}
+
 /**
  * Fetches transcripts for a tenant, applies filtering, and paginates the result.
  *
@@ -242,10 +264,10 @@ export async function getTranscripts(
   options: GetTranscriptsOptions = {}
 ): Promise<PaginatedTranscripts> {
   try {
-    const { page = 1, limit = 20, filters } = options;
+    const { page = 1, limit = 20, filters, sort } = options;
 
     const allTranscripts = await fetchAllTranscripts(tenantId);
-    const filtered = applyFilters(allTranscripts, filters);
+    const filtered = sortTranscripts(applyFilters(allTranscripts, filters), sort);
 
     const safePage = Math.max(1, page);
     const safeLimit = Math.max(1, limit);

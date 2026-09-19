@@ -21,11 +21,17 @@ export async function GET(request: Request) {
     const status = (searchParams.get('status') || undefined) as
       | 'active' | 'pending' | 'processed' | 'ignored' | undefined;
     const tenant = searchParams.get('tenant') || undefined;
+    const sortFieldParam = searchParams.get('sortField');
+    const sortField = sortFieldParam === 'status' || sortFieldParam === 'summary' || sortFieldParam === 'timestamp'
+      ? sortFieldParam
+      : 'timestamp';
+    const sortDirection = searchParams.get('sortDirection') === 'asc' ? 'asc' : 'desc';
 
     const result = await getTranscripts(tenantId, {
       page,
       limit,
       filters: { search, status, tenantId: tenant },
+      sort: { field: sortField, direction: sortDirection },
     });
 
     return NextResponse.json(result);

@@ -3,11 +3,16 @@
 import Link from 'next/link';
 import {
   CircleHelp,
+  Blocks,
+  CreditCard,
   ChevronRight,
   LogOut,
   FileAudio,
   Moon,
+  Phone,
+  Settings,
   UserRound,
+  UsersRound,
   X,
 } from 'lucide-react';
 import { Dispatch, ElementType, SetStateAction, useEffect, useState } from 'react';
@@ -72,7 +77,12 @@ export const Sidebar = ({ authUser, pathname, isOpen, setIsOpen, theme, setTheme
 
   const menuItems: MenuItem[] = [
     { name: 'Home', path: '/', icon: HomeIcon },
-    { name: 'Transcriptions', path: '/transcriptions', icon: FileAudio },
+    { name: 'Conversations', path: '/transcriptions', icon: FileAudio },
+    { name: 'Integrations', path: '/integrations', icon: Blocks },
+    { name: 'Users', path: '/users', icon: UsersRound },
+    { name: 'Phone Numbers', path: '/phone-numbers', icon: Phone },
+    { name: 'Subscription', path: '/subscription', icon: CreditCard },
+    { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
   return (

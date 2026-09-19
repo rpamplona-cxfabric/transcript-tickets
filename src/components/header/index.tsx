@@ -6,13 +6,18 @@ import {
   CircleHelp,
   Check,
   ChevronLeft,
+  Blocks,
+  CreditCard,
   FileAudio,
   ListTodo,
   LogOut,
   Menu,
   Monitor,
   Moon,
+  Phone,
+  Settings,
   Sun,
+  UsersRound,
   UserRound,
   X,
 } from 'lucide-react';
@@ -37,8 +42,13 @@ const cleanProfileValue = (value: string | null | undefined) => {
 
 const breadcrumbPages = {
   '/': { title: 'Home', icon: HomeIcon },
-  '/transcriptions': { title: 'Transcriptions', icon: FileAudio },
+  '/transcriptions': { title: 'Conversations', icon: FileAudio },
   '/tasks': { title: 'Tasks', icon: ListTodo },
+  '/integrations': { title: 'Integrations', icon: Blocks },
+  '/users': { title: 'Users', icon: UsersRound },
+  '/phone-numbers': { title: 'Phone Numbers', icon: Phone },
+  '/subscription': { title: 'Subscription', icon: CreditCard },
+  '/settings': { title: 'Settings', icon: Settings },
 };
 
 export const Header = ({

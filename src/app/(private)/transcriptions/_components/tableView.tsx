@@ -1,6 +1,8 @@
 'use client';
 
 import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { SortableTableHeaderCell, TableHeader, TableSortDirection } from '@/components/tableHeader';
+import { StatusBadge } from '@/components/statusBadge';
 import { Transcript } from '@/types';
 
 interface TableViewProps {
@@ -11,6 +13,9 @@ interface TableViewProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   onSelectTranscript: (transcript: Transcript) => void;
+  sortField: 'timestamp' | 'status' | 'summary';
+  sortDirection: Exclude<TableSortDirection, null>;
+  onSort: (field: 'timestamp' | 'status' | 'summary') => void;
 }
 
 export const TableView = ({
@@ -21,6 +26,9 @@ export const TableView = ({
   pageSize,
   onPageChange,
   onSelectTranscript,
+  sortField,
+  sortDirection,
+  onSort,
 }: TableViewProps) => {
   const indexOfFirstItem = (currentPage - 1) * pageSize;
   const indexOfLastItem = indexOfFirstItem + transcripts.length;
@@ -47,53 +55,30 @@ export const TableView = ({
             key={t.transcriptId}
             type="button"
             onClick={() => onSelectTranscript(t)}
-            className="flex w-full flex-col gap-3 p-4 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-[#151d27]"
+            className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-4 p-4 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-[#151d27]"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="text-xs lg:text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                  {formatTime(t.timestamp)}
-                </div>
-              </div>
-              {t.isIgnored ? (
-                <span className="app-surface-raised inline-flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2 py-1 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" /> Ignored
-                </span>
-              ) : t.isProcessed ? (
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Processed
-                </span>
-              ) : (
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                  Pending
-                </span>
-              )}
+            <div className="min-w-0 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              {formatTime(t.timestamp)}
             </div>
-            <div>
-              <p className="line-clamp-3 text-sm font-medium leading-6 text-zinc-700 dark:text-zinc-300">
-                {t.transcriptSummary || 'No summary available.'}
-              </p>
-            </div>
-            <div className="flex items-center justify-between text-xs lg:text-sm font-semibold text-zinc-500 dark:text-zinc-400">
-              <span>View transcript</span>
-              <ChevronRight className="h-4.5 w-4.5" />
-            </div>
+            <StatusBadge status={t.isIgnored ? 'ignored' : t.isProcessed ? 'processed' : 'pending'} className="shrink-0" />
+            <p className="line-clamp-3 text-sm font-medium leading-6 text-zinc-700 dark:text-zinc-300">
+              {t.transcriptSummary || 'No summary available.'}
+            </p>
+            <ChevronRight className="h-4.5 w-4.5 self-center justify-self-end text-zinc-500 dark:text-zinc-400" />
           </button>
         ))}
       </div>
 
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full border-collapse text-left text-sm text-zinc-500 dark:text-zinc-400">
-          <thead className="app-surface sticky top-0 z-10 border-b border-zinc-200 text-xs lg:text-sm font-bold uppercase text-zinc-700 dark:border-zinc-800 dark:text-zinc-300">
+          <TableHeader sticky>
             <tr>
-              <th scope="col" className="px-6 py-2">Date & Time</th>
-              <th scope="col" className="px-6 py-2">Status</th>
-              <th scope="col" className="px-6 py-2">AI Summary</th>
-              <th scope="col" className="px-6 py-2 text-right">Actions</th>
+              <SortableTableHeaderCell sortDirection={sortField === 'timestamp' ? sortDirection : null} onSort={() => onSort('timestamp')}>DATE &amp; TIME</SortableTableHeaderCell>
+              <SortableTableHeaderCell sortDirection={sortField === 'status' ? sortDirection : null} onSort={() => onSort('status')}>STATUS</SortableTableHeaderCell>
+              <SortableTableHeaderCell sortDirection={sortField === 'summary' ? sortDirection : null} onSort={() => onSort('summary')}>AI SUMMARY</SortableTableHeaderCell>
+              <th scope="col" className="px-6 py-2 text-right">ACTIONS</th>
             </tr>
-          </thead>
+          </TableHeader>
           <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
             {transcripts.map((t) => (
               <tr
@@ -105,21 +90,7 @@ export const TableView = ({
                   {formatTime(t.timestamp)}
                 </td>
                 <td className="px-6 py-4">
-                  {t.isIgnored ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-1 text-xs lg:text-sm font-semibold text-zinc-600 dark:bg-black dark:text-zinc-300">
-                      <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" /> Ignored
-                    </span>
-                  ) : t.isProcessed ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs lg:text-sm font-semibold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      Processed
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs lg:text-sm font-semibold text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      Pending
-                    </span>
-                  )}
+                  <StatusBadge status={t.isIgnored ? 'ignored' : t.isProcessed ? 'processed' : 'pending'} />
                 </td>
                 <td className="px-6 py-4 max-w-sm truncate text-zinc-650 dark:text-zinc-400 font-medium">
                   {t.transcriptSummary || 'No summary available.'}

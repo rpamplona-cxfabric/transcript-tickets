@@ -28,14 +28,14 @@ export const TranscriptionsLoadingSkeleton = () => (
 
     <div className="hidden overflow-x-auto lg:block">
       <table className="w-full border-collapse text-left text-sm">
-            <thead className="app-surface sticky top-0 z-10 border-b border-zinc-200 text-xs lg:text-sm font-bold uppercase text-zinc-700 dark:border-zinc-800 dark:text-zinc-300">
+            <TableHeader sticky>
               <tr>
-                <th scope="col" className="px-6 py-2">Date &amp; Time</th>
-                <th scope="col" className="px-6 py-2">Status</th>
-                <th scope="col" className="px-6 py-2">AI Summary</th>
-                <th scope="col" className="px-6 py-2 text-right">Actions</th>
+                <SortableTableHeaderCell sortDirection={null}>DATE &amp; TIME</SortableTableHeaderCell>
+                <SortableTableHeaderCell sortDirection={null}>STATUS</SortableTableHeaderCell>
+                <SortableTableHeaderCell sortDirection={null}>AI SUMMARY</SortableTableHeaderCell>
+                <th scope="col" className="px-6 py-2 text-right">ACTIONS</th>
               </tr>
-            </thead>
+            </TableHeader>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {SKELETON_ROWS.map((row) => (
                 <tr key={row}>
@@ -57,3 +57,4 @@ export const TranscriptionsLoadingSkeleton = () => (
     <span className="sr-only">Loading transcriptions</span>
   </div>
 );
+import { SortableTableHeaderCell, TableHeader } from '@/components/tableHeader';

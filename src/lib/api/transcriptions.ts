@@ -7,12 +7,14 @@ export interface FetchTranscriptionsParams {
   search?: string;
   status?: 'active' | 'pending' | 'processed' | 'ignored';
   tenant?: string;
+  sortField?: 'timestamp' | 'status' | 'summary';
+  sortDirection?: 'asc' | 'desc';
 }
 
 export const fetchTranscriptions = async (
   params: FetchTranscriptionsParams = {}
 ): Promise<PaginatedTranscriptsResponse> => {
-  const { page = 1, limit = 20, search, status, tenant } = params;
+  const { page = 1, limit = 20, search, status, tenant, sortField, sortDirection } = params;
 
   const query = new URLSearchParams();
   query.set('page', String(page));
@@ -20,6 +22,8 @@ export const fetchTranscriptions = async (
   if (search) query.set('search', search);
   if (status) query.set('status', status);
   if (tenant) query.set('tenant', tenant);
+  if (sortField) query.set('sortField', sortField);
+  if (sortDirection) query.set('sortDirection', sortDirection);
 
   const { data } = await api.get<PaginatedTranscriptsResponse>(`/transcriptions?${query.toString()}`);
   return data;
