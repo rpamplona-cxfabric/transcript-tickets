@@ -8,6 +8,7 @@
   --workspace-canvas: #f2f6f9;
   --surface: #ffffff;
   --surface-raised: #f8fafc;
+  --interactive-radius: 0.375rem;
 }
 
 :root.dark {
@@ -53,6 +54,7 @@ body {
 
 .app-shadow-menu {
   box-shadow: 0 4px 12.6px 0 rgba(0, 0, 0, 0.12);
+  border-radius: var(--interactive-radius) !important;
 }
 
 :root.dark .app-shadow-surface,
@@ -87,12 +89,19 @@ body {
 }
 
 button,
-a,
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea,
 select,
-input[type="button"],
-input[type="submit"],
-input[type="checkbox"],
-input[type="radio"],
-[role="button"] {
+a[class*="rounded-"]:not([class*="rounded-full"]),
+[role="button"]:not([class*="rounded-full"]) {
   cursor: pointer;
+}
+
+button:not([class*="rounded-full"]),
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea,
+select,
+a[class*="rounded-"]:not([class*="rounded-full"]),
+[role="button"]:not([class*="rounded-full"]) {
+  border-radius: var(--interactive-radius) !important;
 }

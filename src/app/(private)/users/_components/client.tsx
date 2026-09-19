@@ -4,16 +4,12 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-  ChevronDown,
   MailPlus,
-  MoreHorizontal,
   Search,
-  ShieldCheck,
-  Trash2,
   UserRound,
-  UserRoundCheck,
   X,
 } from 'lucide-react';
+import { ActionMenu, type ActionMenuItem } from '@/components/actionMenu';
 import { Select } from '@/components/select';
 import { StatusBadge } from '@/components/statusBadge';
 import { SortableTableHeaderCell, TableHeader, TableSortDirection } from '@/components/tableHeader';
@@ -30,10 +26,12 @@ const Dialog = ({
   title,
   children,
   onClose,
+  size = 'default',
 }: {
   title: string;
   children: React.ReactNode;
   onClose: () => void;
+  size?: 'default' | 'wide';
 }) => (
   <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/45 p-4 backdrop-blur-sm" onClick={onClose}>
     <section
@@ -41,7 +39,7 @@ const Dialog = ({
       aria-modal="true"
       aria-label={title}
       onClick={(event) => event.stopPropagation()}
-      className="app-surface app-shadow-surface w-full max-w-lg rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800 sm:p-6"
+      className={`app-surface app-shadow-surface w-full ${size === 'wide' ? 'max-w-xl' : 'max-w-lg'} rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800 sm:p-6`}
     >
       <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4 dark:border-zinc-800">
         <h2 className="text-lg font-bold text-zinc-900 dark:text-white">{title}</h2>
@@ -85,7 +83,7 @@ const InviteDialog = ({
   };
 
   return (
-    <Dialog title="Invite users" onClose={isPending ? () => undefined : onClose}>
+    <Dialog title="Invite users" size="wide" onClose={isPending ? () => undefined : onClose}>
       <div className="space-y-5 pt-5">
         <div>
           <label className="mb-2 block text-sm font-semibold text-zinc-700 dark:text-zinc-300">Email addresses</label>
@@ -130,7 +128,7 @@ const InviteDialog = ({
 
         <div className="flex justify-end gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
           <button type="button" onClick={onClose} disabled={isPending} className="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-black">Cancel</button>
-          <button type="button" onClick={() => onInvite(emails, userRoles, message)} disabled={!emails.length || isPending} className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200">
+          <button type="button" onClick={() => onInvite(emails, userRoles, message)} disabled={!emails.length || isPending} className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#4056a1] dark:text-[#f5f7ff] dark:hover:bg-[#4a63b8]">
             <MailPlus className="h-4 w-4" /> {isPending ? 'Sending…' : 'Send invite'}
           </button>
         </div>
@@ -143,7 +141,6 @@ export const UsersClient = () => {
   const queryClient = useQueryClient();
   const profile = useUserStore((state) => state.profile);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [actionUser, setActionUser] = useState<TenantUser | null>(null);
   const [roleUser, setRoleUser] = useState<TenantUser | null>(null);
   const [removeTarget, setRemoveTarget] = useState<TenantUser | null>(null);
   const [search, setSearch] = useState('');
@@ -179,7 +176,6 @@ export const UsersClient = () => {
     },
     onSuccess: (result) => {
       toast.success(result.message || 'User status updated.');
-      setActionUser(null);
       void refresh();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -236,6 +232,35 @@ export const UsersClient = () => {
       : { field, direction: 'asc' });
   };
 
+  const userActions = (user: TenantUser): ActionMenuItem[] => {
+    const isCurrentUser = user.auth0_id === profile?.auth0_id;
+    const actions: ActionMenuItem[] = [];
+
+    if (user.status === 'invited' && user.email_address) {
+      actions.push({
+        label: inviteMutation.isPending ? 'Sending invitation…' : 'Reinvite',
+        disabled: inviteMutation.isPending,
+        onSelect: () => inviteMutation.mutate({
+          emails: [user.email_address as string],
+          roles: user.role_id ? { [user.email_address as string]: user.role_id } : {},
+          message: '',
+        }),
+      });
+    }
+    if (user.status === 'active') {
+      actions.push({ label: 'Suspend user', disabled: statusMutation.isPending, onSelect: () => statusMutation.mutate({ auth0Id: user.auth0_id, status: 'suspended' }) });
+    }
+    if (user.status === 'suspended') {
+      actions.push({ label: 'Unsuspend user', disabled: statusMutation.isPending, onSelect: () => statusMutation.mutate({ auth0Id: user.auth0_id, status: 'active' }) });
+    }
+    if (!isCurrentUser) {
+      actions.push({ label: 'Assign role', onSelect: () => setRoleUser(user) });
+      actions.push({ label: 'Remove user', destructive: true, onSelect: () => setRemoveTarget(user) });
+    }
+
+    return actions;
+  };
+
   return (
     <div className="workspace-canvas flex flex-1">
       <main className="flex w-full flex-col gap-4">
@@ -245,7 +270,7 @@ export const UsersClient = () => {
               <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white md:text-2xl">Users</h1>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Manage invitations, roles, and account access for your workspace.</p>
             </div>
-            <button type="button" onClick={() => setIsInviteOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200">
+            <button type="button" onClick={() => setIsInviteOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-[#4056a1] dark:text-[#f5f7ff] dark:hover:bg-[#4a63b8]">
               <MailPlus className="h-4 w-4" /> Invite users
             </button>
           </div>
@@ -279,13 +304,13 @@ export const UsersClient = () => {
           ) : (
             <>
               <div className="divide-y divide-zinc-200 dark:divide-zinc-800 lg:hidden">
-                {filteredUsers.map((user) => <UserCard key={user.auth0_id} user={user} role={roleName(user.role_id)} onAction={setActionUser} />)}
+                {filteredUsers.map((user) => <UserCard key={user.auth0_id} user={user} role={roleName(user.role_id)} actions={userActions(user)} />)}
               </div>
               <div className="hidden overflow-x-auto lg:block">
                 <table className="w-full text-left text-sm">
                   <TableHeader><tr><SortableTableHeaderCell sortDirection={sort?.field === 'user' ? sort.direction : null} onSort={() => toggleSort('user')}>USERS</SortableTableHeaderCell><SortableTableHeaderCell sortDirection={sort?.field === 'role' ? sort.direction : null} onSort={() => toggleSort('role')}>ROLE</SortableTableHeaderCell><SortableTableHeaderCell sortDirection={sort?.field === 'status' ? sort.direction : null} onSort={() => toggleSort('status')}>STATUS</SortableTableHeaderCell><th className="px-6 py-2 text-right">ACTIONS</th></tr></TableHeader>
                   <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                    {filteredUsers.map((user) => <tr key={user.auth0_id} className="hover:bg-zinc-50 dark:hover:bg-[#151d27]"><td className="px-6 py-4"><UserIdentity user={user} /></td><td className="px-6 py-4 font-bold text-zinc-700 dark:text-zinc-300">{roleName(user.role_id)}</td><td className="px-6 py-4"><StatusBadge status={user.status} /></td><td className="px-6 py-4 text-right"><button type="button" onClick={() => setActionUser(user)} className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-black dark:hover:text-white" aria-label={`Actions for ${userName(user)}`}><MoreHorizontal className="h-5 w-5" /></button></td></tr>)}
+                    {filteredUsers.map((user) => <tr key={user.auth0_id}><td className="px-6 py-4"><UserIdentity user={user} /></td><td className="px-6 py-4 font-bold text-zinc-700 dark:text-zinc-300">{roleName(user.role_id)}</td><td className="px-6 py-4"><StatusBadge status={user.status} /></td><td className="px-6 py-4 text-right"><ActionMenu ariaLabel={`Actions for ${userName(user)}`} actions={userActions(user)} /></td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -295,7 +320,6 @@ export const UsersClient = () => {
       </main>
 
       {isInviteOpen && <InviteDialog roles={roles} onClose={() => setIsInviteOpen(false)} isPending={inviteMutation.isPending} onInvite={(emails, userRoles, message) => inviteMutation.mutate({ emails, roles: userRoles, message })} />}
-      {actionUser && <ActionDialog user={actionUser} isCurrentUser={actionUser.auth0_id === profile?.auth0_id} onClose={() => setActionUser(null)} onAssignRole={() => { setRoleUser(actionUser); setActionUser(null); }} onRemove={() => { setRemoveTarget(actionUser); setActionUser(null); }} onReinvite={() => inviteMutation.mutate({ emails: [actionUser.email_address || ''], roles: actionUser.role_id ? { [actionUser.email_address || '']: actionUser.role_id } : {}, message: '' })} onStatus={(status) => statusMutation.mutate({ auth0Id: actionUser.auth0_id, status })} isPending={inviteMutation.isPending || statusMutation.isPending} />}
       {roleUser && <RoleDialog user={roleUser} roleOptions={roleOptions} onClose={() => setRoleUser(null)} onSave={(roleId) => roleMutation.mutate({ auth0Id: roleUser.auth0_id, roleId })} isPending={roleMutation.isPending} />}
       {removeTarget && <RemoveDialog user={removeTarget} onClose={() => setRemoveTarget(null)} onRemove={() => removeMutation.mutate(removeTarget.auth0_id)} isPending={removeMutation.isPending} />}
     </div>
@@ -310,11 +334,7 @@ const UserIdentity = ({ user, role }: { user: TenantUser; role?: string }) => {
   ) : initials}</span><span className="min-w-0"><span className="block truncate text-sm font-semibold text-zinc-900 dark:text-white">{userName(user)}</span><span className={`block truncate text-xs lg:text-sm text-zinc-500 dark:text-zinc-400 ${role ? 'mb-1' : ''}`}>{user.email_address || 'No email address'}</span>{role && <span className="block text-xs lg:text-sm font-bold text-zinc-700 dark:text-zinc-300">{role}</span>}</span></div>;
 };
 
-const UserCard = ({ user, role, onAction }: { user: TenantUser; role: string; onAction: (user: TenantUser) => void }) => <button type="button" onClick={() => onAction(user)} className="flex w-full items-center gap-3 p-4 text-left hover:bg-zinc-50 dark:hover:bg-[#151d27]"><UserIdentity user={user} role={role} /><div className="ml-auto shrink-0"><StatusBadge status={user.status} /></div><ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 -rotate-90" /></button>;
-
-const ActionDialog = ({ user, isCurrentUser, onClose, onAssignRole, onRemove, onReinvite, onStatus, isPending }: { user: TenantUser; isCurrentUser: boolean; onClose: () => void; onAssignRole: () => void; onRemove: () => void; onReinvite: () => void; onStatus: (status: 'active' | 'suspended') => void; isPending: boolean }) => <Dialog title={userName(user)} onClose={onClose}><div className="space-y-2 pt-5">{user.status === 'invited' && <ActionButton onClick={onReinvite} disabled={isPending} icon={MailPlus} label={isPending ? 'Sending invitation…' : 'Reinvite'} />}{user.status === 'active' && <ActionButton onClick={() => onStatus('suspended')} disabled={isPending} icon={ShieldCheck} label="Suspend user" />}{user.status === 'suspended' && <ActionButton onClick={() => onStatus('active')} disabled={isPending} icon={ShieldCheck} label="Unsuspend user" />}{!isCurrentUser && <><ActionButton onClick={onAssignRole} icon={UserRoundCheck} label="Assign role" /><ActionButton onClick={onRemove} icon={Trash2} label="Remove user" danger /></>}</div></Dialog>;
-
-const ActionButton = ({ onClick, icon: Icon, label, danger = false, disabled = false }: { onClick: () => void; icon: typeof MailPlus; label: string; danger?: boolean; disabled?: boolean }) => <button type="button" onClick={onClick} disabled={disabled} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-colors disabled:opacity-50 ${danger ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20' : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-black'}`}><Icon className="h-4 w-4" />{label}</button>;
+const UserCard = ({ user, role, actions }: { user: TenantUser; role: string; actions: ActionMenuItem[] }) => <div className="flex w-full items-center gap-3 p-4"><UserIdentity user={user} role={role} /><div className="ml-auto shrink-0"><StatusBadge status={user.status} /></div><ActionMenu ariaLabel={`Actions for ${userName(user)}`} actions={actions} /></div>;
 
 const RoleDialog = ({ user, roleOptions, onClose, onSave, isPending }: { user: TenantUser; roleOptions: { value: string; label: string }[]; onClose: () => void; onSave: (roleId: string) => void; isPending: boolean }) => { const [roleId, setRoleId] = useState(user.role_id || ''); return <Dialog title="Assign role" onClose={onClose}><div className="space-y-5 pt-5"><p className="text-sm text-zinc-500 dark:text-zinc-400">Choose the role for {userName(user)}.</p><Select value={roleId} onChange={setRoleId} options={[{ value: '', label: 'Select role' }, ...roleOptions]} /><div className="flex justify-end gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800"><button type="button" onClick={onClose} disabled={isPending} className="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-700 dark:border-zinc-700 dark:text-zinc-200">Cancel</button><button type="button" onClick={() => onSave(roleId)} disabled={!roleId || roleId === user.role_id || isPending} className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-zinc-950">{isPending ? 'Saving…' : 'Save role'}</button></div></div></Dialog>; };
 

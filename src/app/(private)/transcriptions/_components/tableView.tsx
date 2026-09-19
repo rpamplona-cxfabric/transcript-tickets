@@ -3,6 +3,7 @@
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { SortableTableHeaderCell, TableHeader, TableSortDirection } from '@/components/tableHeader';
 import { StatusBadge } from '@/components/statusBadge';
+import { ActionMenu } from '@/components/actionMenu';
 import { Transcript } from '@/types';
 
 interface TableViewProps {
@@ -96,14 +97,7 @@ export const TableView = ({
                   {t.transcriptSummary || 'No summary available.'}
                 </td>
                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => onSelectTranscript(t)}
-                      className="rounded-lg p-2 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-black dark:hover:text-white cursor-pointer"
-                    >
-                      <ChevronRight className="h-4.5 w-4.5" />
-                    </button>
-                  </div>
+                  <ActionMenu ariaLabel={`Actions for conversation ${t.transcriptId}`} actions={[{ label: 'View conversation', onSelect: () => onSelectTranscript(t) }]} />
                 </td>
               </tr>
             ))}
