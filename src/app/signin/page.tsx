@@ -1,10 +1,10 @@
-import { redirect } from 'next/navigation';
-import { ArrowRight, Headphones, ShieldCheck } from 'lucide-react';
-import { auth0 } from '@/lib/auth/auth0';
+import { redirect } from "next/navigation";
+import { ArrowRight, Headphones, ShieldCheck } from "lucide-react";
+import { auth0 } from "@/lib/auth/auth0";
 
 const getSafeReturnTo = (requested: string | undefined) => {
-  if (!requested?.startsWith('/') || requested.startsWith('//')) {
-    return '/';
+  if (!requested?.startsWith("/") || requested.startsWith("//")) {
+    return "/";
   }
 
   return requested;
@@ -47,8 +47,8 @@ export default async function SignInPage({
             <span className="block text-zinc-400">ready when you are.</span>
           </h1>
           <p className="mt-6 max-w-lg text-base leading-7 text-zinc-400">
-            Review call transcriptions, track customer issues, and keep your support workflow moving
-            from one secure workspace.
+            Review call transcriptions, track customer issues, and keep your
+            support workflow moving from one secure workspace.
           </p>
 
           <div className="mt-8 flex items-center gap-3 text-sm text-zinc-400">

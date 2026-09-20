@@ -1,17 +1,20 @@
-'use client';
+"use client";
 
-import { Sidebar, type AuthenticatedUser } from '@/components/sidebar';
-import { Header } from '@/components/header';
-import { useSidebar } from '@/components/sidebar/hook';
-import { StoreInitializer } from '@/components/storeInitializer';
-import { UserProfileInitializer } from '@/components/auth/userProfileInitializer';
+import { Sidebar, type AuthenticatedUser } from "@/components/sidebar";
+import { Header } from "@/components/header";
+import { useSidebar } from "@/components/sidebar/hook";
+import { StoreInitializer } from "@/components/storeInitializer";
+import { UserProfileInitializer } from "@/components/auth/userProfileInitializer";
 
 interface PrivateAppShellProps {
   authUser: AuthenticatedUser;
   children: React.ReactNode;
 }
 
-export const PrivateAppShell = ({ authUser, children }: PrivateAppShellProps) => {
+export const PrivateAppShell = ({
+  authUser,
+  children,
+}: PrivateAppShellProps) => {
   const { pathname, isOpen, setIsOpen, theme, setTheme } = useSidebar();
 
   return (
@@ -34,9 +37,7 @@ export const PrivateAppShell = ({ authUser, children }: PrivateAppShellProps) =>
         />
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto p-[9px] md:p-0">
           <UserProfileInitializer>
-            <StoreInitializer>
-              {children}
-            </StoreInitializer>
+            <StoreInitializer>{children}</StoreInitializer>
           </UserProfileInitializer>
         </main>
       </div>

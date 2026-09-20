@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { Check, ChevronDown, Plus, X } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { Check, ChevronDown, Plus, X } from "lucide-react";
 
 interface SpeakerComboboxProps {
   speaker: string;
@@ -10,42 +10,54 @@ interface SpeakerComboboxProps {
   onChange: (speaker: string, value: string) => void;
 }
 
-export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerComboboxProps) => {
+export const SpeakerCombobox = ({
+  speaker,
+  value,
+  options,
+  onChange,
+}: SpeakerComboboxProps) => {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
-        setQuery('');
+        setQuery("");
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
+  const filtered = options.filter((o) =>
+    o.toLowerCase().includes(query.toLowerCase()),
+  );
   const queryTrimmed = query.trim();
-  const exactMatch = options.some((o) => o.toLowerCase() === queryTrimmed.toLowerCase());
+  const exactMatch = options.some(
+    (o) => o.toLowerCase() === queryTrimmed.toLowerCase(),
+  );
   const showAdd = queryTrimmed.length > 0 && !exactMatch;
 
   const select = (val: string) => {
     onChange(speaker, val);
     setOpen(false);
-    setQuery('');
+    setQuery("");
   };
 
   const clear = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onChange(speaker, '');
-    setQuery('');
+    onChange(speaker, "");
+    setQuery("");
   };
 
   return (
@@ -55,8 +67,14 @@ export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerCo
         onClick={() => setOpen((o) => !o)}
         className="app-surface flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200 px-3 py-2 text-sm transition hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
       >
-        <span className={value ? 'font-semibold text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}>
-          {value || 'None'}
+        <span
+          className={
+            value
+              ? "font-semibold text-zinc-900 dark:text-white"
+              : "text-zinc-400 dark:text-zinc-500"
+          }
+        >
+          {value || "None"}
         </span>
         <div className="flex shrink-0 items-center gap-1">
           {value && (
@@ -68,7 +86,9 @@ export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerCo
               <X className="h-3.5 w-3.5" />
             </span>
           )}
-          <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`h-4 w-4 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`}
+          />
         </div>
       </button>
 
@@ -86,23 +106,27 @@ export const SpeakerCombobox = ({ speaker, value, options, onChange }: SpeakerCo
           </div>
 
           <div className="max-h-52 overflow-y-auto py-1">
-            {filtered.length > 0 ? (
-              filtered.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => select(option)}
-                  className="flex w-full items-center justify-between px-3.5 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-black transition-colors cursor-pointer"
-                >
-                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{option}</span>
-                  {value === option && <Check className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />}
-                </button>
-              ))
-            ) : (
-              !showAdd && (
-                <p className="px-3.5 py-2 text-xs lg:text-sm italic text-zinc-400">No options found</p>
-              )
-            )}
+            {filtered.length > 0
+              ? filtered.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => select(option)}
+                    className="flex w-full items-center justify-between px-3.5 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-black transition-colors cursor-pointer"
+                  >
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {option}
+                    </span>
+                    {value === option && (
+                      <Check className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                    )}
+                  </button>
+                ))
+              : !showAdd && (
+                  <p className="px-3.5 py-2 text-xs lg:text-sm italic text-zinc-400">
+                    No options found
+                  </p>
+                )}
 
             {showAdd && (
               <button

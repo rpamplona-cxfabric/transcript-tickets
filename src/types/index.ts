@@ -2,8 +2,8 @@ export interface Task {
   ticketId: string;
   title: string;
   description: string;
-  priority: 'low' | 'high';
-  status: 'open' | 'in-progress' | 'resolved';
+  priority: "low" | "high";
+  status: "open" | "in-progress" | "resolved";
   transcriptId: string;
   createdAt: string;
   updatedAt?: string;

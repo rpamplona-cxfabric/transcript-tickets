@@ -1,31 +1,27 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   CircleHelp,
   Check,
   ChevronLeft,
-  Blocks,
-  CreditCard,
   FileAudio,
   ListTodo,
   LogOut,
   Menu,
   Monitor,
   Moon,
-  Phone,
-  Settings,
   Sun,
   UsersRound,
   UserRound,
   X,
-} from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import type { AuthenticatedUser } from '@/components/sidebar';
-import type { ThemePreference } from '@/components/sidebar/hook';
-import { HomeIcon } from '@/components/homeIcon';
-import { useUserStore } from '@/lib/store/user';
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import type { AuthenticatedUser } from "@/components/sidebar";
+import type { ThemePreference } from "@/components/sidebar/hook";
+import { HomeIcon } from "@/components/homeIcon";
+import { useUserStore } from "@/lib/store/user";
 
 interface HeaderProps {
   authUser: AuthenticatedUser;
@@ -37,18 +33,16 @@ interface HeaderProps {
 
 const cleanProfileValue = (value: string | null | undefined) => {
   const normalized = value?.trim();
-  return normalized && normalized !== 'null' && normalized !== 'undefined' ? normalized : '';
+  return normalized && normalized !== "null" && normalized !== "undefined"
+    ? normalized
+    : "";
 };
 
 const breadcrumbPages = {
-  '/': { title: 'Home', icon: HomeIcon },
-  '/transcriptions': { title: 'Conversations', icon: FileAudio },
-  '/tasks': { title: 'Tasks', icon: ListTodo },
-  '/integrations': { title: 'Integrations', icon: Blocks },
-  '/users': { title: 'Users', icon: UsersRound },
-  '/phone-numbers': { title: 'Phone Numbers', icon: Phone },
-  '/subscription': { title: 'Subscription', icon: CreditCard },
-  '/settings': { title: 'Settings', icon: Settings },
+  "/": { title: "Home", icon: HomeIcon },
+  "/conversations": { title: "Conversations", icon: FileAudio },
+  "/tasks": { title: "Tasks", icon: ListTodo },
+  "/users": { title: "Users", icon: UsersRound },
 };
 
 export const Header = ({
@@ -69,24 +63,34 @@ export const Header = ({
     cleanProfileValue(profile?.last_name),
   ]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
   const displayName =
-    profileName || authUser.name || authUser.nickname || authUser.email || 'Workspace user';
-  const displayEmail = cleanProfileValue(profile?.email_address) || authUser.email || '';
-  const profileImage = cleanProfileValue(profile?.image) || authUser.picture || '';
+    profileName ||
+    authUser.name ||
+    authUser.nickname ||
+    authUser.email ||
+    "Workspace user";
+  const displayEmail =
+    cleanProfileValue(profile?.email_address) || authUser.email || "";
+  const profileImage =
+    cleanProfileValue(profile?.image) || authUser.picture || "";
   const initials = displayName
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part.charAt(0))
-    .join('')
+    .join("")
     .toUpperCase();
-  const pageTitle = pathname.split('/').filter(Boolean).at(-1)?.replace(/-/g, ' ') || 'Home';
-  const breadcrumb = breadcrumbPages[pathname as keyof typeof breadcrumbPages] ?? {
+  const pageTitle =
+    pathname.split("/").filter(Boolean).at(-1)?.replace(/-/g, " ") || "Home";
+  const breadcrumb = breadcrumbPages[
+    pathname as keyof typeof breadcrumbPages
+  ] ?? {
     title: pageTitle,
     icon: HomeIcon,
   };
   const BreadcrumbIcon = breadcrumb.icon;
-  const breadcrumbIconSize = BreadcrumbIcon === HomeIcon ? 'h-5 w-5' : 'h-4 w-4';
+  const breadcrumbIconSize =
+    BreadcrumbIcon === HomeIcon ? "h-5 w-5" : "h-4 w-4";
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -98,35 +102,36 @@ export const Header = ({
       }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setIsMenuOpen(false);
         setIsThemeMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', closeMenu);
-    document.addEventListener('touchstart', closeMenu);
-    document.addEventListener('keydown', closeOnEscape);
+    document.addEventListener("mousedown", closeMenu);
+    document.addEventListener("touchstart", closeMenu);
+    document.addEventListener("keydown", closeOnEscape);
 
     return () => {
-      document.removeEventListener('mousedown', closeMenu);
-      document.removeEventListener('touchstart', closeMenu);
-      document.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener("mousedown", closeMenu);
+      document.removeEventListener("touchstart", closeMenu);
+      document.removeEventListener("keydown", closeOnEscape);
     };
   }, [isMenuOpen]);
 
-  const avatar = profileImage && !imageFailed ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={profileImage}
-      alt=""
-      className="h-full w-full object-cover"
-      referrerPolicy="no-referrer"
-      onError={() => setImageFailed(true)}
-    />
-  ) : (
-    initials || 'TP'
-  );
+  const avatar =
+    profileImage && !imageFailed ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={profileImage}
+        alt=""
+        className="h-full w-full object-cover"
+        referrerPolicy="no-referrer"
+        onError={() => setImageFailed(true)}
+      />
+    ) : (
+      initials || "TP"
+    );
 
   return (
     <div className="relative z-50 shrink-0">
@@ -158,10 +163,14 @@ export const Header = ({
           type="button"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="rounded-lg p-2 text-zinc-700 transition-colors hover:bg-zinc-100 md:hidden dark:text-zinc-200 dark:hover:bg-black"
-          aria-label={isSidebarOpen ? 'Close navigation' : 'Open navigation'}
+          aria-label={isSidebarOpen ? "Close navigation" : "Open navigation"}
           aria-expanded={isSidebarOpen}
         >
-          {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {isSidebarOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
         </button>
 
         <div ref={menuRef} className="relative hidden md:block">
@@ -216,10 +225,18 @@ export const Header = ({
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-black"
                 >
                   <span className="flex items-center gap-3">
-                    {theme === 'light' ? <Sun className="h-4.5 w-4.5" /> : theme === 'dark' ? <Moon className="h-4.5 w-4.5" /> : <Monitor className="h-4.5 w-4.5" />}
+                    {theme === "light" ? (
+                      <Sun className="h-4.5 w-4.5" />
+                    ) : theme === "dark" ? (
+                      <Moon className="h-4.5 w-4.5" />
+                    ) : (
+                      <Monitor className="h-4.5 w-4.5" />
+                    )}
                     Theme
                   </span>
-                  <ChevronLeft className={`h-4 w-4 transition-transform ${isThemeMenuOpen ? '' : 'rotate-180'}`} />
+                  <ChevronLeft
+                    className={`h-4 w-4 transition-transform ${isThemeMenuOpen ? "" : "rotate-180"}`}
+                  />
                 </button>
                 {isThemeMenuOpen && (
                   <div
@@ -227,11 +244,13 @@ export const Header = ({
                     aria-label="Theme"
                     className="app-surface app-shadow-menu absolute right-[calc(100%+0.5rem)] top-24 w-44 rounded-2xl border border-zinc-200 p-2 dark:border-zinc-700"
                   >
-                    {([
-                      { value: 'light', label: 'Light', icon: Sun },
-                      { value: 'dark', label: 'Dark', icon: Moon },
-                      { value: 'system', label: 'System', icon: Monitor },
-                    ] as const).map((option) => {
+                    {(
+                      [
+                        { value: "light", label: "Light", icon: Sun },
+                        { value: "dark", label: "Dark", icon: Moon },
+                        { value: "system", label: "System", icon: Monitor },
+                      ] as const
+                    ).map((option) => {
                       const Icon = option.icon;
                       return (
                         <button
@@ -243,13 +262,15 @@ export const Header = ({
                             setTheme(option.value);
                             setIsThemeMenuOpen(false);
                           }}
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${theme === option.value ? 'bg-zinc-100 text-zinc-950 dark:bg-black dark:text-white' : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-black'}`}
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${theme === option.value ? "bg-zinc-100 text-zinc-950 dark:bg-black dark:text-white" : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-black"}`}
                         >
                           <span className="flex items-center gap-3">
                             <Icon className="h-4.5 w-4.5" />
                             {option.label}
                           </span>
-                          {theme === option.value && <Check className="h-4 w-4" />}
+                          {theme === option.value && (
+                            <Check className="h-4 w-4" />
+                          )}
                         </button>
                       );
                     })}

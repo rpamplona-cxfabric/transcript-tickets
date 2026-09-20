@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError } from "axios";
 
 interface GraphQlError {
   message?: string;
@@ -26,23 +26,23 @@ export class UdasRequestError extends Error {
 
   constructor(message: string, status: number) {
     super(message);
-    this.name = 'UdasRequestError';
+    this.name = "UdasRequestError";
     this.status = status;
   }
 }
 
 const makeRequest = async <T>(
   request: UdasRequest,
-  { accessToken, signal }: UdasRequestOptions
+  { accessToken, signal }: UdasRequestOptions,
 ): Promise<T> => {
   const udasApiUrl = process.env.NEXT_PUBLIC_UDAS_API;
 
   if (!udasApiUrl) {
-    throw new UdasRequestError('NEXT_PUBLIC_UDAS_API is not configured.', 500);
+    throw new UdasRequestError("NEXT_PUBLIC_UDAS_API is not configured.", 500);
   }
 
   if (!accessToken) {
-    throw new UdasRequestError('An Auth0 access token is required.', 401);
+    throw new UdasRequestError("An Auth0 access token is required.", 401);
   }
 
   let payload: GraphQlResponse<T> | null = null;
@@ -51,9 +51,9 @@ const makeRequest = async <T>(
   try {
     const response = await axios.post<GraphQlResponse<T>>(udasApiUrl, request, {
       headers: {
-        'Apollo-Require-Preflight': 'true',
+        "Apollo-Require-Preflight": "true",
         Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       signal,
     });
@@ -65,8 +65,9 @@ const makeRequest = async <T>(
       payload = axiosErr.response.data ?? null;
       status = axiosErr.response.status;
       throw new UdasRequestError(
-        payload?.errors?.[0]?.message || `UDAS request failed with status ${status}.`,
-        status
+        payload?.errors?.[0]?.message ||
+          `UDAS request failed with status ${status}.`,
+        status,
       );
     }
     // network error or abort
@@ -75,14 +76,16 @@ const makeRequest = async <T>(
 
   if (payload?.errors?.length) {
     throw new UdasRequestError(
-      payload.errors.map((error) => error.message).filter(Boolean).join(' ') ||
-        'UDAS returned a GraphQL error.',
-      400
+      payload.errors
+        .map((error) => error.message)
+        .filter(Boolean)
+        .join(" ") || "UDAS returned a GraphQL error.",
+      400,
     );
   }
 
   if (!payload?.data) {
-    throw new UdasRequestError('UDAS returned an empty response.', 502);
+    throw new UdasRequestError("UDAS returned an empty response.", 502);
   }
 
   return payload.data;
@@ -90,7 +93,7 @@ const makeRequest = async <T>(
 
 export const getQuery = async <T>(
   request: UdasRequest,
-  options: UdasRequestOptions
+  options: UdasRequestOptions,
 ): Promise<T> => {
   let lastError: unknown;
 

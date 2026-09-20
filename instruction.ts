@@ -197,8 +197,7 @@ Note: speakers must still be populated even when tool is "none", unless no names
 - Do not include explanations, markdown formatting, or additional text before or after the JSON.
 `;
 
-instruction
-
+instruction;
 
 /**
  * const instruction = `

@@ -1,4 +1,4 @@
-import { getQuery } from './udasWrapper';
+import { getQuery } from "./udasWrapper";
 
 export interface UdasUserProfile {
   auth0_id: string;
@@ -48,7 +48,7 @@ export const getUserProfile = async ({
     {
       accessToken,
       signal,
-    }
+    },
   );
 
   return result.userbyid;

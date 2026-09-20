@@ -1,10 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { fetchCurrentUserProfile } from '@/lib/api/user';
-import { useUserStore } from '@/lib/store/user';
+import { useEffect } from "react";
+import { fetchCurrentUserProfile } from "@/lib/api/user";
+import { useUserStore } from "@/lib/store/user";
 
-export const UserProfileInitializer = ({ children }: { children: React.ReactNode }) => {
+export const UserProfileInitializer = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   useEffect(() => {
     const controller = new AbortController();
     useUserStore.setState({ error: null, isLoading: true });
@@ -17,9 +21,12 @@ export const UserProfileInitializer = ({ children }: { children: React.ReactNode
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
-          console.error('Unable to load the UDAS user profile:', error);
+          console.error("Unable to load the UDAS user profile:", error);
           useUserStore.setState({
-            error: error instanceof Error ? error.message : 'Unable to load the UDAS user profile.',
+            error:
+              error instanceof Error
+                ? error.message
+                : "Unable to load the UDAS user profile.",
             isLoading: false,
             profile: null,
           });

@@ -1,7 +1,8 @@
-import axios from 'axios';
+import axios from "axios";
 
-const TRANSCRIPTS_EXECUTOR_URL = 'https://cxf-executor-qa.cxfabric.io/restendpoint';
-const TRANSCRIPTS_FLOW_ID = '25bffe69-38a9-497c-b4cf-8d0432ca4373';
+const TRANSCRIPTS_EXECUTOR_URL =
+  "https://cxf-executor-qa.cxfabric.io/restendpoint";
+const TRANSCRIPTS_FLOW_ID = "25bffe69-38a9-497c-b4cf-8d0432ca4373";
 
 interface IsProcessedExecutorResponse {
   success: boolean;
@@ -13,7 +14,7 @@ interface IsProcessedExecutorResponse {
 
 export async function isTranscriptProcessed(
   tenantId: string,
-  transcriptId: string
+  transcriptId: string,
 ): Promise<boolean> {
   try {
     const { data: result } = await axios.post<IsProcessedExecutorResponse>(
@@ -25,18 +26,18 @@ export async function isTranscriptProcessed(
           flow_id: TRANSCRIPTS_FLOW_ID,
           draft: true,
           displayExecutionLogs: false,
-          action: 'isProcessed',
-        }
-      }
+          action: "isProcessed",
+        },
+      },
     );
 
     if (!result.success) {
-      throw new Error('CXFabric returned an invalid processed-status response');
+      throw new Error("CXFabric returned an invalid processed-status response");
     }
 
     return result.item?.transcriptId === transcriptId;
   } catch (error) {
-    console.error('Error checking processed tenant transcript:', error);
+    console.error("Error checking processed tenant transcript:", error);
     return false;
   }
 }

@@ -2,8 +2,7 @@
 const nextConfig = {
   /* config options here */
   allowedDevOrigins: ["sepulchrally-melliferous-chaim.ngrok-free.dev"],
-  serverExternalPackages: ['snappy']
+  serverExternalPackages: ["snappy"],
 };
 
 export default nextConfig;
-

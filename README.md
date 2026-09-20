@@ -15,6 +15,7 @@ Copy the environment template and add your Auth0 values:
 ```bash
 cp .env.example .env.local
 ```
+
 ## Run the app
 
 ```bash

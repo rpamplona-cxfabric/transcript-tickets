@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { Search, FileAudio, AlertTriangle, RotateCw } from 'lucide-react';
-import { Select } from '@/components/select';
-import { TranscriptionDetailDrawer } from './transcriptionDetailDrawer';
-import { TableView } from './tableView';
-import { TranscriptionsLoadingSkeleton } from './loadingSkeleton';
-import { useTranscriptionsClient } from './hook';
+import { Search, FileAudio, AlertTriangle, RotateCw } from "lucide-react";
+import { Select } from "@/components/select";
+import { TranscriptionDetailDrawer } from "./transcriptionDetailDrawer";
+import { TableView } from "./tableView";
+import { ConversationsLoadingSkeleton } from "./loadingSkeleton";
+import { useConversationsClient } from "./hook";
 
-export const TranscriptionsClient = () => {
+export const ConversationsClient = () => {
   const {
     isReady,
     isFetching,
@@ -29,7 +29,7 @@ export const TranscriptionsClient = () => {
     sortField,
     sortDirection,
     setSort,
-  } = useTranscriptionsClient();
+  } = useConversationsClient();
 
   return (
     <div className="workspace-canvas relative flex min-h-0 flex-1 overflow-hidden">
@@ -57,12 +57,14 @@ export const TranscriptionsClient = () => {
             </div>
             <Select
               value={selectedStatus}
-              onChange={(value) => setSelectedStatus(value as typeof selectedStatus)}
+              onChange={(value) =>
+                setSelectedStatus(value as typeof selectedStatus)
+              }
               options={[
-                { value: 'active', label: 'All active' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'processed', label: 'Processed' },
-                { value: 'ignored', label: 'Ignored' },
+                { value: "active", label: "All active" },
+                { value: "pending", label: "Pending" },
+                { value: "processed", label: "Processed" },
+                { value: "ignored", label: "Ignored" },
               ]}
               className="sm:w-44"
             />
@@ -74,8 +76,12 @@ export const TranscriptionsClient = () => {
             <div className="flex min-w-0 items-start gap-3">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <p className="text-sm font-semibold">Unable to load conversations</p>
-                <p className="mt-0.5 text-xs lg:text-sm opacity-80">{error.message}</p>
+                <p className="text-sm font-semibold">
+                  Unable to load conversations
+                </p>
+                <p className="mt-0.5 text-xs lg:text-sm opacity-80">
+                  {error.message}
+                </p>
               </div>
             </div>
             <button
@@ -90,15 +96,21 @@ export const TranscriptionsClient = () => {
         )}
 
         {!isReady ? (
-          <TranscriptionsLoadingSkeleton />
+          <ConversationsLoadingSkeleton />
         ) : !hasTranscripts ? (
           <div className="app-surface flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-center">
             <FileAudio className="h-10 w-10 text-zinc-300 dark:text-zinc-700 mb-3" />
-            <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No conversations found</p>
-            <p className="text-xs lg:text-sm text-zinc-450 dark:text-zinc-500 mt-1">Try adjusting your filters or search query.</p>
+            <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              No conversations found
+            </p>
+            <p className="text-xs lg:text-sm text-zinc-450 dark:text-zinc-500 mt-1">
+              Try adjusting your filters or search query.
+            </p>
           </div>
         ) : (
-          <div className={`min-h-0 flex-1 ${isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}`}>
+          <div
+            className={`min-h-0 flex-1 ${isFetching ? "opacity-60 transition-opacity" : "transition-opacity"}`}
+          >
             <TableView
               transcripts={transcripts}
               total={total}
@@ -115,7 +127,9 @@ export const TranscriptionsClient = () => {
         )}
       </div>
 
-      <TranscriptionDetailDrawer key={activeTranscript ? activeTranscript.transcriptId : 'closed'} />
+      <TranscriptionDetailDrawer
+        key={activeTranscript ? activeTranscript.transcriptId : "closed"}
+      />
     </div>
   );
 };

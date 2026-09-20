@@ -1,4 +1,4 @@
-import { getQuery } from './udasWrapper';
+import { getQuery } from "./udasWrapper";
 
 export interface TenantUser {
   auth0_id: string;
@@ -6,12 +6,18 @@ export interface TenantUser {
   username: string | null;
   user_type: string | null;
   role_id: string | null;
-  status: 'active' | 'invited' | 'suspended' | string | null;
+  status: "active" | "invited" | "suspended" | string | null;
   first_name: string | null;
   last_name: string | null;
   email_address: string | null;
   image: string | null;
   created_date_time: string | null;
+  organization: string | null;
+  mobile: string | null;
+  phone: string | null;
+  your_location: string | null;
+  language: string | null;
+  user_preferences: unknown;
 }
 
 export interface TenantRole {
@@ -33,24 +39,62 @@ interface UdasRequestOptions {
   tenantId: string;
 }
 
-export const getTenantUsers = async ({ accessToken, tenantId }: UdasRequestOptions) => {
+export const getTenantUsers = async ({
+  accessToken,
+  tenantId,
+}: UdasRequestOptions) => {
   const result = await getQuery<{ users: TenantUser[] }>(
     {
       query: `query Users($tenantId: String!) {
         users(tenant_id: $tenantId) {
           auth0_id tenant_id username user_type role_id status first_name last_name
-          email_address image created_date_time
+          email_address image created_date_time organization mobile phone your_location language user_preferences
         }
       }`,
       variables: { tenantId },
     },
-    { accessToken }
+    { accessToken },
   );
 
   return result.users ?? [];
 };
 
-export const getTenantRoles = async ({ accessToken, tenantId }: UdasRequestOptions) => {
+export const getTenantUserPermissions = async ({
+  accessToken,
+  tenantId,
+  auth0Id,
+  permissions,
+}: UdasRequestOptions & { auth0Id: string; permissions: string[] }) => {
+  const result = await getQuery<{
+    checkUserPermission?: { resultObject?: unknown };
+  }>(
+    {
+      query: `query CheckUserPermission($userId: String!, $tenantId: String!, $permissionsToCheck: [String!]!) {
+        checkUserPermission(user_id: $userId, tenant_id: $tenantId, permissions_to_check: $permissionsToCheck) {
+          resultObject
+        }
+      }`,
+      variables: { userId: auth0Id, tenantId, permissionsToCheck: permissions },
+    },
+    { accessToken },
+  );
+
+  const value = result.checkUserPermission?.resultObject;
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const candidate = item as { name?: unknown; value?: unknown };
+    return typeof candidate.name === "string" &&
+      typeof candidate.value === "boolean"
+      ? [{ name: candidate.name, value: candidate.value }]
+      : [];
+  });
+};
+
+export const getTenantRoles = async ({
+  accessToken,
+  tenantId,
+}: UdasRequestOptions) => {
   const result = await getQuery<{ roles: TenantRole[] }>(
     {
       query: `query Roles($tenantId: String!) {
@@ -60,52 +104,10 @@ export const getTenantRoles = async ({ accessToken, tenantId }: UdasRequestOptio
       }`,
       variables: { tenantId },
     },
-    { accessToken }
+    { accessToken },
   );
 
   return result.roles ?? [];
-};
-
-export const updateTenantUserStatus = async ({
-  accessToken,
-  tenantId,
-  auth0Id,
-  status,
-}: UdasRequestOptions & { auth0Id: string; status: 'active' | 'suspended' }) => {
-  const result = await getQuery<{ updateUserStatus: UserActionResult }>(
-    {
-      query: `mutation UpdateUserStatus($auth0Id: String!, $tenantId: String!, $status: String!) {
-        updateUserStatus(auth0_id: $auth0Id, tenant_id: $tenantId, status: $status) {
-          isSuccessful message resultObject
-        }
-      }`,
-      variables: { auth0Id, tenantId, status },
-    },
-    { accessToken }
-  );
-
-  return result.updateUserStatus;
-};
-
-export const updateTenantUserRole = async ({
-  accessToken,
-  tenantId,
-  auth0Id,
-  roleId,
-}: UdasRequestOptions & { auth0Id: string; roleId: string }) => {
-  const result = await getQuery<{ updateUserRole: UserActionResult }>(
-    {
-      query: `mutation UpdateUserRole($tenantId: String, $auth0Id: String, $roleId: ID) {
-        updateUserRole(tenant_id: $tenantId, auth0_id: $auth0Id, role_id: $roleId) {
-          isSuccessful message resultObject
-        }
-      }`,
-      variables: { tenantId, auth0Id, roleId },
-    },
-    { accessToken }
-  );
-
-  return result.updateUserRole;
 };
 
 export const deleteTenantUser = async ({
@@ -122,7 +124,7 @@ export const deleteTenantUser = async ({
       }`,
       variables: { tenantId, auth0Id },
     },
-    { accessToken }
+    { accessToken },
   );
 
   return result.deleteUser;

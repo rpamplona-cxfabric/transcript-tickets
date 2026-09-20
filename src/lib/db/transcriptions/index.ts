@@ -1,11 +1,12 @@
-import axios from 'axios';
+import axios from "axios";
 // @ts-ignore
-import snappy from 'snappy';
-import { LeadObject, Transcript } from '@/types';
-import { isTranscriptProcessed } from '../processed-transcriptions';
+import snappy from "snappy";
+import { LeadObject, Transcript } from "@/types";
+import { isTranscriptProcessed } from "../processed-transcriptions";
 
-const TRANSCRIPTS_EXECUTOR_URL = 'https://cxf-executor-qa.cxfabric.io/restendpoint';
-const TRANSCRIPTS_FLOW_ID = '25bffe69-38a9-497c-b4cf-8d0432ca4373';
+const TRANSCRIPTS_EXECUTOR_URL =
+  "https://cxf-executor-qa.cxfabric.io/restendpoint";
+const TRANSCRIPTS_FLOW_ID = "25bffe69-38a9-497c-b4cf-8d0432ca4373";
 type TranscriptRecord = Record<string, any>;
 
 interface GetTranscriptsExecutorResponse {
@@ -24,14 +25,16 @@ interface TranscriptActionExecutorResponse {
 }
 
 async function decompressField(value: string | undefined): Promise<string> {
-  if (!value) return '';
+  if (!value) return "";
 
   try {
-    const buf = Buffer.from(value, 'base64');
+    const buf = Buffer.from(value, "base64");
     const decompressed = await snappy.uncompress(buf, { asBuffer: false });
-    return typeof decompressed === 'string' ? decompressed : decompressed.toString('utf8');
+    return typeof decompressed === "string"
+      ? decompressed
+      : decompressed.toString("utf8");
   } catch (error) {
-    console.error('Error decompressing snappy field:', error);
+    console.error("Error decompressing snappy field:", error);
     return value;
   }
 }
@@ -40,7 +43,7 @@ function parseSpeakerNames(value: unknown): Record<string, string> {
   if (!value) return {};
 
   let parsed = value;
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const trimmedValue = value.trim();
     if (!trimmedValue) return {};
 
@@ -51,8 +54,8 @@ function parseSpeakerNames(value: unknown): Record<string, string> {
     }
   }
 
-  return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-    ? parsed as Record<string, string>
+  return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+    ? (parsed as Record<string, string>)
     : {};
 }
 
@@ -61,20 +64,24 @@ function normalizeLeads(value: unknown): string | undefined {
     return JSON.stringify(value.map(String).filter(Boolean));
   }
 
-  return typeof value === 'string' ? value : undefined;
+  return typeof value === "string" ? value : undefined;
 }
 
 async function formatTranscript(
   item: TranscriptRecord,
   isProcessed: boolean,
-  decompress = true
+  decompress = true,
 ): Promise<Transcript> {
   const transcript = decompress
     ? await decompressField(item.transcript)
-    : typeof item.transcript === 'string' ? item.transcript : '';
+    : typeof item.transcript === "string"
+      ? item.transcript
+      : "";
   const transcriptSummary = decompress
     ? await decompressField(item.transcriptSummary)
-    : typeof item.transcriptSummary === 'string' ? item.transcriptSummary : '';
+    : typeof item.transcriptSummary === "string"
+      ? item.transcriptSummary
+      : "";
 
   return {
     ...item,
@@ -89,7 +96,7 @@ async function formatTranscript(
 
 export async function ignoreTranscript(
   tenantId: string,
-  transcriptId: string
+  transcriptId: string,
 ): Promise<{ transcriptId: string; isIgnored: true }> {
   try {
     const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
@@ -101,25 +108,25 @@ export async function ignoreTranscript(
           flow_id: TRANSCRIPTS_FLOW_ID,
           draft: true,
           displayExecutionLogs: false,
-          action: 'ignoreTranscript',
+          action: "ignoreTranscript",
         },
       },
     );
 
     if (!result.success) {
-      throw new Error('CXFabric failed to ignore the transcript');
+      throw new Error("CXFabric failed to ignore the transcript");
     }
 
     return { transcriptId, isIgnored: true };
   } catch (error) {
-    console.error('Error ignoring transcript:', error);
+    console.error("Error ignoring transcript:", error);
     throw error;
   }
 }
 
 export async function recoverTranscript(
   tenantId: string,
-  transcriptId: string
+  transcriptId: string,
 ): Promise<{ transcriptId: string; isIgnored: false }> {
   try {
     const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
@@ -131,18 +138,18 @@ export async function recoverTranscript(
           flow_id: TRANSCRIPTS_FLOW_ID,
           draft: true,
           displayExecutionLogs: false,
-          action: 'recoverTranscript',
+          action: "recoverTranscript",
         },
       },
     );
 
     if (!result.success) {
-      throw new Error('CXFabric failed to recover the transcript');
+      throw new Error("CXFabric failed to recover the transcript");
     }
 
     return { transcriptId, isIgnored: false };
   } catch (error) {
-    console.error('Error recovering transcript:', error);
+    console.error("Error recovering transcript:", error);
     throw error;
   }
 }
@@ -150,7 +157,7 @@ export async function recoverTranscript(
 export interface GetTranscriptsFilters {
   search?: string;
   tenantId?: string;
-  status?: 'active' | 'pending' | 'processed' | 'ignored';
+  status?: "active" | "pending" | "processed" | "ignored";
 }
 
 export interface GetTranscriptsOptions {
@@ -158,8 +165,8 @@ export interface GetTranscriptsOptions {
   limit?: number;
   filters?: GetTranscriptsFilters;
   sort?: {
-    field: 'timestamp' | 'status' | 'summary';
-    direction: 'asc' | 'desc';
+    field: "timestamp" | "status" | "summary";
+    direction: "asc" | "desc";
   };
 }
 
@@ -181,21 +188,23 @@ async function fetchAllTranscripts(tenantId: string): Promise<Transcript[]> {
         flow_id: TRANSCRIPTS_FLOW_ID,
         draft: true,
         displayExecutionLogs: false,
-        action: 'getTranscripts',
-      }
-    }
+        action: "getTranscripts",
+      },
+    },
   );
 
   if (!result.success || !Array.isArray(result.items)) {
-    throw new Error('CXFabric returned an invalid transcript response');
+    throw new Error("CXFabric returned an invalid transcript response");
   }
 
   const transcripts = await Promise.all(
-    result.items.map(async (item) => formatTranscript(
-      item,
-      await isTranscriptProcessed(tenantId, item.transcriptId),
-      false
-    ))
+    result.items.map(async (item) =>
+      formatTranscript(
+        item,
+        await isTranscriptProcessed(tenantId, item.transcriptId),
+        false,
+      ),
+    ),
   );
 
   transcripts.sort((a, b) => {
@@ -207,27 +216,34 @@ async function fetchAllTranscripts(tenantId: string): Promise<Transcript[]> {
   return transcripts;
 }
 
-function applyFilters(transcripts: Transcript[], filters?: GetTranscriptsFilters): Transcript[] {
+function applyFilters(
+  transcripts: Transcript[],
+  filters?: GetTranscriptsFilters,
+): Transcript[] {
   if (!filters) return transcripts;
 
   const { search, tenantId: subTenantId, status } = filters;
   const normalizedSearch = search?.trim().toLowerCase();
 
   return transcripts.filter((transcript) => {
-    const matchesSearch = !normalizedSearch
-      || transcript.transcript?.toLowerCase().includes(normalizedSearch)
-      || transcript.transcriptSummary?.toLowerCase().includes(normalizedSearch)
-      || transcript.transcriptId?.toLowerCase().includes(normalizedSearch);
+    const matchesSearch =
+      !normalizedSearch ||
+      transcript.transcript?.toLowerCase().includes(normalizedSearch) ||
+      transcript.transcriptSummary?.toLowerCase().includes(normalizedSearch) ||
+      transcript.transcriptId?.toLowerCase().includes(normalizedSearch);
 
-    const matchesTenant = !subTenantId || subTenantId === 'all' || transcript.tenantId === subTenantId;
+    const matchesTenant =
+      !subTenantId ||
+      subTenantId === "all" ||
+      transcript.tenantId === subTenantId;
 
     const matchesStatus = !status
       ? true
-      : status === 'ignored'
+      : status === "ignored"
         ? Boolean(transcript.isIgnored)
-        : status === 'processed'
+        : status === "processed"
           ? !transcript.isIgnored && Boolean(transcript.isProcessed)
-          : status === 'pending'
+          : status === "pending"
             ? !transcript.isIgnored && !transcript.isProcessed
             : !transcript.isIgnored; // 'active'
 
@@ -237,18 +253,32 @@ function applyFilters(transcripts: Transcript[], filters?: GetTranscriptsFilters
 
 function sortTranscripts(
   transcripts: Transcript[],
-  sort: NonNullable<GetTranscriptsOptions['sort']> = { field: 'timestamp', direction: 'desc' }
+  sort: NonNullable<GetTranscriptsOptions["sort"]> = {
+    field: "timestamp",
+    direction: "desc",
+  },
 ): Transcript[] {
-  const status = (transcript: Transcript) => transcript.isIgnored ? 'ignored' : transcript.isProcessed ? 'processed' : 'pending';
-  const multiplier = sort.direction === 'asc' ? 1 : -1;
+  const status = (transcript: Transcript) =>
+    transcript.isIgnored
+      ? "ignored"
+      : transcript.isProcessed
+        ? "processed"
+        : "pending";
+  const multiplier = sort.direction === "asc" ? 1 : -1;
 
   return [...transcripts].sort((left, right) => {
-    if (sort.field === 'timestamp') {
-      return ((new Date(left.timestamp).getTime() || 0) - (new Date(right.timestamp).getTime() || 0)) * multiplier;
+    if (sort.field === "timestamp") {
+      return (
+        ((new Date(left.timestamp).getTime() || 0) -
+          (new Date(right.timestamp).getTime() || 0)) *
+        multiplier
+      );
     }
 
-    const leftValue = sort.field === 'status' ? status(left) : left.transcriptSummary || '';
-    const rightValue = sort.field === 'status' ? status(right) : right.transcriptSummary || '';
+    const leftValue =
+      sort.field === "status" ? status(left) : left.transcriptSummary || "";
+    const rightValue =
+      sort.field === "status" ? status(right) : right.transcriptSummary || "";
     return leftValue.localeCompare(rightValue) * multiplier;
   });
 }
@@ -261,13 +291,16 @@ function sortTranscripts(
  */
 export async function getTranscripts(
   tenantId: string,
-  options: GetTranscriptsOptions = {}
+  options: GetTranscriptsOptions = {},
 ): Promise<PaginatedTranscripts> {
   try {
     const { page = 1, limit = 20, filters, sort } = options;
 
     const allTranscripts = await fetchAllTranscripts(tenantId);
-    const filtered = sortTranscripts(applyFilters(allTranscripts, filters), sort);
+    const filtered = sortTranscripts(
+      applyFilters(allTranscripts, filters),
+      sort,
+    );
 
     const safePage = Math.max(1, page);
     const safeLimit = Math.max(1, limit);
@@ -282,14 +315,14 @@ export async function getTranscripts(
       totalPages: Math.ceil(filtered.length / safeLimit) || 1,
     };
   } catch (error) {
-    console.error('Error fetching tenant transcripts:', error);
+    console.error("Error fetching tenant transcripts:", error);
     throw error;
   }
 }
 
 export async function getTranscript(
   tenantId: string,
-  transcriptId: string
+  transcriptId: string,
 ): Promise<Transcript | null> {
   try {
     const { data: result } = await axios.post<GetTranscriptExecutorResponse>(
@@ -301,13 +334,13 @@ export async function getTranscript(
           flow_id: TRANSCRIPTS_FLOW_ID,
           draft: true,
           displayExecutionLogs: false,
-          action: 'getTranscript',
+          action: "getTranscript",
         },
-      }
+      },
     );
 
     if (!result.success) {
-      throw new Error('CXFabric returned an invalid transcript response');
+      throw new Error("CXFabric returned an invalid transcript response");
     }
 
     if (!result.item) return null;
@@ -315,7 +348,7 @@ export async function getTranscript(
     const isProcessed = await isTranscriptProcessed(tenantId, transcriptId);
     return formatTranscript(result.item, isProcessed, false);
   } catch (error) {
-    console.error('Error getting tenant transcript:', error);
+    console.error("Error getting tenant transcript:", error);
     throw error;
   }
 }
@@ -323,7 +356,7 @@ export async function getTranscript(
 export async function updateTranscriptSpeakerNames(
   tenantId: string,
   transcriptId: string,
-  speakerNames: Record<string, string>
+  speakerNames: Record<string, string>,
 ): Promise<{
   success: true;
   transcriptId: string;
@@ -339,18 +372,18 @@ export async function updateTranscriptSpeakerNames(
           flow_id: TRANSCRIPTS_FLOW_ID,
           draft: true,
           displayExecutionLogs: false,
-          action: 'updateSpeakerNames',
+          action: "updateSpeakerNames",
         },
       },
     );
 
     if (!result.success) {
-      throw new Error('CXFabric failed to update transcript speaker names');
+      throw new Error("CXFabric failed to update transcript speaker names");
     }
 
     return { success: true, transcriptId, speakerNames };
   } catch (error) {
-    console.error('Error updating transcript speakerNames:', error);
+    console.error("Error updating transcript speakerNames:", error);
     throw error;
   }
 }
@@ -358,7 +391,7 @@ export async function updateTranscriptSpeakerNames(
 export async function addTranscriptLead(
   tenantId: string,
   transcriptId: string,
-  leadObj: LeadObject
+  leadObj: LeadObject,
 ): Promise<Transcript> {
   try {
     const leads = [`${leadObj.leadId}`];
@@ -371,13 +404,13 @@ export async function addTranscriptLead(
           flow_id: TRANSCRIPTS_FLOW_ID,
           draft: true,
           displayExecutionLogs: false,
-          action: 'addTranscriptLead',
+          action: "addTranscriptLead",
         },
       },
     );
 
     if (!result.success) {
-      throw new Error('CXFabric failed to add the transcript lead');
+      throw new Error("CXFabric failed to add the transcript lead");
     }
 
     const updatedTranscript = await getTranscript(tenantId, transcriptId);
@@ -387,7 +420,7 @@ export async function addTranscriptLead(
 
     return updatedTranscript;
   } catch (error) {
-    console.error('Error adding transcript lead:', error);
+    console.error("Error adding transcript lead:", error);
     throw error;
   }
 }

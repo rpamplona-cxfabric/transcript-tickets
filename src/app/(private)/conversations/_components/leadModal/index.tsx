@@ -1,0 +1,151 @@
+"use client";
+
+import { X, UserPlus, AlertTriangle } from "lucide-react";
+import { Dialog } from "@/components/dialog";
+import { Transcript } from "@/types";
+import { useLeadModal } from "./hook";
+
+interface LeadModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  prefillName: string;
+  transcriptId: string;
+  onSuccess: (
+    updatedTranscript: Transcript,
+    leadName: string,
+    leadId: string,
+  ) => void;
+}
+
+export const LeadModal = ({
+  isOpen,
+  onClose,
+  prefillName,
+  transcriptId,
+  onSuccess,
+}: LeadModalProps) => {
+  const {
+    register,
+    errors,
+    isSubmitting,
+    firstName,
+    lastName,
+    duplicateExists,
+    isPending,
+    onSubmit,
+  } = useLeadModal({ isOpen, prefillName, transcriptId, onSuccess, onClose });
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog
+      onClose={onClose}
+      size="medium"
+      className="flex flex-col gap-4 animate-scale-up"
+    >
+      <div className="flex items-center justify-between border-b border-zinc-150 pb-3 dark:border-zinc-850">
+        <div className="flex items-center gap-2">
+          <UserPlus className="h-5 w-5 text-indigo-600 dark:text-indigo-450" />
+          <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+            Create New Lead
+          </h3>
+        </div>
+        <button
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-black dark:hover:text-white cursor-pointer"
+        >
+          <X className="h-4.5 w-4.5" />
+        </button>
+      </div>
+
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase text-zinc-500">
+              First Name *
+            </label>
+            <input
+              {...register("firstName")}
+              placeholder="e.g. John"
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-hidden dark:border-zinc-800 dark:bg-black dark:text-white dark:placeholder-zinc-600 dark:focus:border-white"
+            />
+            {errors.firstName && (
+              <p className="text-[10px] text-red-500">
+                {errors.firstName.message}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase text-zinc-500">
+              Last Name *
+            </label>
+            <input
+              {...register("lastName")}
+              placeholder="e.g. Doe"
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-hidden dark:border-zinc-800 dark:bg-black dark:text-white dark:placeholder-zinc-600 dark:focus:border-white"
+            />
+            {errors.lastName && (
+              <p className="text-[10px] text-red-500">
+                {errors.lastName.message}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-bold uppercase text-zinc-500">
+            Phone Number
+          </label>
+          <input
+            {...register("phone")}
+            type="tel"
+            placeholder="e.g. 555-123-4567"
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-hidden dark:border-zinc-800 dark:bg-black dark:text-white dark:placeholder-zinc-600 dark:focus:border-white"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-bold uppercase text-zinc-500">
+            Email Address
+          </label>
+          <input
+            {...register("email")}
+            type="email"
+            placeholder="e.g. john.doe@example.com"
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-hidden dark:border-zinc-800 dark:bg-black dark:text-white dark:placeholder-zinc-600 dark:focus:border-white"
+          />
+          {errors.email && (
+            <p className="text-[10px] text-red-500">{errors.email.message}</p>
+          )}
+        </div>
+
+        {duplicateExists && (
+          <div className="flex items-start gap-2.5 rounded-xl bg-amber-50 p-3.5 text-xs lg:text-sm text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30 animate-shake">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <p className="font-semibold leading-normal">
+              A lead named &quot;{firstName} {lastName}&quot; already exists in
+              Lofty.
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2.5 pt-3 border-t border-zinc-150 dark:border-zinc-850">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs lg:text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:text-zinc-300 dark:hover:bg-black cursor-pointer transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting || isPending}
+            className="rounded-xl bg-zinc-900 px-4 py-2.5 text-xs lg:text-sm font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            {isPending ? "Creating..." : "Create Lead"}
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  );
+};

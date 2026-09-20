@@ -1,31 +1,41 @@
-import api from '@/lib/axios';
-import { PaginatedTranscriptsResponse, Transcript } from '@/types';
+import api from "@/lib/axios";
+import { PaginatedTranscriptsResponse, Transcript } from "@/types";
 
 export interface FetchTranscriptionsParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: 'active' | 'pending' | 'processed' | 'ignored';
+  status?: "active" | "pending" | "processed" | "ignored";
   tenant?: string;
-  sortField?: 'timestamp' | 'status' | 'summary';
-  sortDirection?: 'asc' | 'desc';
+  sortField?: "timestamp" | "status" | "summary";
+  sortDirection?: "asc" | "desc";
 }
 
 export const fetchTranscriptions = async (
-  params: FetchTranscriptionsParams = {}
+  params: FetchTranscriptionsParams = {},
 ): Promise<PaginatedTranscriptsResponse> => {
-  const { page = 1, limit = 20, search, status, tenant, sortField, sortDirection } = params;
+  const {
+    page = 1,
+    limit = 20,
+    search,
+    status,
+    tenant,
+    sortField,
+    sortDirection,
+  } = params;
 
   const query = new URLSearchParams();
-  query.set('page', String(page));
-  query.set('limit', String(limit));
-  if (search) query.set('search', search);
-  if (status) query.set('status', status);
-  if (tenant) query.set('tenant', tenant);
-  if (sortField) query.set('sortField', sortField);
-  if (sortDirection) query.set('sortDirection', sortDirection);
+  query.set("page", String(page));
+  query.set("limit", String(limit));
+  if (search) query.set("search", search);
+  if (status) query.set("status", status);
+  if (tenant) query.set("tenant", tenant);
+  if (sortField) query.set("sortField", sortField);
+  if (sortDirection) query.set("sortDirection", sortDirection);
 
-  const { data } = await api.get<PaginatedTranscriptsResponse>(`/transcriptions?${query.toString()}`);
+  const { data } = await api.get<PaginatedTranscriptsResponse>(
+    `/transcriptions?${query.toString()}`,
+  );
   return data;
 };
 
@@ -44,17 +54,27 @@ export const patchSpeakerNames = async ({
     success: true;
     transcriptId: string;
     speakerNames: Record<string, string>;
-  }>('/transcriptions', { transcriptId, speakerNames });
+  }>("/transcriptions", { transcriptId, speakerNames });
   return data;
 };
 
-export const ignoreTranscript = async (transcriptId: string): Promise<{ transcriptId: string; isIgnored: true }> => {
-  const { data } = await api.patch<{ transcriptId: string; isIgnored: true }>('/transcriptions', { transcriptId, isIgnored: true });
+export const ignoreTranscript = async (
+  transcriptId: string,
+): Promise<{ transcriptId: string; isIgnored: true }> => {
+  const { data } = await api.patch<{ transcriptId: string; isIgnored: true }>(
+    "/transcriptions",
+    { transcriptId, isIgnored: true },
+  );
   return data;
 };
 
-export const recoverTranscript = async (transcriptId: string): Promise<{ transcriptId: string; isIgnored: false }> => {
-  const { data } = await api.patch<{ transcriptId: string; isIgnored: false }>('/transcriptions', { transcriptId, isIgnored: false });
+export const recoverTranscript = async (
+  transcriptId: string,
+): Promise<{ transcriptId: string; isIgnored: false }> => {
+  const { data } = await api.patch<{ transcriptId: string; isIgnored: false }>(
+    "/transcriptions",
+    { transcriptId, isIgnored: false },
+  );
   return data;
 };
 
@@ -67,12 +87,18 @@ export const generateTasks = async ({
   leadName?: string;
   leadId?: string;
 }): Promise<void> => {
-  await api.post('/transcriptions/generate-tasks', { transcriptId, leadName, leadId });
+  await api.post("/transcriptions/generate-tasks", {
+    transcriptId,
+    leadName,
+    leadId,
+  });
 };
 
-export const checkProcessedStatus = async (transcriptId: string): Promise<boolean> => {
+export const checkProcessedStatus = async (
+  transcriptId: string,
+): Promise<boolean> => {
   const { data } = await api.get<{ isProcessed: boolean }>(
-    `/transcriptions/processed-status?transcriptId=${encodeURIComponent(transcriptId)}`
+    `/transcriptions/processed-status?transcriptId=${encodeURIComponent(transcriptId)}`,
   );
   return data.isProcessed;
 };
@@ -80,7 +106,7 @@ export const checkProcessedStatus = async (transcriptId: string): Promise<boolea
 export const pollUntilProcessed = (
   transcriptId: string,
   intervalMs = 1500,
-  timeoutMs = 40000
+  timeoutMs = 40000,
 ): Promise<boolean> => {
   return new Promise((resolve) => {
     const start = Date.now();
@@ -92,8 +118,7 @@ export const pollUntilProcessed = (
           resolve(true);
           return;
         }
-      } catch(error) {
-      }
+      } catch (error) {}
 
       if (Date.now() - start >= timeoutMs) {
         resolve(false);

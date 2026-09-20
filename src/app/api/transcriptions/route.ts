@@ -1,10 +1,18 @@
-import { NextResponse } from 'next/server';
-import { getTranscripts, ignoreTranscript, recoverTranscript, updateTranscriptSpeakerNames } from '@/lib/db/transcriptions';
-import { getApiSession, unauthorized } from '@/lib/auth/requireSession';
-import { getTenantId } from '@/lib/tenant';
+import { NextResponse } from "next/server";
+import {
+  getTranscripts,
+  ignoreTranscript,
+  recoverTranscript,
+  updateTranscriptSpeakerNames,
+} from "@/lib/db/transcriptions";
+import { getApiSession, unauthorized } from "@/lib/auth/requireSession";
+import { getTenantId } from "@/lib/tenant";
 
 const tenantUnavailable = () =>
-  NextResponse.json({ error: 'Tenant ID is unavailable for this user' }, { status: 403 });
+  NextResponse.json(
+    { error: "Tenant ID is unavailable for this user" },
+    { status: 403 },
+  );
 
 export async function GET(request: Request) {
   const session = await getApiSession();
@@ -15,17 +23,21 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const search = searchParams.get('search') || undefined;
-    const status = (searchParams.get('status') || undefined) as
-      | 'active' | 'pending' | 'processed' | 'ignored' | undefined;
-    const tenant = searchParams.get('tenant') || undefined;
-    const sortFieldParam = searchParams.get('sortField');
-    const sortField = sortFieldParam === 'status' || sortFieldParam === 'summary' || sortFieldParam === 'timestamp'
-      ? sortFieldParam
-      : 'timestamp';
-    const sortDirection = searchParams.get('sortDirection') === 'asc' ? 'asc' : 'desc';
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const search = searchParams.get("search") || undefined;
+    const status = (searchParams.get("status") || undefined) as
+      "active" | "pending" | "processed" | "ignored" | undefined;
+    const tenant = searchParams.get("tenant") || undefined;
+    const sortFieldParam = searchParams.get("sortField");
+    const sortField =
+      sortFieldParam === "status" ||
+      sortFieldParam === "summary" ||
+      sortFieldParam === "timestamp"
+        ? sortFieldParam
+        : "timestamp";
+    const sortDirection =
+      searchParams.get("sortDirection") === "asc" ? "asc" : "desc";
 
     const result = await getTranscripts(tenantId, {
       page,
@@ -36,10 +48,10 @@ export async function GET(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('API Error in GET /api/transcriptions:', error);
+    console.error("API Error in GET /api/transcriptions:", error);
     return NextResponse.json(
-      { error: 'Failed to retrieve transcripts from CXFabric' },
-      { status: 500 }
+      { error: "Failed to retrieve transcripts from CXFabric" },
+      { status: 500 },
     );
   }
 }
@@ -52,28 +64,32 @@ export async function PATCH(request: Request) {
   if (!tenantId) return tenantUnavailable();
 
   try {
-
     const body = await request.json();
     const { transcriptId, speakerNames, isIgnored } = body;
 
     if (!transcriptId) {
       return NextResponse.json(
-        { error: 'transcriptId is required' },
-        { status: 400 }
+        { error: "transcriptId is required" },
+        { status: 400 },
       );
     }
 
-    const updated = isIgnored === true
-      ? await ignoreTranscript(tenantId, transcriptId)
-      : isIgnored === false
-        ? await recoverTranscript(tenantId, transcriptId)
-        : await updateTranscriptSpeakerNames(tenantId, transcriptId, speakerNames);
+    const updated =
+      isIgnored === true
+        ? await ignoreTranscript(tenantId, transcriptId)
+        : isIgnored === false
+          ? await recoverTranscript(tenantId, transcriptId)
+          : await updateTranscriptSpeakerNames(
+              tenantId,
+              transcriptId,
+              speakerNames,
+            );
     return NextResponse.json(updated);
   } catch (error: any) {
-    console.error('API Error in PATCH /api/transcriptions:', error);
+    console.error("API Error in PATCH /api/transcriptions:", error);
     return NextResponse.json(
-      { error: error.message || 'Failed to update transcript speaker names' },
-      { status: 500 }
+      { error: error.message || "Failed to update transcript speaker names" },
+      { status: 500 },
     );
   }
 }

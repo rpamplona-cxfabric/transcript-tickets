@@ -1,5 +1,5 @@
 export const queryKeys = {
-  transcriptions: ['transcriptions'] as const,
+  transcriptions: ["transcriptions"] as const,
   transcriptionsList: (params: {
     page: number;
     limit: number;
@@ -8,8 +8,9 @@ export const queryKeys = {
     tenant?: string;
     sortField?: string;
     sortDirection?: string;
-  }) => ['transcriptions', params] as const,
-  leads: ['leads', 'all'] as const,
-  leadById: (leadId: string) => ['leads', 'byId', leadId] as const,
-  leadExists: (firstName: string, lastName: string) => ['leads', 'exists', firstName, lastName] as const,
+  }) => ["transcriptions", params] as const,
+  leads: ["leads", "all"] as const,
+  leadById: (leadId: string) => ["leads", "byId", leadId] as const,
+  leadExists: (firstName: string, lastName: string) =>
+    ["leads", "exists", firstName, lastName] as const,
 };

@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { UdasUserProfile } from '@/lib/udas/userApi';
+import { create } from "zustand";
+import { UdasUserProfile } from "@/lib/udas/userApi";
 
 interface UserState {
   error: string | null;

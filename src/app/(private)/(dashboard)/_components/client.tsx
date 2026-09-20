@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
-import { ArrowRight, Sparkles } from 'lucide-react';
-import { fetchTranscriptions } from '@/lib/api/transcriptions';
-import { queryKeys } from '@/lib/queries/queryKeys';
-import { DashboardMetrics } from './metrics';
-import { RecentTranscriptions } from './recentTranscriptions';
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { fetchTranscriptions } from "@/lib/api/transcriptions";
+import { queryKeys } from "@/lib/queries/queryKeys";
+import { DashboardMetrics } from "./metrics";
+import { RecentTranscriptions } from "./recentTranscriptions";
 
 export const DashboardClient = () => {
   const { data, isLoading } = useQuery({
@@ -28,12 +28,15 @@ export const DashboardClient = () => {
               <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-300" />
               CXF CALL INTELLIGENCE
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white sm:text-3xl">Your call workspace</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white sm:text-3xl">
+              Your call workspace
+            </h1>
             <p className="mt-3 max-w-lg text-sm leading-6 text-zinc-600 dark:text-zinc-300 sm:text-base">
-              Review recent conversations, surface what matters, and keep every follow-up moving.
+              Review recent conversations, surface what matters, and keep every
+              follow-up moving.
             </p>
             <Link
-              href="/transcriptions"
+              href="/conversations"
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
             >
               Browse conversations
