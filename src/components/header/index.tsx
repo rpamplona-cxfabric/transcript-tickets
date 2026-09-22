@@ -12,6 +12,7 @@ import {
   Menu,
   Monitor,
   Moon,
+  Phone,
   Sun,
   UsersRound,
   UserRound,
@@ -43,6 +44,7 @@ const breadcrumbPages = {
   "/conversations": { title: "Conversations", icon: FileAudio },
   "/tasks": { title: "Tasks", icon: ListTodo },
   "/users": { title: "Users", icon: UsersRound },
+  "/phone-numbers": { title: "Phone Numbers", icon: Phone },
 };
 
 export const Header = ({

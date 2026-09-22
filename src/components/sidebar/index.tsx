@@ -10,6 +10,7 @@ import {
   UserRound,
   UsersRound,
   X,
+  Phone,
 } from "lucide-react";
 import {
   Dispatch,
@@ -114,6 +115,7 @@ export const Sidebar = ({
     { name: "Home", path: "/", icon: HomeIcon },
     { name: "Conversations", path: "/conversations", icon: FileAudio },
     { name: "Users", path: "/users", icon: UsersRound },
+    { name: "Phone Numbers", path: "/phone-numbers", icon: Phone },
   ];
 
   return (
