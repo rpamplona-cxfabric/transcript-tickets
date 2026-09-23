@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
 import { addTranscriptLead } from "@/lib/db/transcriptions";
+import { executeCreateLeadFlow } from "@/lib/db/leads/flow";
 import { getApiSession, unauthorized } from "@/lib/auth/requireSession";
+import { errorResponse, tenantUnavailable } from "@/lib/api/responses";
 import { getTenantId } from "@/lib/tenant";
+
+interface CreateLeadExecutorResponse {
+  emails?: string[];
+  firstName?: string;
+  lastName?: string;
+  leadId?: string;
+  phones?: string[];
+}
 
 export async function POST(request: Request) {
   const session = await getApiSession();
@@ -12,10 +21,7 @@ export async function POST(request: Request) {
 
   const tenantId = await getTenantId();
   if (!tenantId) {
-    return NextResponse.json(
-      { error: "Tenant ID is unavailable for this user" },
-      { status: 403 },
-    );
+    return tenantUnavailable();
   }
 
   try {
@@ -65,15 +71,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: cxfData } = await axios.post(
-      "https://cxf-executor-qa.cxfabric.io/restendpoint?tenant_id=1f23a6b3-fb9a-4af4-84fb-4ba01dad68e8&flow_id=c276db63-834c-4306-9888-a3597860e686&draft=true&targetUserId=auth0_6a58fa6f7d004d7b0c57bac3&displayExecutionLogs=true",
-      {
+    const cxfData = await executeCreateLeadFlow<CreateLeadExecutorResponse>({
+      payload: {
         firstname,
         lastname,
         phoneNumber: phoneNumber ?? "",
         email: email ?? "",
       },
-    );
+      tenantId,
+    });
 
     const createdLeadId = cxfData?.leadId;
     if (!createdLeadId) {
@@ -100,15 +106,11 @@ export async function POST(request: Request) {
       result: { leadId: createdLeadId },
       updatedTranscript,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("API Error in POST /api/leads:", error);
-    return NextResponse.json(
-      {
-        error:
-          error.message ||
-          "Failed to create lead and associate with transcript",
-      },
-      { status: 500 },
+    return errorResponse(
+      error,
+      "Failed to create lead and associate with transcript",
     );
   }
 }

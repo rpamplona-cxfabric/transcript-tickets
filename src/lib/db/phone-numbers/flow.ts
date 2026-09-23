@@ -1,10 +1,9 @@
-import axios from "axios";
+import { executeCxfFlow } from "../flow";
 
 export const phoneNumbersFlow = {
-  endpoint: "https://cxf-executor-qa.cxfabric.io/restendpoint",
   flowId: "ce66ccf8-8a3b-478d-affc-d5ae5b73facd",
+  includeTenantIdInPayload: true,
   params: {
-    displayExecutionLogs: false,
     draft: true,
   },
 } as const;
@@ -18,20 +17,10 @@ export const executePhoneNumbersFlow = async <T>({
   payload?: Record<string, unknown>;
   tenantId: string;
 }): Promise<T> => {
-  const { data } = await axios.post<T>(
-    phoneNumbersFlow.endpoint,
-    { tenantId, ...payload },
-    {
-      params: {
-        ...phoneNumbersFlow.params,
-        action,
-        flow_id: phoneNumbersFlow.flowId,
-        tenant_id: tenantId,
-        targetUserId: "auth0_6a58fa6f7d004d7b0c57bac3",
-        displayExecutionLogs: true,
-      },
-    },
-  );
-
-  return data;
+  return executeCxfFlow<T>({
+    action,
+    flow: phoneNumbersFlow,
+    payload,
+    tenantId,
+  });
 };

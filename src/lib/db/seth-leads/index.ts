@@ -1,7 +1,4 @@
-import axios from "axios";
-
-const LEADS_EXECUTOR_URL = "https://cxf-executor-qa.cxfabric.io/restendpoint";
-const LEADS_FLOW_ID = "25bffe69-38a9-497c-b4cf-8d0432ca4373";
+import { executeSethLeadsFlow } from "./flow";
 
 type SethLeadRecord = Record<string, any>;
 
@@ -25,19 +22,11 @@ export async function getSethLeadById(
       return null;
     }
 
-    const { data: result } = await axios.post<GetSethLeadExecutorResponse>(
-      LEADS_EXECUTOR_URL,
-      { leadId: normalizedLeadId },
-      {
-        params: {
-          tenant_id: tenantId,
-          flow_id: LEADS_FLOW_ID,
-          draft: true,
-          displayExecutionLogs: false,
-          action: "getSethLead",
-        },
-      },
-    );
+    const result = await executeSethLeadsFlow<GetSethLeadExecutorResponse>({
+      action: "getSethLead",
+      payload: { leadId: normalizedLeadId },
+      tenantId,
+    });
 
     if (!result.success) {
       throw new Error("CXFabric returned an invalid lead response");
@@ -54,19 +43,10 @@ export async function getSethLeads(
   tenantId: string,
 ): Promise<SethLeadRecord[]> {
   try {
-    const { data: result } = await axios.post<GetSethLeadsExecutorResponse>(
-      LEADS_EXECUTOR_URL,
-      undefined,
-      {
-        params: {
-          tenant_id: tenantId,
-          flow_id: LEADS_FLOW_ID,
-          draft: true,
-          displayExecutionLogs: false,
-          action: "getSethLeads",
-        },
-      },
-    );
+    const result = await executeSethLeadsFlow<GetSethLeadsExecutorResponse>({
+      action: "getSethLeads",
+      tenantId,
+    });
 
     if (!result.success || !Array.isArray(result.items)) {
       throw new Error("CXFabric returned an invalid leads response");

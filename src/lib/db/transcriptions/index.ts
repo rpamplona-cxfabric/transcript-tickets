@@ -1,12 +1,8 @@
-import axios from "axios";
 // @ts-ignore
 import snappy from "snappy";
 import { LeadObject, Transcript } from "@/types";
 import { isTranscriptProcessed } from "../processed-transcriptions";
-
-const TRANSCRIPTS_EXECUTOR_URL =
-  "https://cxf-executor-qa.cxfabric.io/restendpoint";
-const TRANSCRIPTS_FLOW_ID = "25bffe69-38a9-497c-b4cf-8d0432ca4373";
+import { executeTranscriptsFlow } from "./flow";
 type TranscriptRecord = Record<string, any>;
 
 interface GetTranscriptsExecutorResponse {
@@ -105,19 +101,12 @@ export async function ignoreTranscript(
   transcriptId: string,
 ): Promise<{ transcriptId: string; isIgnored: true }> {
   try {
-    const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
-      TRANSCRIPTS_EXECUTOR_URL,
-      { transcriptId },
-      {
-        params: {
-          tenant_id: tenantId,
-          flow_id: TRANSCRIPTS_FLOW_ID,
-          draft: true,
-          displayExecutionLogs: false,
-          action: "ignoreTranscript",
-        },
-      },
-    );
+    const result =
+      await executeTranscriptsFlow<TranscriptActionExecutorResponse>({
+        action: "ignoreTranscript",
+        payload: { transcriptId },
+        tenantId,
+      });
 
     if (!result.success) {
       throw new Error("CXFabric failed to ignore the transcript");
@@ -135,19 +124,12 @@ export async function recoverTranscript(
   transcriptId: string,
 ): Promise<{ transcriptId: string; isIgnored: false }> {
   try {
-    const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
-      TRANSCRIPTS_EXECUTOR_URL,
-      { transcriptId },
-      {
-        params: {
-          tenant_id: tenantId,
-          flow_id: TRANSCRIPTS_FLOW_ID,
-          draft: true,
-          displayExecutionLogs: false,
-          action: "recoverTranscript",
-        },
-      },
-    );
+    const result =
+      await executeTranscriptsFlow<TranscriptActionExecutorResponse>({
+        action: "recoverTranscript",
+        payload: { transcriptId },
+        tenantId,
+      });
 
     if (!result.success) {
       throw new Error("CXFabric failed to recover the transcript");
@@ -185,19 +167,10 @@ export interface PaginatedTranscripts {
 }
 
 async function fetchAllTranscripts(tenantId: string): Promise<Transcript[]> {
-  const { data: result } = await axios.post<GetTranscriptsExecutorResponse>(
-    TRANSCRIPTS_EXECUTOR_URL,
-    undefined,
-    {
-      params: {
-        tenant_id: tenantId,
-        flow_id: TRANSCRIPTS_FLOW_ID,
-        draft: true,
-        displayExecutionLogs: false,
-        action: "getTranscripts",
-      },
-    },
-  );
+  const result = await executeTranscriptsFlow<GetTranscriptsExecutorResponse>({
+    action: "getTranscripts",
+    tenantId,
+  });
 
   if (!result.success || !Array.isArray(result.items)) {
     throw new Error("CXFabric returned an invalid transcript response");
@@ -333,19 +306,11 @@ export async function getTranscript(
   transcriptId: string,
 ): Promise<Transcript | null> {
   try {
-    const { data: result } = await axios.post<GetTranscriptExecutorResponse>(
-      TRANSCRIPTS_EXECUTOR_URL,
-      { transcriptId },
-      {
-        params: {
-          tenant_id: tenantId,
-          flow_id: TRANSCRIPTS_FLOW_ID,
-          draft: true,
-          displayExecutionLogs: false,
-          action: "getTranscript",
-        },
-      },
-    );
+    const result = await executeTranscriptsFlow<GetTranscriptExecutorResponse>({
+      action: "getTranscript",
+      payload: { transcriptId },
+      tenantId,
+    });
 
     if (!result.success) {
       throw new Error("CXFabric returned an invalid transcript response");
@@ -373,19 +338,12 @@ export async function updateTranscriptSpeakerNames(
   speakerNames: Record<string, string>;
 }> {
   try {
-    const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
-      TRANSCRIPTS_EXECUTOR_URL,
-      { speakerNames, transcriptId },
-      {
-        params: {
-          tenant_id: tenantId,
-          flow_id: TRANSCRIPTS_FLOW_ID,
-          draft: true,
-          displayExecutionLogs: false,
-          action: "updateSpeakerNames",
-        },
-      },
-    );
+    const result =
+      await executeTranscriptsFlow<TranscriptActionExecutorResponse>({
+        action: "updateSpeakerNames",
+        payload: { speakerNames, transcriptId },
+        tenantId,
+      });
 
     if (!result.success) {
       throw new Error("CXFabric failed to update transcript speaker names");
@@ -405,19 +363,12 @@ export async function addTranscriptLead(
 ): Promise<Transcript> {
   try {
     const leads = [`${leadObj.leadId}`];
-    const { data: result } = await axios.post<TranscriptActionExecutorResponse>(
-      TRANSCRIPTS_EXECUTOR_URL,
-      { leads, transcriptId },
-      {
-        params: {
-          tenant_id: tenantId,
-          flow_id: TRANSCRIPTS_FLOW_ID,
-          draft: true,
-          displayExecutionLogs: false,
-          action: "addTranscriptLead",
-        },
-      },
-    );
+    const result =
+      await executeTranscriptsFlow<TranscriptActionExecutorResponse>({
+        action: "addTranscriptLead",
+        payload: { leads, transcriptId },
+        tenantId,
+      });
 
     if (!result.success) {
       throw new Error("CXFabric failed to add the transcript lead");
