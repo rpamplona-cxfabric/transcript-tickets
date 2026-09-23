@@ -18,11 +18,15 @@ const getClaimBySuffix = (claims: Record<string, unknown>, suffix: string) => {
 const getIdTokenClaims = (
   idToken: string | undefined,
 ): Record<string, unknown> => {
-  if (!idToken) return {};
+  if (!idToken) {
+    return {};
+  }
 
   try {
     const payload = idToken.split(".")[1];
-    if (!payload) return {};
+    if (!payload) {
+      return {};
+    }
     return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
   } catch {
     return {};
@@ -35,7 +39,9 @@ const getIdTokenClaims = (
  */
 export const getTenantId = async (): Promise<string | null> => {
   const session = await auth0.getSession();
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
 
   const user = session.user as Record<string, unknown>;
   const idTokenClaims = getIdTokenClaims(session.tokenSet.idToken);
@@ -58,7 +64,9 @@ export const getTenantId = async (): Promise<string | null> => {
  */
 export const getUserAuth0Id = async (): Promise<string | null> => {
   const session = await auth0.getSession();
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
 
   const user = session.user as Record<string, unknown>;
   const idTokenClaims = getIdTokenClaims(session.tokenSet.idToken);

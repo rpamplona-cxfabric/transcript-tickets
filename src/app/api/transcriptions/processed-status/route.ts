@@ -5,7 +5,9 @@ import { getTenantId } from "@/lib/tenant";
 
 export async function GET(request: Request) {
   const session = await getApiSession();
-  if (!session) return unauthorized();
+  if (!session) {
+    return unauthorized();
+  }
 
   const tenantId = await getTenantId();
   if (!tenantId) {

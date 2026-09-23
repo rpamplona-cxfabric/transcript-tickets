@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth/auth0";
 import { getApiSession, unauthorized } from "@/lib/auth/requireSession";
+import { errorResponse } from "@/lib/api/responses";
 import { getTenantId, getUserAuth0Id } from "@/lib/tenant";
 import {
   deleteTenantUser,
@@ -18,33 +19,26 @@ import {
 
 const getRequestContext = async () => {
   const session = await getApiSession();
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
 
   const tenantId = await getTenantId();
-  if (!tenantId)
+  if (!tenantId) {
     throw new Error(
       "The authenticated user does not include a tenant identifier.",
     );
+  }
   const actorAuth0Id = await getUserAuth0Id();
-  if (!actorAuth0Id)
+  if (!actorAuth0Id) {
     throw new Error(
       "The authenticated user does not include a user identifier.",
     );
+  }
 
   const { token } = await auth0.getAccessToken();
   return { session, tenantId, accessToken: token, actorAuth0Id };
 };
-
-const errorResponse = (error: unknown) =>
-  NextResponse.json(
-    {
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to complete the user request.",
-    },
-    { status: 502 },
-  );
 
 const forbidden = () =>
   NextResponse.json(
@@ -82,7 +76,9 @@ const can = (permissions: TenantPermission[], permission: UserPermissionName) =>
 export async function GET() {
   try {
     const context = await getRequestContext();
-    if (!context) return unauthorized();
+    if (!context) {
+      return unauthorized();
+    }
 
     const [users, roles, permissions] = await Promise.all([
       getTenantUsers(context),
@@ -97,43 +93,49 @@ export async function GET() {
     });
   } catch (error) {
     console.error("API Error in GET /api/users:", error);
-    return errorResponse(error);
+    return errorResponse(error, "Unable to complete the user request.", 502);
   }
 }
 
 export async function DELETE(request: Request) {
   try {
     const context = await getRequestContext();
-    if (!context) return unauthorized();
+    if (!context) {
+      return unauthorized();
+    }
 
     const [permissions, { searchParams }] = await Promise.all([
       permissionsFor(context),
       Promise.resolve(new URL(request.url)),
     ]);
     const auth0Id = searchParams.get("auth0Id") || "";
-    if (!auth0Id)
+    if (!auth0Id) {
       return NextResponse.json(
         { error: "auth0Id is required." },
         { status: 400 },
       );
+    }
 
     if (
       !can(permissions, USER_PERMISSIONS.REMOVE_USERS) ||
       auth0Id === context.actorAuth0Id ||
       (await targetIsOwner(context, auth0Id))
-    )
+    ) {
       return forbidden();
+    }
     return NextResponse.json(await deleteTenantUser({ ...context, auth0Id }));
   } catch (error) {
     console.error("API Error in DELETE /api/users:", error);
-    return errorResponse(error);
+    return errorResponse(error, "Unable to complete the user request.", 502);
   }
 }
 
 export async function POST(request: Request) {
   try {
     const context = await getRequestContext();
-    if (!context) return unauthorized();
+    if (!context) {
+      return unauthorized();
+    }
 
     const auth0Gateway = process.env.AUTH0_GATEWAY;
     if (!auth0Gateway) {
@@ -147,7 +149,9 @@ export async function POST(request: Request) {
       request.json(),
       permissionsFor(context),
     ]);
-    if (!can(permissions, USER_PERMISSIONS.INVITE_USERS)) return forbidden();
+    if (!can(permissions, USER_PERMISSIONS.INVITE_USERS)) {
+      return forbidden();
+    }
     const emails: string[] = Array.isArray(body.emails)
       ? body.emails.filter(
           (email: unknown): email is string => typeof email === "string",
@@ -200,6 +204,6 @@ export async function POST(request: Request) {
     return NextResponse.json(payload.data?.inviteUser);
   } catch (error) {
     console.error("API Error in POST /api/users:", error);
-    return errorResponse(error);
+    return errorResponse(error, "Unable to complete the user request.", 502);
   }
 }

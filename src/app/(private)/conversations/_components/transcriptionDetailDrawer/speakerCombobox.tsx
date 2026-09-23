@@ -36,7 +36,9 @@ export const SpeakerCombobox = ({
   }, []);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (open) {
+      inputRef.current?.focus();
+    }
   }, [open]);
 
   const filtered = options.filter((o) =>

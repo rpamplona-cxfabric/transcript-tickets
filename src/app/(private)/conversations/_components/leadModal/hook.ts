@@ -52,7 +52,9 @@ export const useLeadModal = ({
   const lastName = watch("lastName") ?? "";
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
     const parts = prefillName.trim().split(/\s+/);
     reset({
       firstName: parts[0] || "",

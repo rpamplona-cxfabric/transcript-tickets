@@ -4,7 +4,9 @@ import { usePathname } from "next/navigation";
 export type ThemePreference = "light" | "dark" | "system";
 
 const resolveTheme = (theme: ThemePreference) => {
-  if (theme !== "system") return theme;
+  if (theme !== "system") {
+    return theme;
+  }
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
@@ -35,7 +37,9 @@ export function useSidebar() {
   }, []);
 
   useEffect(() => {
-    if (theme !== "system") return;
+    if (theme !== "system") {
+      return;
+    }
 
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => applyTheme("system");

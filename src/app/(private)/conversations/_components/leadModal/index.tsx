@@ -35,7 +35,9 @@ export const LeadModal = ({
     onSubmit,
   } = useLeadModal({ isOpen, prefillName, transcriptId, onSuccess, onClose });
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <Dialog

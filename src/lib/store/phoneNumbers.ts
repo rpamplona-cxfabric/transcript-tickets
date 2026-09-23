@@ -1,18 +1,31 @@
 import { create } from "zustand";
-import type { PhoneNumber } from "@/lib/api/phoneNumbers";
+import type { AvailablePhoneNumber, PhoneNumber } from "@/lib/api/phoneNumbers";
 import { fetchPhoneNumbers } from "@/lib/api/phoneNumbers";
 
 interface PhoneNumbersState {
+  availablePhoneNumbers: AvailablePhoneNumber[];
   phoneNumbers: PhoneNumber[];
   error: string | null;
   isLoading: boolean;
+  appendPhoneNumber: (phoneNumber: PhoneNumber) => void;
   loadPhoneNumbers: () => Promise<void>;
+  setAvailablePhoneNumbers: (phoneNumbers: AvailablePhoneNumber[]) => void;
 }
 
 export const usePhoneNumbersStore = create<PhoneNumbersState>((set) => ({
+  availablePhoneNumbers: [],
   phoneNumbers: [],
   error: null,
   isLoading: false,
+  appendPhoneNumber: (phoneNumber) =>
+    set((state) => ({
+      phoneNumbers: [
+        ...state.phoneNumbers.filter(
+          (item) => item.phoneNumber !== phoneNumber.phoneNumber,
+        ),
+        phoneNumber,
+      ],
+    })),
   loadPhoneNumbers: async () => {
     set({ error: null, isLoading: true });
     try {
@@ -28,4 +41,6 @@ export const usePhoneNumbersStore = create<PhoneNumbersState>((set) => ({
       });
     }
   },
+  setAvailablePhoneNumbers: (phoneNumbers) =>
+    set({ availablePhoneNumbers: phoneNumbers }),
 }));

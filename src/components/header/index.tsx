@@ -95,7 +95,9 @@ export const Header = ({
     BreadcrumbIcon === HomeIcon ? "h-5 w-5" : "h-4 w-4";
 
   useEffect(() => {
-    if (!isMenuOpen) return;
+    if (!isMenuOpen) {
+      return;
+    }
 
     const closeMenu = (event: MouseEvent | TouchEvent) => {
       if (!menuRef.current?.contains(event.target as Node)) {
@@ -179,7 +181,9 @@ export const Header = ({
           <button
             type="button"
             onClick={() => {
-              if (isMenuOpen) setIsThemeMenuOpen(false);
+              if (isMenuOpen) {
+                setIsThemeMenuOpen(false);
+              }
               setIsMenuOpen((isOpen) => !isOpen);
             }}
             className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-zinc-100 text-xs lg:text-sm font-semibold text-zinc-700 transition hover:ring-2 hover:ring-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:ring-zinc-700"

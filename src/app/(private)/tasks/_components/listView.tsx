@@ -18,7 +18,9 @@ export const ListView = ({
   setDeletingTaskId,
 }: ListViewProps) => {
   const formatTime = (timeStr: string | undefined) => {
-    if (!timeStr) return "N/A";
+    if (!timeStr) {
+      return "N/A";
+    }
     try {
       const date = new Date(timeStr);
       return date.toLocaleString(undefined, {

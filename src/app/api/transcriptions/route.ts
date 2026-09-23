@@ -6,20 +6,19 @@ import {
   updateTranscriptSpeakerNames,
 } from "@/lib/db/transcriptions";
 import { getApiSession, unauthorized } from "@/lib/auth/requireSession";
+import { tenantUnavailable } from "@/lib/api/responses";
 import { getTenantId } from "@/lib/tenant";
-
-const tenantUnavailable = () =>
-  NextResponse.json(
-    { error: "Tenant ID is unavailable for this user" },
-    { status: 403 },
-  );
 
 export async function GET(request: Request) {
   const session = await getApiSession();
-  if (!session) return unauthorized();
+  if (!session) {
+    return unauthorized();
+  }
 
   const tenantId = await getTenantId();
-  if (!tenantId) return tenantUnavailable();
+  if (!tenantId) {
+    return tenantUnavailable();
+  }
 
   try {
     const { searchParams } = new URL(request.url);
@@ -58,10 +57,14 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   const session = await getApiSession();
-  if (!session) return unauthorized();
+  if (!session) {
+    return unauthorized();
+  }
 
   const tenantId = await getTenantId();
-  if (!tenantId) return tenantUnavailable();
+  if (!tenantId) {
+    return tenantUnavailable();
+  }
 
   try {
     const body = await request.json();

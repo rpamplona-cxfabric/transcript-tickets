@@ -67,10 +67,14 @@ export const useConversationsClient = () => {
 
   useEffect(() => {
     const items = data?.items;
-    if (!items || items.length === 0) return;
+    if (!items || items.length === 0) {
+      return;
+    }
     const params = new URLSearchParams(window.location.search);
     const openId = params.get("open");
-    if (!openId) return;
+    if (!openId) {
+      return;
+    }
 
     const matchedTranscript = items.find(
       (transcript) => transcript.transcriptId === openId,

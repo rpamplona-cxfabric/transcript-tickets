@@ -27,11 +27,21 @@ export const fetchTranscriptions = async (
   const query = new URLSearchParams();
   query.set("page", String(page));
   query.set("limit", String(limit));
-  if (search) query.set("search", search);
-  if (status) query.set("status", status);
-  if (tenant) query.set("tenant", tenant);
-  if (sortField) query.set("sortField", sortField);
-  if (sortDirection) query.set("sortDirection", sortDirection);
+  if (search) {
+    query.set("search", search);
+  }
+  if (status) {
+    query.set("status", status);
+  }
+  if (tenant) {
+    query.set("tenant", tenant);
+  }
+  if (sortField) {
+    query.set("sortField", sortField);
+  }
+  if (sortDirection) {
+    query.set("sortDirection", sortDirection);
+  }
 
   const { data } = await api.get<PaginatedTranscriptsResponse>(
     `/transcriptions?${query.toString()}`,

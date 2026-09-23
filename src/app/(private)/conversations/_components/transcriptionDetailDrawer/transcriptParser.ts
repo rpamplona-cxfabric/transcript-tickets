@@ -20,10 +20,14 @@ export function parseTranscriptLine(line: string): ParsedTranscriptLine | null {
   const match = line.match(
     /^(?:\[([^\]]+)\]\s+)?(?:\[([^\]]+)\]|(Speaker\s*\d+|[^:]+))\s*:(.*)$/,
   );
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
 
   const speakerName = (match[2] || match[3]).trim();
-  if (!speakerName || !isSpeakerName(speakerName)) return null;
+  if (!speakerName || !isSpeakerName(speakerName)) {
+    return null;
+  }
 
   return {
     timeTag: match[1] ? `[${match[1]}]` : "",

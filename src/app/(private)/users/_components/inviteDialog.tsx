@@ -44,11 +44,13 @@ export const InviteDialog = ({
       .split(/[\s,;]+/)
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean);
-    if (values.some((email) => !emailExpression.test(email)))
+    if (values.some((email) => !emailExpression.test(email))) {
       return toast.error("Enter valid email addresses.");
+    }
     const nextEmails = [...new Set([...emails, ...values])].slice(0, 10);
-    if (nextEmails.length < emails.length + values.length)
+    if (nextEmails.length < emails.length + values.length) {
       toast.error("You can invite up to 10 users at a time.");
+    }
     setEmails(nextEmails);
     setEmailInput("");
   };

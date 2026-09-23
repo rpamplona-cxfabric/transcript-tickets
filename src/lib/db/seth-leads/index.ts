@@ -21,7 +21,9 @@ export async function getSethLeadById(
 ): Promise<SethLeadRecord | null> {
   try {
     const normalizedLeadId = leadId.trim();
-    if (!normalizedLeadId) return null;
+    if (!normalizedLeadId) {
+      return null;
+    }
 
     const { data: result } = await axios.post<GetSethLeadExecutorResponse>(
       LEADS_EXECUTOR_URL,

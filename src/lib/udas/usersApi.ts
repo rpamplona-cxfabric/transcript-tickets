@@ -80,9 +80,13 @@ export const getTenantUserPermissions = async ({
   );
 
   const value = result.checkUserPermission?.resultObject;
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) {
+    return [];
+  }
   return value.flatMap((item) => {
-    if (!item || typeof item !== "object") return [];
+    if (!item || typeof item !== "object") {
+      return [];
+    }
     const candidate = item as { name?: unknown; value?: unknown };
     return typeof candidate.name === "string" &&
       typeof candidate.value === "boolean"

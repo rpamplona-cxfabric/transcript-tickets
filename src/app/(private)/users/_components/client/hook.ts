@@ -41,7 +41,9 @@ export const useUsersClient = () => {
   const canManageMembership = hasPermission(USER_PERMISSIONS.REMOVE_USERS);
 
   const userActions = (user: TenantUser): ActionMenuItem[] => {
-    if (!canManageMembership) return [];
+    if (!canManageMembership) {
+      return [];
+    }
 
     const isTargetOwner = roleName(user.role_id).toLowerCase() === "owner";
     const actions: ActionMenuItem[] = [];
@@ -75,7 +77,9 @@ export const useUsersClient = () => {
       );
     })
     .sort((left, right) => {
-      if (!sort) return 0;
+      if (!sort) {
+        return 0;
+      }
       const value = (user: TenantUser) =>
         sort.field === "user"
           ? userName(user)

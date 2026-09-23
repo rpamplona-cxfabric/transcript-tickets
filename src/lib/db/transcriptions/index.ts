@@ -25,7 +25,9 @@ interface TranscriptActionExecutorResponse {
 }
 
 async function decompressField(value: string | undefined): Promise<string> {
-  if (!value) return "";
+  if (!value) {
+    return "";
+  }
 
   try {
     const buf = Buffer.from(value, "base64");
@@ -40,12 +42,16 @@ async function decompressField(value: string | undefined): Promise<string> {
 }
 
 function parseSpeakerNames(value: unknown): Record<string, string> {
-  if (!value) return {};
+  if (!value) {
+    return {};
+  }
 
   let parsed = value;
   if (typeof value === "string") {
     const trimmedValue = value.trim();
-    if (!trimmedValue) return {};
+    if (!trimmedValue) {
+      return {};
+    }
 
     try {
       parsed = JSON.parse(trimmedValue);
@@ -220,7 +226,9 @@ function applyFilters(
   transcripts: Transcript[],
   filters?: GetTranscriptsFilters,
 ): Transcript[] {
-  if (!filters) return transcripts;
+  if (!filters) {
+    return transcripts;
+  }
 
   const { search, tenantId: subTenantId, status } = filters;
   const normalizedSearch = search?.trim().toLowerCase();
@@ -343,7 +351,9 @@ export async function getTranscript(
       throw new Error("CXFabric returned an invalid transcript response");
     }
 
-    if (!result.item) return null;
+    if (!result.item) {
+      return null;
+    }
 
     const isProcessed = await isTranscriptProcessed(tenantId, transcriptId);
     return formatTranscript(result.item, isProcessed, false);

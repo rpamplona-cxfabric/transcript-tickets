@@ -24,7 +24,9 @@ export const ActionMenu = ({ actions, ariaLabel }: ActionMenuProps) => {
 
   const updateMenuPosition = () => {
     const trigger = triggerRef.current;
-    if (!trigger) return;
+    if (!trigger) {
+      return;
+    }
 
     const rect = trigger.getBoundingClientRect();
     const width = 160;
@@ -43,11 +45,14 @@ export const ActionMenu = ({ actions, ariaLabel }: ActionMenuProps) => {
       if (
         !menuRef.current?.contains(target) &&
         !triggerRef.current?.contains(target)
-      )
+      ) {
         setIsOpen(false);
+      }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsOpen(false);
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", closeOnOutsideClick);
@@ -59,7 +64,9 @@ export const ActionMenu = ({ actions, ariaLabel }: ActionMenuProps) => {
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
 
     updateMenuPosition();
     window.addEventListener("resize", updateMenuPosition);
@@ -70,7 +77,9 @@ export const ActionMenu = ({ actions, ariaLabel }: ActionMenuProps) => {
     };
   }, [isOpen]);
 
-  if (!actions.length) return null;
+  if (!actions.length) {
+    return null;
+  }
 
   return (
     <div className="inline-block text-left">

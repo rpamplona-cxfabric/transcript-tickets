@@ -14,7 +14,9 @@ const statusClasses: Record<string, string> = {
 };
 
 export const StatusBadge = ({ status, className = "" }: StatusBadgeProps) => {
-  if (!status) return null;
+  if (!status) {
+    return null;
+  }
 
   return (
     <span

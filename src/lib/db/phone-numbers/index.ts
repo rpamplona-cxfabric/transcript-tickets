@@ -1,101 +1,92 @@
 import axios from "axios";
-import type { PhoneNumber } from "@/lib/api/phoneNumbers";
-
-const PHONE_NUMBERS_EXECUTOR_URL =
-  "https://cxf-executor-qa.cxfabric.io/restendpoint";
-const PHONE_NUMBERS_FLOW_ID = "ce66ccf8-8a3b-478d-affc-d5ae5b73facd";
+import type { AvailablePhoneNumber, PhoneNumber } from "@/lib/api/phoneNumbers";
+import { executePhoneNumbersFlow } from "./flow";
 
 interface GetPhoneNumbersExecutorResponse {
-  success: boolean;
-  items: PhoneNumber[];
   count?: number;
+  items: PhoneNumber[];
+  success: boolean;
 }
 
-interface GeneratePhoneNumberResponse {
-  success: boolean;
+interface PurchasePhoneNumberResponse {
+  message: unknown;
   phoneNumber: string;
   sid: string;
-  message: unknown;
+  success: boolean;
 }
 
-export async function getPhoneNumbers(
+interface AvailablePhoneNumbersExecutorResponse {
+  phoneNumbers: AvailablePhoneNumber[];
+  success: boolean;
+}
+
+const logExecutorError = (message: string, error: unknown) => {
+  console.error(message, error);
+  const response = axios.isAxiosError(error) ? error.response : undefined;
+  console.error("Executor response data:", response?.data);
+  console.error("Executor response status:", response?.status);
+};
+
+export const getPhoneNumbers = async (
   tenantId: string,
-): Promise<PhoneNumber[]> {
+): Promise<PhoneNumber[]> => {
   try {
-    console.log("Fetching phone numbers for tenant:", tenantId);
-    console.log("Request URL:", PHONE_NUMBERS_EXECUTOR_URL);
-    console.log("Flow ID:", PHONE_NUMBERS_FLOW_ID);
-
-    const { data: result } = await axios.post<GetPhoneNumbersExecutorResponse>(
-      PHONE_NUMBERS_EXECUTOR_URL,
-      {
-        tenantId: tenantId,
-      },
-      {
-        params: {
-          tenant_id: tenantId,
-          flow_id: PHONE_NUMBERS_FLOW_ID,
-          draft: true,
-          displayExecutionLogs: false,
-          action: "getPhoneNumbers",
-        },
-      },
-    );
-
-    console.log("Response from CXFabric:", JSON.stringify(result, null, 2));
+    const result =
+      await executePhoneNumbersFlow<GetPhoneNumbersExecutorResponse>({
+        action: "getPhoneNumbers",
+        tenantId,
+      });
 
     if (!result.success || !Array.isArray(result.items)) {
-      console.error("Invalid response structure:", result);
-      throw new Error("CXFabric returned an invalid phone numbers response");
+      throw new Error("CXFabric returned an invalid phone numbers response.");
     }
 
     return result.items;
   } catch (error: unknown) {
-    console.error("Error fetching phone numbers:", error);
-    const response = axios.isAxiosError(error) ? error.response : undefined;
-    console.error("Error response data:", response?.data);
-    console.error("Error response status:", response?.status);
+    logExecutorError("Error fetching phone numbers:", error);
     throw error;
   }
-}
+};
 
-export async function generatePhoneNumber(
+export const purchasePhoneNumber = async (
   tenantId: string,
-): Promise<GeneratePhoneNumberResponse> {
+  phoneNumber: string,
+): Promise<PurchasePhoneNumberResponse> => {
   try {
-    console.log("Generating phone number for tenant:", tenantId);
-
-    const { data: result } = await axios.post<GeneratePhoneNumberResponse>(
-      PHONE_NUMBERS_EXECUTOR_URL,
-      {
-        tenantId: tenantId,
-      },
-      {
-        params: {
-          tenant_id: tenantId,
-          flow_id: PHONE_NUMBERS_FLOW_ID,
-          draft: true,
-          displayExecutionLogs: false,
-          action: "generatePhoneNumber",
-        },
-      },
-    );
-
-    console.log(
-      "Generate phone number response:",
-      JSON.stringify(result, null, 2),
-    );
+    const result = await executePhoneNumbersFlow<PurchasePhoneNumberResponse>({
+      action: "purchasePhoneNumber",
+      payload: { phoneNumber },
+      tenantId,
+    });
 
     if (!result.success) {
-      throw new Error("CXFabric failed to generate phone number");
+      throw new Error("CXFabric failed to purchase the phone number.");
     }
 
     return result;
   } catch (error: unknown) {
-    console.error("Error generating phone number:", error);
-    const response = axios.isAxiosError(error) ? error.response : undefined;
-    console.error("Error response data:", response?.data);
-    console.error("Error response status:", response?.status);
+    logExecutorError("Error purchasing phone number:", error);
     throw error;
   }
-}
+};
+
+export const getAvailablePhoneNumbers = async (
+  tenantId: string,
+): Promise<AvailablePhoneNumber[]> => {
+  try {
+    const result =
+      await executePhoneNumbersFlow<AvailablePhoneNumbersExecutorResponse>({
+        action: "getAvailablePhoneNumbers",
+        tenantId,
+      });
+
+    if (!result.success || !Array.isArray(result.phoneNumbers)) {
+      throw new Error("CXFabric returned invalid available phone numbers.");
+    }
+
+    return result.phoneNumbers;
+  } catch (error: unknown) {
+    logExecutorError("Error fetching available phone numbers:", error);
+    throw error;
+  }
+};

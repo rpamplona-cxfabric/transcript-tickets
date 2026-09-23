@@ -41,7 +41,9 @@ export const Combobox = ({
 
   const results = useMemo(() => {
     const normalizedQuery = debouncedQuery.trim().toLowerCase();
-    if (!normalizedQuery) return leads.slice(0, 50);
+    if (!normalizedQuery) {
+      return leads.slice(0, 50);
+    }
 
     return leads
       .filter((lead) => {

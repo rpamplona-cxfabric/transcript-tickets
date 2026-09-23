@@ -46,19 +46,24 @@ export const TranscriptionDetailDrawer = () => {
   } = useTranscriptionDetailDrawer();
   const [isIgnoreDialogOpen, setIsIgnoreDialogOpen] = useState(false);
 
-  if (!activeTranscript) return null;
+  if (!activeTranscript) {
+    return null;
+  }
 
   const selectedLead = selectedLeadFromHook ?? associatedLead;
 
   const renderFormattedTranscript = (text: string | undefined) => {
-    if (!text)
+    if (!text) {
       return (
         <p className="text-zinc-500 italic">No transcript text available.</p>
       );
+    }
     return (
       <div className="space-y-4">
         {text.split("\n").map((line, idx) => {
-          if (!line.trim()) return null;
+          if (!line.trim()) {
+            return null;
+          }
           const parsedLine = parseTranscriptLine(line);
           if (parsedLine) {
             const { timeTag, speakerName, speakerText } = parsedLine;

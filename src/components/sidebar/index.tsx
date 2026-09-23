@@ -89,7 +89,9 @@ export const Sidebar = ({
     .toUpperCase();
 
   useEffect(() => {
-    if (!isOpen && !isProfileOpen) return;
+    if (!isOpen && !isProfileOpen) {
+      return;
+    }
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {

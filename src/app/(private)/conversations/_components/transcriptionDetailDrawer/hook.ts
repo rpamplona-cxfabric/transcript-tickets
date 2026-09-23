@@ -42,10 +42,14 @@ export const useTranscriptionDetailDrawer = () => {
       : null;
 
   const associatedLeadId: string | null = (() => {
-    if (!activeTranscript?.leads) return null;
+    if (!activeTranscript?.leads) {
+      return null;
+    }
     try {
       const parsed = JSON.parse(activeTranscript.leads);
-      if (!Array.isArray(parsed) || parsed.length === 0) return null;
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        return null;
+      }
       const leadId = `${parsed[0]}`.trim();
       return leadId || null;
     } catch {
@@ -68,7 +72,9 @@ export const useTranscriptionDetailDrawer = () => {
     setIsPolling(true);
     try {
       const processed = await pollUntilProcessed(transcriptId);
-      if (pollingTranscriptIdRef.current !== transcriptId) return;
+      if (pollingTranscriptIdRef.current !== transcriptId) {
+        return;
+      }
       if (processed) {
         const current = activeTranscriptRef.current;
         if (current && current.transcriptId === transcriptId) {
@@ -100,7 +106,9 @@ export const useTranscriptionDetailDrawer = () => {
   const associateMutation = useMutation({
     mutationFn: associateLead,
     onSuccess: (data, { transcriptId, firstname, lastname, leadId }) => {
-      if (data.updatedTranscript) updateTranscript(data.updatedTranscript);
+      if (data.updatedTranscript) {
+        updateTranscript(data.updatedTranscript);
+      }
       qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
 
       const leadName = `${firstname} ${lastname}`.trim();
@@ -120,12 +128,13 @@ export const useTranscriptionDetailDrawer = () => {
       qc.invalidateQueries({ queryKey: queryKeys.transcriptions });
       const entries = Object.entries(speakerNames);
       const last = entries[entries.length - 1];
-      if (last)
+      if (last) {
         toast.success(
           last[1]
             ? `Mapped ${last[0]} to ${last[1]}`
             : `Removed ${last[0]} mapped name`,
         );
+      }
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -160,7 +169,9 @@ export const useTranscriptionDetailDrawer = () => {
   });
 
   const handleSelectLead = (lead: ComboboxLead) => {
-    if (!activeTranscript) return;
+    if (!activeTranscript) {
+      return;
+    }
     setSelectedLeadState({ transcriptId: activeTranscript.transcriptId, lead });
   };
 
@@ -192,8 +203,9 @@ export const useTranscriptionDetailDrawer = () => {
       !lead ||
       activeTranscript.isProcessed ||
       isSubmitting
-    )
+    ) {
       return;
+    }
 
     associateMutation.mutate({
       leadId: lead.leadId,
@@ -204,7 +216,9 @@ export const useTranscriptionDetailDrawer = () => {
   };
 
   const handleMapSpeaker = (speaker: string, mappedName: string) => {
-    if (!activeTranscript) return;
+    if (!activeTranscript) {
+      return;
+    }
     const updatedSpeakerNames = {
       ...(activeTranscript.speakerNames || {}),
       [speaker]: mappedName,
@@ -228,7 +242,9 @@ export const useTranscriptionDetailDrawer = () => {
   };
 
   const getSpeakers = (text: string | undefined): string[] => {
-    if (!text) return [];
+    if (!text) {
+      return [];
+    }
     const speakers = new Set<string>();
     text.split("\n").forEach((line) => {
       const parsedLine = parseTranscriptLine(line);
@@ -266,7 +282,9 @@ export const useTranscriptionDetailDrawer = () => {
   };
 
   const formatTime = (timeStr: string | undefined) => {
-    if (!timeStr) return "N/A";
+    if (!timeStr) {
+      return "N/A";
+    }
     try {
       return new Date(timeStr).toLocaleString(undefined, {
         dateStyle: "medium",

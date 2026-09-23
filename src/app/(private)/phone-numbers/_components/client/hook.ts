@@ -57,7 +57,9 @@ export const usePhoneNumbersClient = () => {
       );
     })
     .sort((left, right) => {
-      if (!sort) return 0;
+      if (!sort) {
+        return 0;
+      }
       const value = (phoneNumber: PhoneNumber) =>
         sort.field === "phoneNumber"
           ? phoneNumber.phoneNumber

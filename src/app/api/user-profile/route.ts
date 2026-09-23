@@ -6,7 +6,9 @@ import { getUserProfile } from "@/lib/udas/userApi";
 
 export async function GET() {
   const session = await getApiSession();
-  if (!session) return unauthorized();
+  if (!session) {
+    return unauthorized();
+  }
 
   const auth0Id = session.user.sub;
   const tenantId = await getTenantId();
