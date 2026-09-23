@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
-import { purchasePhoneNumber, getPhoneNumbers } from "@/lib/db/phone-numbers";
+import {
+  assignPhoneNumber,
+  purchasePhoneNumber,
+  getPhoneNumbers,
+} from "@/lib/db/phone-numbers";
+import { auth0 } from "@/lib/auth/auth0";
 import { getApiSession, unauthorized } from "@/lib/auth/requireSession";
 import { errorResponse, tenantUnavailable } from "@/lib/api/responses";
 import { getTenantId } from "@/lib/tenant";
+import { getTenantUsers } from "@/lib/udas/usersApi";
 
 export async function GET() {
   const session = await getApiSession();
@@ -57,6 +63,7 @@ export async function POST(request: Request) {
       ...result,
       item: {
         phoneNumber: result.phoneNumber,
+        routing: "",
         status: "active",
         tenantId,
       },
@@ -64,5 +71,47 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     console.error("API Error in POST /api/phone-numbers:", error);
     return errorResponse(error, "Failed to generate phone number.");
+  }
+}
+
+export async function PUT(request: Request) {
+  const session = await getApiSession();
+  if (!session) {
+    return unauthorized();
+  }
+
+  const tenantId = await getTenantId();
+  if (!tenantId) {
+    return tenantUnavailable();
+  }
+
+  const body = await request.json();
+  const phoneNumber =
+    typeof body.phoneNumber === "string" ? body.phoneNumber.trim() : "";
+  const userId = typeof body.userId === "string" ? body.userId.trim() : "";
+  if (!phoneNumber) {
+    return NextResponse.json(
+      { error: "phoneNumber is required." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    if (userId) {
+      const { token } = await auth0.getAccessToken();
+      const users = await getTenantUsers({ accessToken: token, tenantId });
+      if (!users.some((user) => user.auth0_id === userId)) {
+        return NextResponse.json(
+          { error: "The selected user is not in this workspace." },
+          { status: 404 },
+        );
+      }
+    }
+
+    await assignPhoneNumber(tenantId, phoneNumber, userId);
+    return NextResponse.json({ phoneNumber, success: true, userId });
+  } catch (error: unknown) {
+    console.error("API Error in PUT /api/phone-numbers:", error);
+    return errorResponse(error, "Failed to assign the phone number.");
   }
 }

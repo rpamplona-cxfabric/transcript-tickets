@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, MoreVertical } from "lucide-react";
 
 export interface ActionMenuItem {
   label: string;
@@ -14,11 +14,19 @@ export interface ActionMenuItem {
 interface ActionMenuProps {
   actions: ActionMenuItem[];
   ariaLabel: string;
+  orientation?: "horizontal" | "vertical";
 }
 
-export const ActionMenu = ({ actions, ariaLabel }: ActionMenuProps) => {
+export const ActionMenu = ({
+  actions,
+  ariaLabel,
+  orientation = "horizontal",
+}: ActionMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -47,11 +55,13 @@ export const ActionMenu = ({ actions, ariaLabel }: ActionMenuProps) => {
         !triggerRef.current?.contains(target)
       ) {
         setIsOpen(false);
+        setMenuPosition(null);
       }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsOpen(false);
+        setMenuPosition(null);
       }
     };
 
@@ -89,12 +99,26 @@ export const ActionMenu = ({ actions, ariaLabel }: ActionMenuProps) => {
         aria-label={ariaLabel}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() => {
+          if (isOpen) {
+            setIsOpen(false);
+            setMenuPosition(null);
+            return;
+          }
+
+          updateMenuPosition();
+          setIsOpen(true);
+        }}
         className="p-2 text-zinc-500 dark:text-zinc-400"
       >
-        <MoreHorizontal className="h-5 w-5" />
+        {orientation === "vertical" ? (
+          <MoreVertical className="h-5 w-5" />
+        ) : (
+          <MoreHorizontal className="h-5 w-5" />
+        )}
       </button>
       {isOpen &&
+        menuPosition &&
         typeof document !== "undefined" &&
         createPortal(
           <div

@@ -20,6 +20,10 @@ interface AvailablePhoneNumbersExecutorResponse {
   success: boolean;
 }
 
+interface AssignPhoneNumberExecutorResponse {
+  success: boolean;
+}
+
 const logExecutorError = (message: string, error: unknown) => {
   console.error(message, error);
   const response = axios.isAxiosError(error) ? error.response : undefined;
@@ -87,6 +91,30 @@ export const getAvailablePhoneNumbers = async (
     return result.phoneNumbers;
   } catch (error: unknown) {
     logExecutorError("Error fetching available phone numbers:", error);
+    throw error;
+  }
+};
+
+export const assignPhoneNumber = async (
+  tenantId: string,
+  phoneNumber: string,
+  userId: string,
+): Promise<AssignPhoneNumberExecutorResponse> => {
+  try {
+    const result =
+      await executePhoneNumbersFlow<AssignPhoneNumberExecutorResponse>({
+        action: "assignPhoneNumber",
+        payload: { phoneNumber, userId },
+        tenantId,
+      });
+
+    if (!result.success) {
+      throw new Error("CXFabric failed to assign the phone number.");
+    }
+
+    return result;
+  } catch (error: unknown) {
+    logExecutorError("Error assigning phone number:", error);
     throw error;
   }
 };

@@ -4,16 +4,24 @@ import { useEffect, useState } from "react";
 import type { ActionMenuItem } from "@/components/actionMenu";
 import type { TableSortDirection } from "@/components/tableHeader";
 import { usePhoneNumbersStore } from "@/lib/store/phoneNumbers";
+import { useUsersStore } from "@/lib/store/users";
 import type { PhoneNumber } from "@/lib/api/phoneNumbers";
+import { userName } from "@/lib/utils";
 
 export type { PhoneNumber };
 
 export const usePhoneNumbersClient = () => {
   const { phoneNumbers, isLoading, error, loadPhoneNumbers } =
     usePhoneNumbersStore();
+  const users = useUsersStore((state) => state.users);
+  const loadUsers = useUsersStore((state) => state.loadUsers);
 
+  const [assignTarget, setAssignTarget] = useState<PhoneNumber | null>(null);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<PhoneNumber | null>(null);
+  const [unassignTarget, setUnassignTarget] = useState<PhoneNumber | null>(
+    null,
+  );
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sort, setSort] = useState<{
@@ -22,11 +30,24 @@ export const usePhoneNumbersClient = () => {
   } | null>(null);
 
   useEffect(() => {
-    loadPhoneNumbers();
-  }, [loadPhoneNumbers]);
+    void loadPhoneNumbers();
+    void loadUsers();
+  }, [loadPhoneNumbers, loadUsers]);
 
   const phoneNumberActions = (phoneNumber: PhoneNumber): ActionMenuItem[] => {
     return [
+      {
+        label: phoneNumber.routing ? "Change assigned user" : "Assign user",
+        onSelect: () => setAssignTarget(phoneNumber),
+      },
+      ...(phoneNumber.routing
+        ? [
+            {
+              label: "Unassign user",
+              onSelect: () => setUnassignTarget(phoneNumber),
+            },
+          ]
+        : []),
       {
         label: "Remove",
         destructive: true,
@@ -77,21 +98,35 @@ export const usePhoneNumbersClient = () => {
         : { field, direction: "asc" },
     );
 
+  const routingLabel = (phoneNumber: PhoneNumber) => {
+    if (!phoneNumber.routing) {
+      return "Unassigned";
+    }
+
+    const user = users.find((item) => item.auth0_id === phoneNumber.routing);
+    return user ? userName(user) : "Assigned user";
+  };
+
   return {
+    assignTarget,
     filteredPhoneNumbers,
     isLoading,
     error,
     isGenerateOpen,
     setIsGenerateOpen,
+    setAssignTarget,
     removeTarget,
     search,
     setRemoveTarget,
     setSearch,
     setStatusFilter,
+    setUnassignTarget,
     sort,
     statusFilter,
     toggleSort,
     phoneNumberActions,
+    routingLabel,
+    unassignTarget,
     handleRemove,
   };
 };

@@ -53,6 +53,7 @@ export const UserCard = ({
       <ActionMenu
         ariaLabel={`Actions for ${userName(user)}`}
         actions={actions}
+        orientation="vertical"
       />
     </div>
   );

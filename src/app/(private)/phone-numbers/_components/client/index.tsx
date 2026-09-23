@@ -6,7 +6,10 @@ import { Select } from "@/components/select";
 import { StatusBadge } from "@/components/statusBadge";
 import { SortableTableHeaderCell, TableHeader } from "@/components/tableHeader";
 import { RemoveDialog } from "../removeDialog";
+import { AssignPhoneNumberDialog } from "../assignDialog";
+import { UnassignPhoneNumberDialog } from "../unassignDialog";
 import { PhoneNumberCard } from "../phoneNumberCard";
+import { RoutingBadge } from "../routingBadge";
 import { GeneratePhoneNumberDialog } from "../generateDialog";
 import { usePhoneNumbersClient } from "./hook";
 
@@ -14,19 +17,24 @@ export const PhoneNumbersClient = () => {
   const state = usePhoneNumbersClient();
   const {
     filteredPhoneNumbers,
+    assignTarget,
     isLoading,
     error,
     isGenerateOpen,
     setIsGenerateOpen,
+    setAssignTarget,
     removeTarget,
     search,
     setRemoveTarget,
     setSearch,
     setStatusFilter,
+    setUnassignTarget,
     sort,
     statusFilter,
     toggleSort,
     phoneNumberActions,
+    routingLabel,
+    unassignTarget,
     handleRemove,
   } = state;
 
@@ -96,6 +104,7 @@ export const PhoneNumbersClient = () => {
                   <PhoneNumberCard
                     key={phoneNumber.phoneNumber}
                     phoneNumber={phoneNumber}
+                    routingLabel={routingLabel(phoneNumber)}
                     actions={phoneNumberActions(phoneNumber)}
                   />
                 ))}
@@ -112,7 +121,7 @@ export const PhoneNumbersClient = () => {
                       >
                         PHONE NUMBER
                       </SortableTableHeaderCell>
-                      <th className="px-6 py-2">TENANT ID</th>
+                      <th className="px-6 py-2">ROUTING</th>
                       <SortableTableHeaderCell
                         sortDirection={
                           sort?.field === "status" ? sort.direction : null
@@ -132,8 +141,11 @@ export const PhoneNumbersClient = () => {
                             {phoneNumber.phoneNumber}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400">
-                          {phoneNumber.tenantId}
+                        <td className="px-6 py-4">
+                          <RoutingBadge
+                            label={routingLabel(phoneNumber)}
+                            routing={phoneNumber.routing}
+                          />
                         </td>
                         <td className="px-6 py-4">
                           <StatusBadge status={phoneNumber.status} />
@@ -155,6 +167,18 @@ export const PhoneNumbersClient = () => {
       </main>
       {isGenerateOpen && (
         <GeneratePhoneNumberDialog onClose={() => setIsGenerateOpen(false)} />
+      )}
+      {assignTarget && (
+        <AssignPhoneNumberDialog
+          phoneNumber={assignTarget}
+          onClose={() => setAssignTarget(null)}
+        />
+      )}
+      {unassignTarget && (
+        <UnassignPhoneNumberDialog
+          phoneNumber={unassignTarget}
+          onClose={() => setUnassignTarget(null)}
+        />
       )}
       {removeTarget && (
         <RemoveDialog
