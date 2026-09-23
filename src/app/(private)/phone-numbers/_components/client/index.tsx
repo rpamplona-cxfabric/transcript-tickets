@@ -35,7 +35,6 @@ export const PhoneNumbersClient = () => {
     phoneNumberActions,
     routingLabel,
     unassignTarget,
-    handleRemove,
   } = state;
 
   return (
@@ -184,7 +183,6 @@ export const PhoneNumbersClient = () => {
         <RemoveDialog
           phoneNumber={removeTarget}
           onClose={() => setRemoveTarget(null)}
-          onConfirm={handleRemove}
         />
       )}
     </div>

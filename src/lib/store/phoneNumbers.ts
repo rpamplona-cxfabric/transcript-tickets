@@ -9,6 +9,7 @@ interface PhoneNumbersState {
   isLoading: boolean;
   appendPhoneNumber: (phoneNumber: PhoneNumber) => void;
   loadPhoneNumbers: () => Promise<void>;
+  removePhoneNumber: (phoneNumber: string) => void;
   setAvailablePhoneNumbers: (phoneNumbers: AvailablePhoneNumber[]) => void;
 }
 
@@ -41,6 +42,12 @@ export const usePhoneNumbersStore = create<PhoneNumbersState>((set) => ({
       });
     }
   },
+  removePhoneNumber: (phoneNumber) =>
+    set((state) => ({
+      phoneNumbers: state.phoneNumbers.filter(
+        (item) => item.phoneNumber !== phoneNumber,
+      ),
+    })),
   setAvailablePhoneNumbers: (phoneNumbers) =>
     set({ availablePhoneNumbers: phoneNumbers }),
 }));

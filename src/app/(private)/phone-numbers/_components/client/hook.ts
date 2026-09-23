@@ -56,14 +56,6 @@ export const usePhoneNumbersClient = () => {
     ];
   };
 
-  const handleRemove = (phoneNumber: string) => {
-    // TODO: Implement actual remove API call
-    console.log("Removing phone number:", phoneNumber);
-    setRemoveTarget(null);
-    // After successful removal, refetch the data
-    loadPhoneNumbers();
-  };
-
   const searchTerm = search.trim().toLowerCase();
   const filteredPhoneNumbers = phoneNumbers
     .filter((phoneNumber) => {
@@ -127,6 +119,5 @@ export const usePhoneNumbersClient = () => {
     phoneNumberActions,
     routingLabel,
     unassignTarget,
-    handleRemove,
   };
 };

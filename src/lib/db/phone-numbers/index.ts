@@ -118,3 +118,25 @@ export const assignPhoneNumber = async (
     throw error;
   }
 };
+
+export const deletePhoneNumber = async (
+  tenantId: string,
+  phoneNumber: string,
+  sid: string,
+): Promise<void> => {
+  try {
+    const result =
+      await executePhoneNumbersFlow<AssignPhoneNumberExecutorResponse>({
+        action: "deletePhoneNumber",
+        payload: { phoneNumber, sid },
+        tenantId,
+      });
+
+    if (!result.success) {
+      throw new Error("CXFabric failed to delete the phone number.");
+    }
+  } catch (error: unknown) {
+    logExecutorError("Error deleting phone number:", error);
+    throw error;
+  }
+};

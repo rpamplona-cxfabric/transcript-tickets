@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   assignPhoneNumber,
+  deletePhoneNumber,
   purchasePhoneNumber,
   getPhoneNumbers,
 } from "@/lib/db/phone-numbers";
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
       item: {
         phoneNumber: result.phoneNumber,
         routing: "",
+        sid: result.sid,
         status: "active",
         tenantId,
       },
@@ -113,5 +115,36 @@ export async function PUT(request: Request) {
   } catch (error: unknown) {
     console.error("API Error in PUT /api/phone-numbers:", error);
     return errorResponse(error, "Failed to assign the phone number.");
+  }
+}
+
+export async function DELETE(request: Request) {
+  const session = await getApiSession();
+  if (!session) {
+    return unauthorized();
+  }
+
+  const tenantId = await getTenantId();
+  if (!tenantId) {
+    return tenantUnavailable();
+  }
+
+  const body = await request.json();
+  const phoneNumber =
+    typeof body.phoneNumber === "string" ? body.phoneNumber.trim() : "";
+  const sid = typeof body.sid === "string" ? body.sid.trim() : "";
+  if (!phoneNumber || !sid) {
+    return NextResponse.json(
+      { error: "phoneNumber and sid are required." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    await deletePhoneNumber(tenantId, phoneNumber, sid);
+    return NextResponse.json({ phoneNumber, sid, success: true });
+  } catch (error: unknown) {
+    console.error("API Error in DELETE /api/phone-numbers:", error);
+    return errorResponse(error, "Failed to remove the phone number.");
   }
 }

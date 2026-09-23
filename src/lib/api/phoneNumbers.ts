@@ -3,6 +3,7 @@ import api from "@/lib/axios";
 export interface PhoneNumber {
   phoneNumber: string;
   routing: string;
+  sid: string;
   tenantId: string;
   status: "active" | "inactive";
 }
@@ -45,6 +46,12 @@ export interface AssignPhoneNumberResponse {
   userId: string;
 }
 
+export interface DeletePhoneNumberResponse {
+  phoneNumber: string;
+  sid: string;
+  success: boolean;
+}
+
 export const fetchPhoneNumbers = async (): Promise<PhoneNumbersResponse> => {
   const { data } = await api.get<PhoneNumbersResponse>("/phone-numbers");
   return data;
@@ -73,6 +80,20 @@ export const assignPhoneNumber = async ({
     phoneNumber,
     userId,
   });
+  return data;
+};
+
+export const deletePhoneNumber = async ({
+  phoneNumber,
+  sid,
+}: {
+  phoneNumber: string;
+  sid: string;
+}): Promise<DeletePhoneNumberResponse> => {
+  const { data } = await api.delete<DeletePhoneNumberResponse>(
+    "/phone-numbers",
+    { data: { phoneNumber, sid } },
+  );
   return data;
 };
 
