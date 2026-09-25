@@ -1,6 +1,5 @@
-import { PlannedSettingsPage } from "../_components/plannedSettingsPage";
-import { settingsSections } from "../_components/sectionDefinitions";
+import { CallRoutingClient } from "./_components/client";
 
 export default function CallRoutingPage() {
-  return <PlannedSettingsPage {...settingsSections["call-routing"]} />;
+  return <CallRoutingClient />;
 }

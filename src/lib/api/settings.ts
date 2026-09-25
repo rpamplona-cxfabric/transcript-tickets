@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import type {
+  CallRoutingSettings,
   SpamHandlingSettings,
   WorkspaceSettings,
 } from "@/lib/settings/types";
@@ -16,14 +17,8 @@ export const fetchWorkspaceSettings = async (): Promise<WorkspaceSettings> => {
   return data;
 };
 
-export const updateBusinessHours = async ({
-  businessHours,
-  timezone,
-}: Pick<WorkspaceSettings, "businessHours" | "timezone">) => {
-  const { data } = await api.put<WorkspaceSettings>("/settings", {
-    businessHours,
-    timezone,
-  });
+export const updateBusinessHours = async (settings: WorkspaceSettings) => {
+  const { data } = await api.put<WorkspaceSettings>("/settings", settings);
   return data;
 };
 
@@ -33,6 +28,16 @@ export const updateSpamHandling = async (
   const { data } = await api.put<SpamHandlingSettings>(
     "/settings/spam-handling",
     { spamHandling },
+  );
+  return data;
+};
+
+export const updateCallRouting = async (
+  callRouting: CallRoutingSettings,
+): Promise<CallRoutingSettings> => {
+  const { data } = await api.put<CallRoutingSettings>(
+    "/settings/call-routing",
+    { callRouting },
   );
   return data;
 };

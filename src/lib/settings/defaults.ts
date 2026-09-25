@@ -10,6 +10,19 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     tuesday: { enabled: true, start: "09:00", end: "17:00" },
     wednesday: { enabled: true, start: "09:00", end: "17:00" },
   },
+  callRouting: {
+    afterHours: {
+      destination: { type: "unassigned" },
+      enabled: false,
+    },
+    defaultDestination: { type: "unassigned" },
+    fallbackDestination: { type: "unassigned" },
+    noAnswer: {
+      destination: { type: "unassigned" },
+      enabled: false,
+      ringTimeoutSeconds: 20,
+    },
+  },
   spamHandling: {
     allowList: [],
     blockList: [],

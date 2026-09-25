@@ -3,6 +3,7 @@ import { workspaceSettingsSchema } from "./schemas";
 import type {
   BusinessDayHours,
   BusinessHours,
+  CallRoutingSettings,
   SpamHandlingSettings,
   WorkspaceSettings,
 } from "./types";
@@ -14,6 +15,7 @@ interface BusinessHoursFlowValue {
 
 interface BusinessSettingsFlowValue {
   businessHours: BusinessHoursFlowValue;
+  callRouting?: CallRoutingSettings;
   spamHandling?: SpamHandlingSettings;
 }
 
@@ -41,6 +43,7 @@ export const normalizeBusinessHours = (
 
   return workspaceSettingsSchema.parse({
     businessHours: mergedBusinessHours,
+    callRouting: settings.callRouting ?? defaultWorkspaceSettings.callRouting,
     spamHandling:
       settings.spamHandling ?? defaultWorkspaceSettings.spamHandling,
     timezone: settings.businessHours.timezone,

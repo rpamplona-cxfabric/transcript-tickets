@@ -38,6 +38,7 @@ export const useBusinessHoursForm = (settings: WorkspaceSettings) => {
   const form = useForm<SettingsFormValues>({
     defaultValues: {
       businessHours: normalizeBusinessHours(settings.businessHours),
+      callRouting: settings.callRouting,
       spamHandling: settings.spamHandling,
       timezone: settings.timezone,
     },
@@ -47,6 +48,7 @@ export const useBusinessHoursForm = (settings: WorkspaceSettings) => {
   useEffect(() => {
     form.reset({
       businessHours: normalizeBusinessHours(settings.businessHours),
+      callRouting: settings.callRouting,
       spamHandling: settings.spamHandling,
       timezone: settings.timezone,
     });

@@ -6,6 +6,7 @@ import {
   toBusinessHoursPayload,
 } from "@/lib/settings/transform";
 import type {
+  CallRoutingSettings,
   SpamHandlingSettings,
   WorkspaceSettings,
 } from "@/lib/settings/types";
@@ -42,6 +43,7 @@ export const createBusinessSettings = async (
       action: "createBusinessSettings",
       payload: {
         businessHours: toBusinessHoursPayload(settings),
+        callRouting: settings.callRouting,
         spamHandling: settings.spamHandling,
       },
       tenantId,
@@ -123,6 +125,29 @@ export const updateSpamHandling = async (
     return spamHandling;
   } catch (error: unknown) {
     logExecutorError("Error updating spam handling:", error);
+    throw error;
+  }
+};
+
+export const updateCallRouting = async (
+  tenantId: string,
+  callRouting: CallRoutingSettings,
+): Promise<CallRoutingSettings> => {
+  try {
+    const result =
+      await executeBusinessSettingsFlow<UpdateBusinessHoursFlowResponse>({
+        action: "updateCallRouting",
+        payload: { callRouting },
+        tenantId,
+      });
+
+    if (!result.success) {
+      throw new Error("CXFabric failed to update call routing.");
+    }
+
+    return callRouting;
+  } catch (error: unknown) {
+    logExecutorError("Error updating call routing:", error);
     throw error;
   }
 };
