@@ -3,12 +3,18 @@ import { workspaceSettingsSchema } from "./schemas";
 import type {
   BusinessDayHours,
   BusinessHours,
+  SpamHandlingSettings,
   WorkspaceSettings,
 } from "./types";
 
 interface BusinessHoursFlowValue {
   dates: Array<Record<string, BusinessDayHours>>;
   timezone: string;
+}
+
+interface BusinessSettingsFlowValue {
+  businessHours: BusinessHoursFlowValue;
+  spamHandling?: SpamHandlingSettings;
 }
 
 const weekdays = [
@@ -22,9 +28,9 @@ const weekdays = [
 ];
 
 export const normalizeBusinessHours = (
-  businessHours: BusinessHoursFlowValue,
+  settings: BusinessSettingsFlowValue,
 ): WorkspaceSettings => {
-  const dates = businessHours.dates.reduce<BusinessHours>(
+  const dates = settings.businessHours.dates.reduce<BusinessHours>(
     (normalizedDates, date) => ({ ...normalizedDates, ...date }),
     {},
   );
@@ -35,7 +41,9 @@ export const normalizeBusinessHours = (
 
   return workspaceSettingsSchema.parse({
     businessHours: mergedBusinessHours,
-    timezone: businessHours.timezone,
+    spamHandling:
+      settings.spamHandling ?? defaultWorkspaceSettings.spamHandling,
+    timezone: settings.businessHours.timezone,
   });
 };
 

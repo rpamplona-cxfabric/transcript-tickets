@@ -5,7 +5,10 @@ import {
   normalizeBusinessHours,
   toBusinessHoursPayload,
 } from "@/lib/settings/transform";
-import type { WorkspaceSettings } from "@/lib/settings/types";
+import type {
+  SpamHandlingSettings,
+  WorkspaceSettings,
+} from "@/lib/settings/types";
 import { executeBusinessSettingsFlow } from "./flow";
 
 interface GetBusinessSettingsFlowResponse {
@@ -39,6 +42,7 @@ export const createBusinessSettings = async (
       action: "createBusinessSettings",
       payload: {
         businessHours: toBusinessHoursPayload(settings),
+        spamHandling: settings.spamHandling,
       },
       tenantId,
     });
@@ -68,7 +72,7 @@ export const getBusinessSettings = async (
     }
 
     const item = businessSettingsFlowItemSchema.parse(result.item);
-    return normalizeBusinessHours(item.businessHours);
+    return normalizeBusinessHours(item);
   } catch (error: unknown) {
     logExecutorError("Error fetching business settings:", error);
     throw error;
@@ -96,6 +100,29 @@ export const updateBusinessHours = async (
     return settings;
   } catch (error: unknown) {
     logExecutorError("Error updating business hours:", error);
+    throw error;
+  }
+};
+
+export const updateSpamHandling = async (
+  tenantId: string,
+  spamHandling: SpamHandlingSettings,
+): Promise<SpamHandlingSettings> => {
+  try {
+    const result =
+      await executeBusinessSettingsFlow<UpdateBusinessHoursFlowResponse>({
+        action: "updateSpamHandling",
+        payload: { spamHandling },
+        tenantId,
+      });
+
+    if (!result.success) {
+      throw new Error("CXFabric failed to update spam handling.");
+    }
+
+    return spamHandling;
+  } catch (error: unknown) {
+    logExecutorError("Error updating spam handling:", error);
     throw error;
   }
 };

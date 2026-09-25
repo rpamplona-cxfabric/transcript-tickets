@@ -1,14 +1,9 @@
-"use client";
-
-import { useEffect } from "react";
 import { useSettingsStore } from "@/lib/store/settings";
 
 export const useBusinessHoursClient = () => {
-  const { error, isLoading, loadSettings, settings } = useSettingsStore();
-
-  useEffect(() => {
-    void loadSettings();
-  }, [loadSettings]);
+  const error = useSettingsStore((state) => state.error);
+  const isLoading = useSettingsStore((state) => state.isLoading);
+  const settings = useSettingsStore((state) => state.settings);
 
   return { error, isLoading, settings };
 };

@@ -1,9 +1,13 @@
 import api from "@/lib/axios";
-import type { WorkspaceSettings } from "@/lib/settings/types";
+import type {
+  SpamHandlingSettings,
+  WorkspaceSettings,
+} from "@/lib/settings/types";
 
 export type {
   BusinessDayHours,
   BusinessHours,
+  SpamHandlingSettings,
   WorkspaceSettings,
 } from "@/lib/settings/types";
 
@@ -20,5 +24,15 @@ export const updateBusinessHours = async ({
     businessHours,
     timezone,
   });
+  return data;
+};
+
+export const updateSpamHandling = async (
+  spamHandling: SpamHandlingSettings,
+): Promise<SpamHandlingSettings> => {
+  const { data } = await api.put<SpamHandlingSettings>(
+    "/settings/spam-handling",
+    { spamHandling },
+  );
   return data;
 };

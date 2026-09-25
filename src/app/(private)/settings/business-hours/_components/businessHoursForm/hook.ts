@@ -38,6 +38,7 @@ export const useBusinessHoursForm = (settings: WorkspaceSettings) => {
   const form = useForm<SettingsFormValues>({
     defaultValues: {
       businessHours: normalizeBusinessHours(settings.businessHours),
+      spamHandling: settings.spamHandling,
       timezone: settings.timezone,
     },
     resolver: zodResolver(workspaceSettingsSchema),
@@ -46,6 +47,7 @@ export const useBusinessHoursForm = (settings: WorkspaceSettings) => {
   useEffect(() => {
     form.reset({
       businessHours: normalizeBusinessHours(settings.businessHours),
+      spamHandling: settings.spamHandling,
       timezone: settings.timezone,
     });
   }, [form, settings]);

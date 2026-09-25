@@ -10,5 +10,13 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     tuesday: { enabled: true, start: "09:00", end: "17:00" },
     wednesday: { enabled: true, start: "09:00", end: "17:00" },
   },
+  spamHandling: {
+    allowList: [],
+    blockList: [],
+    blockUnknownCallers: false,
+    enabled: true,
+    notifyOnScreenedCalls: true,
+    treatment: "voicemail",
+  },
   timezone: "America/Chicago",
 };
