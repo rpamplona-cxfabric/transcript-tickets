@@ -8,7 +8,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## Application code conventions
 
 - Keep each private route page minimal. A route's non-reusable implementation
-  belongs in that route's `_components/` directory.
+  belongs in that route's `_components/` directory. This applies to every
+  nested page route as well; do not place a child page's implementation in its
+  parent route's `_components/` directory.
 - Put reusable, cross-feature UI in `src/components/`; do not duplicate shared
   components inside route folders.
 - Keep one React component per file.

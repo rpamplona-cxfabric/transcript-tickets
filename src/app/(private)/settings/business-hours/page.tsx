@@ -1,5 +1,5 @@
-import { SettingsClient } from "../_components/client";
+import { BusinessHoursClient } from "./_components/client";
 
 export default function BusinessHoursPage() {
-  return <SettingsClient />;
+  return <BusinessHoursClient />;
 }

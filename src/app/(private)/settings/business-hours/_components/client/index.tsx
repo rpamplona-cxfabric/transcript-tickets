@@ -2,11 +2,11 @@
 
 import { BusinessHoursForm } from "../businessHoursForm";
 import { BusinessHoursSkeleton } from "../businessHoursSkeleton";
-import { SettingsPageShell } from "../settingsPageShell";
-import { useSettingsClient } from "./hook";
+import { SettingsPageShell } from "../../../_components/settingsPageShell";
+import { useBusinessHoursClient } from "./hook";
 
-export const SettingsClient = () => {
-  const { error, isLoading, settings } = useSettingsClient();
+export const BusinessHoursClient = () => {
+  const { error, isLoading, settings } = useBusinessHoursClient();
 
   return (
     <SettingsPageShell
