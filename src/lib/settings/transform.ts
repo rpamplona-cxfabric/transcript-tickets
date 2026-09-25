@@ -1,0 +1,50 @@
+import { defaultWorkspaceSettings } from "./defaults";
+import { workspaceSettingsSchema } from "./schemas";
+import type {
+  BusinessDayHours,
+  BusinessHours,
+  WorkspaceSettings,
+} from "./types";
+
+interface BusinessHoursFlowValue {
+  dates: Array<Record<string, BusinessDayHours>>;
+  timezone: string;
+}
+
+const weekdays = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
+
+export const normalizeBusinessHours = (
+  businessHours: BusinessHoursFlowValue,
+): WorkspaceSettings => {
+  const dates = businessHours.dates.reduce<BusinessHours>(
+    (normalizedDates, date) => ({ ...normalizedDates, ...date }),
+    {},
+  );
+  const mergedBusinessHours: BusinessHours = {
+    ...defaultWorkspaceSettings.businessHours,
+    ...dates,
+  };
+
+  return workspaceSettingsSchema.parse({
+    businessHours: mergedBusinessHours,
+    timezone: businessHours.timezone,
+  });
+};
+
+export const toBusinessHoursPayload = ({
+  businessHours,
+  timezone,
+}: WorkspaceSettings): BusinessHoursFlowValue => ({
+  dates: weekdays.map((day) => ({
+    [day]: businessHours[day] ?? defaultWorkspaceSettings.businessHours[day],
+  })),
+  timezone,
+});

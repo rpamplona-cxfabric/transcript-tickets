@@ -11,6 +11,7 @@ interface SelectProps {
   placeholder?: string;
   className?: string;
   buttonClassName?: string;
+  disabled?: boolean;
 }
 
 export const Select = ({
@@ -20,6 +21,7 @@ export const Select = ({
   placeholder = "Select option",
   className = "",
   buttonClassName = "",
+  disabled = false,
 }: SelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,8 +50,9 @@ export const Select = ({
     >
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-black dark:text-white dark:hover:bg-black ${buttonClassName}`}
+        disabled={disabled}
+        onClick={() => setIsOpen((open) => !open)}
+        className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 focus:border-zinc-500 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-black dark:text-white dark:hover:bg-black ${buttonClassName}`}
       >
         <span
           className={selectedOption ? "" : "text-zinc-400 dark:text-zinc-500"}

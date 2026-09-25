@@ -14,6 +14,7 @@ import {
   Moon,
   Phone,
   Sun,
+  Settings,
   UsersRound,
   UserRound,
   X,
@@ -45,6 +46,16 @@ const breadcrumbPages = {
   "/tasks": { title: "Tasks", icon: ListTodo },
   "/users": { title: "Users", icon: UsersRound },
   "/phone-numbers": { title: "Phone Numbers", icon: Phone },
+  "/settings": { title: "Settings", icon: Settings },
+  "/settings/business-hours": { title: "Business Hours", icon: Settings },
+  "/settings/call-routing": { title: "Call Routing", icon: Settings },
+  "/settings/spam-handling": { title: "Spam Handling", icon: Settings },
+  "/settings/recording": {
+    title: "Recording & Transcripts",
+    icon: Settings,
+  },
+  "/settings/data-retention": { title: "Data Retention", icon: Settings },
+  "/settings/notifications": { title: "Notifications", icon: Settings },
 };
 
 export const Header = ({

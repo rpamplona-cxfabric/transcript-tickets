@@ -5,6 +5,7 @@ import { Header } from "@/components/header";
 import { useSidebar } from "@/components/sidebar/hook";
 import { StoreInitializer } from "@/components/storeInitializer";
 import { UserProfileInitializer } from "@/components/auth/userProfileInitializer";
+import { SessionGuard } from "@/components/auth/sessionGuard";
 
 interface PrivateAppShellProps {
   authUser: AuthenticatedUser;
@@ -19,6 +20,7 @@ export const PrivateAppShell = ({
 
   return (
     <div className="workspace-canvas flex h-[100svh] flex-col overflow-hidden text-zinc-900 dark:text-zinc-50 md:gap-[9px] md:p-[9px]">
+      <SessionGuard />
       <Header
         authUser={authUser}
         isSidebarOpen={isOpen}

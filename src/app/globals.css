@@ -69,6 +69,11 @@ body {
   box-shadow: none;
 }
 
+/* Keep the primary app layout visually open in dark mode. */
+:root.dark .app-surface.app-shadow-surface:not([role="dialog"]) {
+  border-color: transparent !important;
+}
+
 * {
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   scrollbar-width: thin;

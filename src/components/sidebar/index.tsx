@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   CircleHelp,
+  ChevronDown,
   ChevronRight,
   LogOut,
   FileAudio,
@@ -11,6 +12,7 @@ import {
   UsersRound,
   X,
   Phone,
+  Settings,
 } from "lucide-react";
 import {
   Dispatch,
@@ -28,6 +30,11 @@ interface MenuItem {
   name: string;
   path: string;
   icon: ElementType;
+}
+
+interface SettingsMenuItem {
+  name: string;
+  path: string;
 }
 
 export interface AuthenticatedUser {
@@ -119,6 +126,16 @@ export const Sidebar = ({
     { name: "Users", path: "/users", icon: UsersRound },
     { name: "Phone Numbers", path: "/phone-numbers", icon: Phone },
   ];
+  const settingsMenuItems: SettingsMenuItem[] = [
+    { name: "Business Hours", path: "/settings/business-hours" },
+    { name: "Call Routing", path: "/settings/call-routing" },
+    { name: "Spam Handling", path: "/settings/spam-handling" },
+    { name: "Recording & Transcripts", path: "/settings/recording" },
+    { name: "Data Retention", path: "/settings/data-retention" },
+    { name: "Notifications", path: "/settings/notifications" },
+  ];
+  const isSettingsActive =
+    pathname === "/settings" || pathname.startsWith("/settings/");
 
   return (
     <>
@@ -173,6 +190,53 @@ export const Sidebar = ({
               </Link>
             );
           })}
+          <div>
+            <Link
+              href="/settings/business-hours"
+              onClick={() => setIsOpen(false)}
+              className={`group flex items-center justify-between rounded-lg px-4 py-3 text-sm font-normal transition-all duration-200 ${
+                isSettingsActive
+                  ? "bg-[#e2e8f0] text-[#1e283e] dark:bg-white dark:text-zinc-950"
+                  : "text-[#1e283e] hover:bg-[#e2e8f0] dark:text-zinc-400 dark:hover:bg-black dark:hover:text-white"
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <Settings
+                  className={`h-4 w-4 transition-transform duration-200 group-hover:scale-105 ${
+                    isSettingsActive
+                      ? "text-[#1e283e]"
+                      : "text-[#1e283e] dark:text-zinc-400 dark:group-hover:text-white"
+                  }`}
+                />
+                <span>Settings</span>
+              </span>
+              {isSettingsActive ? (
+                <ChevronDown className="h-4 w-4 text-[#1e283e]" />
+              ) : null}
+            </Link>
+
+            {isSettingsActive ? (
+              <div className="ml-7 mt-1 space-y-0.5 border-l border-zinc-200 pl-4 dark:border-zinc-800">
+                {settingsMenuItems.map((item) => {
+                  const isActive = pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      href={item.path}
+                      onClick={() => setIsOpen(false)}
+                      className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
+                        isActive
+                          ? "font-semibold text-zinc-950 dark:text-white"
+                          : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-black dark:hover:text-white"
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
         </nav>
 
         <button
